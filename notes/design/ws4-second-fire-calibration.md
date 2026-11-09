@@ -1,6 +1,6 @@
 # Second observed fire and calibration gate
 
-Status: P161.1 data gate — conditional pass
+Status: P161.1–P161.2 data gate — pass
 Phase: P161 (Second observed fire and calibration protocol)
 Date: 2026-11-09
 Related: P157 (#923), P160 (#947), P161 (#954)
@@ -12,9 +12,9 @@ independent of Dogrib, uses Canadian FBP fuels, and has a public hourly weather 
 public satellite-derived daily progression and final perimeter, a public ignition location, and
 a public fuel dataset.
 
-The gate is a **conditional pass**: the data sources exist and are identified, but P161.2 must
-acquire and subset the 2023 FBP fuel dataset and the ASTER terrain tile before the fixture is
-valid. If either acquisition fails, P161 closes as a no-go.
+The gate **passes**. P161.2 acquired the 2023 FBP fuel and DEM tiles, subset them to the fire
+footprint, and built the fixture. The remaining uncertainty is the source perimeter and the
+absence of an official ignition report, not missing data.
 
 ## 2. Gate checklist
 
@@ -24,10 +24,10 @@ valid. If either acquisition fails, P161 closes as a no-go.
 | Independence | Different fire, year, region, and fuel/weather stream from Dogrib | pass |
 | Observed perimeter | CFSDS `2023_320_krig.tif`, 90 m, final day-of-burning 140 (20 May 2023); 2,770.2 ha | pass with caveat |
 | Progression | CFSDS day-of-burning 134–140 (14–20 May 2023) | pass |
-| Hourly weather | ECCC Hay River A, climate ID 2202401, hourly May 2023 | pass |
+| Hourly weather | ECCC Hay River Climate, climate ID 2202402, hourly May 2023 | pass |
 | Ignition | First CFSDS burned centroid near 60.8416 N, 115.7022 W; satellite-inferred, not an official ignition report | pass with caveat |
-| Fuel | FireSTARR Fuel 2023 V1.0, FBP 100 m, public index with SHA-256 | pass with acquisition |
-| Terrain | ASTER GDEM V003, 30 m, public | pass with acquisition |
+| Fuel | FireSTARR Fuel 2023 V1.0, FBP 100 m, public index with SHA-256 | pass |
+| Terrain | FireSTARR Fuel 2023 V1.0 DEM, 100 m, same archive | pass |
 | CRS / time zone | CFSDS Lambert Conformal Conic; weather local standard time; reproject to a local metric grid | pass |
 | Event duration | 14–20 May 2023, seven daily growth days | pass |
 | Licence | CFSDS public OSF, no explicit licence; ECCC open data; FireSTARR fuel index public, no explicit licence; ASTER public | caveat |
@@ -44,26 +44,29 @@ Canadian Fire Spread Dataset (CFSDS), v1.1, OSF `f48ry`:
   area 2,770.2 ha; day-of-burning 134–140.
 
 The CFSDS final perimeter is satellite-derived and ends on 20 May 2023. A NWT map dated
-22 May 2023 reports 3,208.9 ha. P161.2 must state which perimeter is the comparison target; the
-default is the CFSDS raster because it is georeferenced and reproducible. The 14 % difference
-is an accepted limitation, not a calibration target.
+22 May 2023 reports 3,208.9 ha. The fixture stores seven cumulative daily perimeters; the
+final mask is 2,987 ha on the reprojected 100 m grid. The CFSDS source is 2,770 ha, and the
+22 May NWT map is 3,208.9 ha. The fixture’s final perimeter is the comparison target. The
+difference is an accepted limitation, not a calibration target.
 
 ### 3.2 Weather
 
-ECCC station **HAY RIVER A**, climate ID `2202401`, hourly May 2023. The hourly record covers
-the event window and includes temperature, relative humidity, wind speed/direction, and
-precipitation. The event-day FWI starting codes must be derived and recorded; they are not
-assumed from Dogrib.
+ECCC station **HAY RIVER CLIMATE**, climate ID `2202402`, hourly May 2023. The hourly record
+covers the event window and includes temperature, relative humidity, wind speed/direction, and
+precipitation. Missing wind directions on calm hours are recorded as 0 degrees. The event-day
+FWI starting codes are taken from the CFSDS day-1 row: FFMC 92.9, DMC 60.4, DC 233.0, BUI 73.3.
 
 ### 3.3 Fuel and terrain
 
 - FireSTARR Fuel 2023 V1.0: `FireSTARR_Fuel_2023_V1.0.zip`, 2,832,256,903 bytes,
   SHA-256 `3a1c18b85592358ae1031884947dba0640a2703947dcdfd8b637caa02dd40acc`.
   Public index: `https://fgmfiles.spyd.com/datasets/nomad/index.json`.
-- ASTER GDEM V003 for the fire footprint, 30 m.
+- The archive contains `fuel_11_0.tif` and `dem_11_0.tif` on UTM zone 11N at 100 m. P161.2
+  subset both to the fire footprint; no separate ASTER tile is needed.
 
-The fuel zip is large and must be subset to the fire tile; it is not committed. Its index has no
-explicit licence, so P161.2 treats it as validation data with attribution and no redistribution.
+The fuel zip is large and is subset to `fuel_11_0` / `dem_11_0`; only the derived 131 × 117
+fixture is committed. Its index has no explicit licence, so P161.2 treats it as validation data
+with attribution and no redistribution.
 
 ### 3.4 Ignition
 
@@ -90,8 +93,20 @@ candidate uses point ignition; there is no public 14 May start perimeter.
   case, like the FireSTARR comparison but with Canadian FBP fuels.
 - One fire is still not a regional calibration; the result will be a two-case transfer test.
 
-## 6. Next step
+## 6. P161.2 fixture
 
-P161.2 acquires the CFSDS raster and ECCC weather, subsets the 2023 FBP fuel tile, obtains the
-ASTER terrain tile, and builds the second-fire fixture. If the fuel or terrain subset cannot be
-produced, close P161 as a data-gate no-go before writing calibration code.
+The fixture is `tests/fixtures/fire/hay_river_2023`:
+
+- `fbp_fuel_type.asc`, `elevation.asc`, `fbp_lookup_table.csv`
+- seven cumulative `perimeter_*.kml` snapshots
+- `ignition.kml`
+- `weather.csv`
+- `SOURCE.md`
+
+The loader is `ws4.fire.observed.load_hay_river`; it validates the same contract as Dogrib and
+does not change the Dogrib fixture.
+
+## 7. Next step
+
+P161.3 fixes the calibration parameters, bounds, objective, and holdout rules before seeing the
+calibrated result. P161.4 runs the baseline and calibrated cases.

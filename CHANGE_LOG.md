@@ -5049,3 +5049,10 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   before P161.2. Rejected Horse River 2016 (analytic FBP fuel raster token-gated), WildfireAV
   (US FBFM), the June Nomad run (no matching perimeter), and CFSDS-only alternatives (no
   hourly/FBP fuel). Dashboard: **GREEN**.
+
+- P161.2: built the Hay River / K'atl'odeeche second-fire fixture from CFSDS `2023_320`
+  (seven cumulative daily perimeters), ECCC Hay River Climate 2202402 hourly weather, and
+  the FireSTARR Fuel 2023 `fuel_11_0` / `dem_11_0` subset. Added `load_hay_river`, fixture
+  validation tests, and the observed-fire docs. The fixture is 131 × 117 at 100 m, UTM zone
+  11N; final rasterized area is 2,987 ha. The raw CFSDS/FireSTARR data remain untracked.
+  Dashboard: **GREEN**.

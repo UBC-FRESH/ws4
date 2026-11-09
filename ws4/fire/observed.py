@@ -34,6 +34,11 @@ DOGRIB_SOURCE: Final[str] = (
     "Prometheus sample dataset Dogrib_v624.zip; "
     "http://www.firegrowthmodel.ca/prometheus/downloads/Dogrib_v624.zip"
 )
+HAY_RIVER_SOURCE: Final[str] = (
+    "Canadian Fire Spread Dataset v1.1 (OSF f48ry), ECCC Hay River Climate 2202402, "
+    "and FireSTARR Fuel 2023 V1.0"
+)
+HAY_RIVER_CRS: Final[str] = "EPSG:26911"
 
 
 class ObservedFireError(RuntimeError):
@@ -772,6 +777,141 @@ def load_dogrib(directory: str | Path) -> ObservedFire:
         perimeters=tuple(perimeters),
         weather=weather,
         weather_patch_projected=weather_patch,
+        provenance=provenance,
+    )
+
+
+def load_hay_river(directory: str | Path) -> ObservedFire:
+    """Load the Hay River / K'atl'odeeche second-fire fixture.
+
+    Parameters
+    ----------
+    directory : str or Path
+        Directory containing the fixture files.
+
+    Returns
+    -------
+    ObservedFire
+        The validated observed fire.
+
+    Raises
+    ------
+    ObservedFireError
+        If a file is missing, the grids disagree, a fuel code is unknown, the ignition point
+        is outside the grid, or the weather does not cover the event window.
+    """
+    root = Path(directory)
+    fuel_codes, fuel_grid = read_ascii_grid(root / "fbp_fuel_type.asc", crs=HAY_RIVER_CRS)
+    elevation, elevation_grid = read_ascii_grid(root / "elevation.asc", crs=HAY_RIVER_CRS)
+    if (
+        fuel_grid.ncols,
+        fuel_grid.nrows,
+        fuel_grid.xll,
+        fuel_grid.yll,
+        fuel_grid.cell_size_m,
+        fuel_grid.crs,
+    ) != (
+        elevation_grid.ncols,
+        elevation_grid.nrows,
+        elevation_grid.xll,
+        elevation_grid.yll,
+        elevation_grid.cell_size_m,
+        elevation_grid.crs,
+    ):
+        raise ObservedFireError("fuel and elevation grids have different geometry")
+    lookup_frame = pd.read_csv(root / "fbp_lookup_table.csv")
+    if not {"grid_value", "fuel_type"}.issubset(lookup_frame.columns):
+        raise ObservedFireError("fuel lookup table needs grid_value and fuel_type")
+    lookup: dict[int, str | None] = {}
+    for row in lookup_frame.itertuples(index=False):
+        code = int(str(row.grid_value))
+        name = str(row.fuel_type).strip()
+        lookup[code] = None if name.lower() == "non-fuel" else name
+    lookup[int(fuel_grid.nodata)] = None
+    unknown = sorted({int(code) for code in np.unique(fuel_codes)} - set(lookup))
+    if unknown:
+        raise ObservedFireError(f"fuel grid has unknown codes: {unknown[:10]}")
+    weather = read_weather(root / "weather.csv")
+    perimeter_paths = sorted(root.glob("perimeter_*.kml"))
+    if len(perimeter_paths) < 2:
+        raise ObservedFireError("observed fire needs at least two perimeter snapshots")
+    ignition_lonlat = read_kml_point(root / "ignition.kml")
+    try:
+        from pyproj import Transformer
+    except ImportError as error:  # pragma: no cover - pyproj is a declared dependency
+        raise ObservedFireError("pyproj is required to load observed-fire KML") from error
+    transformer = Transformer.from_crs("EPSG:4326", fuel_grid.crs, always_xy=True)
+    ignition_xy = transformer.transform(*ignition_lonlat)
+    if not fuel_grid.contains(*ignition_xy):
+        raise ObservedFireError("ignition point is outside the observed grid")
+    perimeters: list[ObservedPerimeter] = []
+    for path in perimeter_paths:
+        match = re.search(r"perimeter_(\d{8})_(\d{4})\.kml$", path.name)
+        if match is None:
+            raise ObservedFireError(f"perimeter filename has no timestamp: {path.name}")
+        observed_at = datetime.strptime(match.group(1) + match.group(2), "%Y%m%d%H%M")
+        rings_lonlat = read_kml_rings(path)
+        rings_projected = tuple(
+            tuple(transformer.transform(lon, lat) for lon, lat in ring) for ring in rings_lonlat
+        )
+        points = [point for ring in rings_projected for point in ring]
+        min_x = min(point[0] for point in points)
+        max_x = max(point[0] for point in points)
+        min_y = min(point[1] for point in points)
+        max_y = max(point[1] for point in points)
+        grid_min_x, grid_min_y, grid_max_x, grid_max_y = fuel_grid.bounds
+        if max_x < grid_min_x or min_x > grid_max_x or max_y < grid_min_y or min_y > grid_max_y:
+            raise ObservedFireError(f"perimeter {path.name} does not overlap the observed grid")
+        perimeters.append(
+            ObservedPerimeter(
+                observed_at=observed_at,
+                rings_lonlat=rings_lonlat,
+                rings_projected=rings_projected,
+                source=path.name,
+            )
+        )
+    perimeters.sort(key=lambda item: item.observed_at)
+    event_start = datetime(2023, 5, 14, 12, 0)
+    event_end = datetime(2023, 5, 20, 23, 0)
+    if weather["local_time"].min() > event_start or weather["local_time"].max() < event_end:
+        raise ObservedFireError("weather stream does not cover the event window")
+    if not weather["local_time"].diff().dropna().eq(pd.Timedelta(hours=1)).all():
+        raise ObservedFireError("weather stream has a gap between hourly records")
+    if event_start >= event_end:
+        raise ObservedFireError("event window must be increasing")
+    provenance = {
+        "source": HAY_RIVER_SOURCE,
+        "archive": "https://osf.io/f48ry/ and https://fgmfiles.spyd.com/datasets/nomad/",
+        "accessed": "2026-11-09",
+        "fire_id": "2023_320",
+        "event": "Hay River / K'atl'odeeche SS005-23, 2023-05-14 to 2023-05-20 LST",
+        "projection": "NAD83 UTM zone 11N (EPSG:26911)",
+        "notes": (
+            "CFSDS daily progression and perimeter; ECCC hourly weather; FireSTARR 2023 "
+            "FBP fuel and DEM subset. The ignition is the first-day burned centroid, not an "
+            "official ignition report. Times are local standard time."
+        ),
+    }
+    return ObservedFire(
+        fire_id="2023_320",
+        name="Hay River / K'atl'odeeche fire",
+        source=HAY_RIVER_SOURCE,
+        licence=(
+            "CFSDS public OSF data; ECCC open data; FireSTARR fuel public index. "
+            "No explicit licence file in the reviewed copies; attribution retained."
+        ),
+        time_zone="local standard (America/Yellowknife, no DST)",
+        event_start=event_start,
+        event_end=event_end,
+        ignition_lonlat=ignition_lonlat,
+        ignition_xy=ignition_xy,
+        grid=fuel_grid,
+        fuel_codes=fuel_codes,
+        elevation_m=elevation,
+        fuel_lookup=lookup,
+        perimeters=tuple(perimeters),
+        weather=weather,
+        weather_patch_projected=None,
         provenance=provenance,
     )
 

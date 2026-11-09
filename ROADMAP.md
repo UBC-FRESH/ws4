@@ -4767,7 +4767,7 @@ and test whether calibrated WS4 parameters improve the new fire while Dogrib rem
 untouched holdout.
 
 - [x] P161.1 Candidate-fire inventory and data gate (#955)
-- [ ] P161.2 Second-fire fixture and observed-fire contract (#956)
+- [x] P161.2 Second-fire fixture and observed-fire contract (#956)
 - [ ] P161.3 Calibration and holdout protocol (#957)
 - [ ] P161.4 Baseline and calibrated runs (#958)
 - [ ] P161.5 Close with go/no-go evidence (#959)

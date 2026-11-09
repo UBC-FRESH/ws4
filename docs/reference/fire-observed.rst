@@ -11,7 +11,8 @@ needed to compare a simulation without a hidden calibration step.
 
 The first fixture is the **Dogrib fire (RWF085)**, the standard Prometheus validation case for
 the Canadian FBP System. It is used only as validation evidence; the comparison harness is
-P157.2.
+P157.2. The second fixture is the **Hay River / K'atl'odeeche fire (2023_320)**, added by P161
+for an independent calibration/holdout case.
 
 Source and window
 -----------------
@@ -63,7 +64,7 @@ Each perimeter reports its time, polygon count, point count, and total area. Inn
 Loader and validation
 ---------------------
 
-``ws4.fire.observed.load_dogrib`` validates:
+``ws4.fire.observed.load_dogrib`` and ``ws4.fire.observed.load_hay_river`` validate:
 
 - every required file is present;
 - the fuel and elevation grids have the same geometry;
@@ -75,6 +76,27 @@ Loader and validation
 
 The fixture tests cover the grid shape, fuel lookup, weather window, perimeter areas, JSON
 summary, malformed grid, missing fuel file, unknown fuel code, and weather gap.
+
+Second fixture: Hay River / K'atl'odeeche (2023_320)
+----------------------------------------------------
+
+- Fire: SS005-23 / Hay River / K'atl'odeeche, Northwest Territories, May 2023.
+- Perimeter and progression: CFSDS v1.1 ``2023_320_krig.tif``, day-of-burning 134–140.
+  The fixture stores seven cumulative daily perimeters. The final perimeter is 2,987 ha on the
+  reprojected 100 m grid; the CFSDS source area is 2,770 ha and a 22 May NWT map reports
+  3,208.9 ha.
+- Weather: ECCC HAY RIVER CLIMATE, climate ID 2202402, hourly local standard time,
+  14 May 12:00 to 20 May 23:00.
+- Fuel and elevation: FireSTARR Fuel 2023 V1.0 100 m subset, UTM zone 11N; the same archive
+  provides the DEM.
+- Ignition: the first-day burned centroid, not an official ignition report.
+- Grid: 131 columns by 117 rows, 100 m, EPSG:26911.
+- The CFSDS and FireSTARR datasets have no explicit licence file in the reviewed copies. The
+  fixture is used for non-commercial validation with attribution; the raw datasets are not
+  committed.
+
+The second fixture is the data gate for P161. It is not yet used for a calibrated run; P161.2
+builds the fixture, P161.3 fixes the protocol, and P161.4 runs the baseline and holdout.
 
 Comparison harness
 ------------------
@@ -121,7 +143,9 @@ Limits
 - Hourly FFMC uses the standard FFMC equation on hourly weather; BUI is held constant.
 - Spotting is absent; the observed final contains 25 polygons, including spot fires.
 - Scenario 2b overpredicts area by 59% and perimeter by 76%, so it is not an operational match.
-- Burning-condition thresholds, the WindNinja scenarios, hourly BUI, and spotting are missing.
+- P160 tested the documented burning-condition thresholds and the WindNinja 2c/2d grids; the
+  thresholds do not change Scenario 2b and the wind grids underburn. Hourly BUI and spotting
+  remain missing.
 - The event window ends at the 11:52 perimeter in this archive. The Prometheus scenario text
   describes a slightly later end; the loader records the archive's actual timestamp.
 - The weather and perimeter times are local time. No daylight-saving conversion is applied.
