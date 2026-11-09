@@ -4934,11 +4934,16 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   centroid and overlap fail. No external Prometheus/FARSITE parity, hourly weather, or
   spotting yet. Dashboard: **GREEN**.
 
+- P157.4: verified and closed out the Dogrib observed-fire validation. The benchmark matrix,
+  CSV, JSON, and SVG reproduce. The time-matched run is 29,509 ha vs 10,219 (+188.8%),
+  perimeter +222.8%, centroid 3.01 km, IoU 0.255, Sorensen 0.406, and 9.2° orientation error.
+  It passes centroid/orientation and fails area, perimeter, and overlap. External parity,
+  hourly BUI, and spotting remain accepted limits. Closed as a negative validation result.
 - P157.7: added time-dependent growth. `WeatherStep` and `GrowthConfig.weather_steps` drive a
   FIFO edge-travel integration through piecewise-constant weather. The Dogrib case builds 23
   hourly steps from the weather stream, advances FFMC with the standard equation, and holds BUI
-  at 105.0. The 1,372-minute observed-grid run is 29,989 ha vs 10,219 (+193.5%), perimeter
-  +230.0%, centroid 2.96 km, IoU 0.255, Sorensen 0.407, orientation 9.1°. It passes centroid
+  at 98.7. The 1,372-minute observed-grid run is 29,509 ha vs 10,219 (+188.8%), perimeter
+  +222.8%, centroid 3.01 km, IoU 0.255, Sorensen 0.406, orientation 9.2°. It passes centroid
   and orientation but fails area, perimeter, and overlap. The 1,372-minute constant-weather run
-  is 49,583 ha (+385.2%). Added wind-shift, constant-step, and hourly-step tests. No external
+  is 49,207 ha (+381.5%). Added wind-shift, constant-step, and hourly-step tests. No external
   Prometheus/FARSITE parity, hourly BUI, or spotting. Dashboard: **GREEN**.

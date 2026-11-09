@@ -87,22 +87,24 @@ can use a homogeneous C2 reference or the observed per-cell fuel, terrain, and h
 ESRI ASCII grids store row zero at the north edge. P157.5 corrected an earlier north/south
 row flip; the earlier P157.2 numbers are invalid.
 
-The primary case is now time-matched: observed grid, hourly weather, 1,372 minutes to the
-11:52 perimeter. FFMC starts at 92.7 and is advanced hourly; BUI is held at 105.0 because the
+The primary case is now time-matched to the observed final: observed grid, hourly weather,
+1,372 minutes to the 11:52 perimeter. The sample dataset's Scenario 2 is 402 minutes
+(13:00–19:42); the 402-minute cases are retained for the official duration, but there is no
+observed 19:42 perimeter in the fixture. FFMC starts at 92.7 and is advanced hourly; BUI is held at 98.7 because the
 stream has no hourly BUI conversion.
 
 Time-matched observed-grid result:
 
-- area 29,989 ha vs 10,219 ha (+193.5%);
-- perimeter 528.6 km vs 160.2 km (+230.0%);
-- centroid 2.96 km;
-- orientation error 9.1°;
-- IoU 0.255 and Sorensen 0.407.
+- area 29,509 ha vs 10,219 ha (+188.8%);
+- perimeter 517.2 km vs 160.2 km (+222.8%);
+- centroid 3.01 km;
+- orientation error 9.2°;
+- IoU 0.255 and Sorensen 0.406.
 
-The 402-minute observed-grid case is not time-matched: 8,287 ha (−18.9%), perimeter +12.2%,
-centroid 9.82 km, IoU 0.207, Sorensen 0.343, orientation 29.1°. The homogeneous C2 reference
-is 14,126 ha (+38.2%), perimeter +76.2%, centroid 6.08 km, IoU 0.265, Sorensen 0.419,
-orientation 0.5°.
+The 402-minute observed-grid case is not time-matched: 8,203 ha (−19.7%), perimeter +11.6%,
+centroid 9.85 km, IoU 0.206, Sorensen 0.342, orientation 29.2°. The homogeneous C2 reference
+is 13,852 ha (+35.6%), perimeter +75.2%, centroid 6.17 km, IoU 0.264, Sorensen 0.418,
+orientation 0.7°.
 
 The time-matched run passes the centroid and orientation checks but fails area, perimeter,
 IoU, and Sorensen. The full evidence is in ``notes/reports/p157-observed-validation.md`` and
@@ -120,7 +122,7 @@ Limits
   No runnable Prometheus/FARSITE oracle was used for parity.
 - Hourly FFMC uses the standard FFMC equation on hourly weather; BUI is held constant.
 - Spotting is absent; the observed final contains 25 polygons, including spot fires.
-- The time-matched run overpredicts area by 193%, so it is not an operational match.
+- The time-matched run overpredicts area by 189%, so it is not an operational match.
 - The event window ends at the 11:52 perimeter in this archive. The Prometheus scenario text
   describes a slightly later end; the loader records the archive's actual timestamp.
 - The weather and perimeter times are local time. No daylight-saving conversion is applied.

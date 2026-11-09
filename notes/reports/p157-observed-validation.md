@@ -2,8 +2,9 @@
 
 Date: 2026-11-09
 Branch: `feature/p157-observed-fire`
-Tasks: P157.2 (#926), P157.5 (#939), P157.6 (#940), P157.7 (#941)
+Tasks: P157.2 (#926), P157.5 (#939), P157.6 (#940), P157.7 (#941), P157.4 (#927)
 Parent: P157 (#923)
+Status: negative validation result; close-out in `notes/reports/p157-closeout.md`
 
 ## Correction
 
@@ -30,12 +31,17 @@ the hourly weather to the 11:52 target?
 - Fuel: observed FBP grid per cell. O1A/O1B maps to O1B; D1/D2 maps to D1; M1/M2 maps to M1
   with the labelled conifer percentage. These are documented assumptions.
 - Terrain: slope and aspect derived from the north-first elevation grid; per-cell elevation.
-- Weather: hourly wind, temperature, relative humidity, and precipitation. FFMC starts at the
-  event-day value and is advanced with the standard FFMC equation on the hourly stream; BUI
-  is held at 105.0 because the stream has no defensible hourly BUI conversion.
+- Weather: hourly wind, temperature, relative humidity, and precipitation. The FWI sequence
+  starts from the sample dataset codes FFMC 89, DMC 58, and DC 482; event-day FFMC is 92.7
+  and BUI is 98.7. FFMC is advanced with the standard equation on the hourly stream; BUI is
+  held constant because the stream has no defensible hourly BUI conversion.
 - Duration: 1,372 minutes, ending at the observed 11:52 perimeter.
 - Ignition: every burnable cell inside the observed start perimeter (686 cells).
 - Spotting: absent.
+- Official scenario note: the sample dataset's Scenario 2 is 13:00–19:42 (402 min). The only
+  observed final perimeter is 11:52 the next day. The 1,372-minute run is a time-matched test
+  against that final, not the official 402-minute scenario; the 402-minute cases are retained
+  for the official duration.
 
 ## Time alignment
 
@@ -47,19 +53,19 @@ not time-matched to the final perimeter.
 
 | Metric | Value |
 | --- | --- |
-| Simulated area | 29,989 ha |
+| Simulated area | 29,509 ha |
 | Observed area | 10,219 ha |
-| Area bias | +193.5% |
-| Simulated raster perimeter | 528.6 km |
+| Area bias | +188.8% |
+| Simulated raster perimeter | 517.2 km |
 | Observed raster perimeter | 160.2 km |
-| Perimeter bias | +230.0% |
-| Centroid distance | 2.96 km |
+| Perimeter bias | +222.8% |
+| Centroid distance | 3.01 km |
 | IoU | 0.255 |
-| Sorensen | 0.407 |
-| Orientation error | 9.1° |
+| Sorensen | 0.406 |
+| Orientation error | 9.2° |
 | Start cells | 686 |
 | FFMC range | 92.7 → 84.7 |
-| BUI | 105.0 constant |
+| BUI | 98.7 constant |
 
 The time-matched run moves the centroid close to the observed centroid and aligns the
 principal axis. It grossly overpredicts area and perimeter: the simulated fire covers the
@@ -70,13 +76,13 @@ observed final shape.
 
 | Scenario | Duration | Weather | Area (ha) | Area bias | Perimeter bias | Centroid (km) | IoU | Sorensen | Orientation |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| observed grid, hourly | 1,372 | hourly | 29,989 | +193.5% | +230.0% | 2.96 | 0.255 | 0.407 | 9.1° |
-| observed grid | 402 | constant | 8,287 | −18.9% | +12.2% | 9.82 | 0.207 | 0.343 | 29.1° |
-| homogeneous C2 | 402 | constant | 14,126 | +38.2% | +76.2% | 6.08 | 0.265 | 0.419 | 0.5° |
-| observed grid, hourly | 402 | hourly | 17,446 | +70.7% | +112.4% | 5.11 | 0.188 | 0.316 | 13.2° |
-| observed grid, wind 27 | 402 | constant | 11,498 | +12.5% | +54.8% | 7.76 | 0.232 | 0.376 | 27.9° |
-| observed grid, no wind | 402 | constant | 5,603 | −45.2% | −33.3% | 12.24 | 0.130 | 0.230 | 27.2° |
-| observed grid | 1,372 | constant | 49,583 | +385.2% | +346.2% | 2.21 | 0.190 | 0.319 | 20.2° |
+| observed grid, hourly | 1,372 | hourly | 29,509 | +188.8% | +222.8% | 3.01 | 0.255 | 0.406 | 9.2° |
+| observed grid | 402 | constant | 8,203 | −19.7% | +11.6% | 9.85 | 0.206 | 0.342 | 29.2° |
+| homogeneous C2 | 402 | constant | 13,852 | +35.6% | +75.2% | 6.17 | 0.264 | 0.418 | 0.7° |
+| observed grid, hourly | 402 | hourly | 17,195 | +68.3% | +110.1% | 5.18 | 0.186 | 0.314 | 13.1° |
+| observed grid, wind 27 | 402 | constant | 11,369 | +11.3% | +53.9% | 7.82 | 0.232 | 0.376 | 28.0° |
+| observed grid, no wind | 402 | constant | 5,552 | −45.7% | −33.1% | 12.24 | 0.130 | 0.231 | 27.6° |
+| observed grid | 1,372 | constant | 49,207 | +381.5% | +341.9% | 2.22 | 0.191 | 0.321 | 20.3° |
 
 The 1,372-minute constant-weather run is worse than the hourly run. The hourly FFMC drop
 reduces the overnight spread, but not enough to match the observed 10,219 ha. No case passes
@@ -88,12 +94,12 @@ These are screening tolerances, not operational acceptance.
 
 | Check | Tolerance | Hourly 1,372 | Result |
 | --- | --- | --- | --- |
-| Area bias | ±50% | +193.5% | fail |
-| Perimeter bias | ±35% | +230.0% | fail |
-| Orientation error | ≤30° | 9.1° | pass |
-| Centroid distance | ≤5 km | 2.96 km | pass |
+| Area bias | ±50% | +188.8% | fail |
+| Perimeter bias | ±35% | +222.8% | fail |
+| Orientation error | ≤30° | 9.2° | pass |
+| Centroid distance | ≤5 km | 3.01 km | pass |
 | IoU | ≥0.30 | 0.255 | fail |
-| Sorensen | ≥0.45 | 0.407 | fail |
+| Sorensen | ≥0.45 | 0.406 | fail |
 
 The time-matched run passes the centroid and orientation checks but fails area, perimeter,
 IoU, and Sorensen. That is a different failure from the 402-minute case: the location is
@@ -126,7 +132,7 @@ read-only.
 - **External model parity.** No runnable Prometheus/FARSITE oracle was used. This is an
   independent reimplementation of published FBP and Huygens logic, not a line-by-line parity
   test against a known-good executable.
-- **Hourly BUI.** BUI is held at 105.0. The hourly FFMC is the standard FFMC equation applied
+- **Hourly BUI.** BUI is held at 98.7. The hourly FFMC is the standard FFMC equation applied
   to hourly weather, which is an approximation.
 - **Spotting.** The observed final contains 25 polygons, including spot fires. The model has
   no spotting.

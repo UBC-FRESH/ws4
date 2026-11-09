@@ -148,11 +148,11 @@ and a 10,223 ha final perimeter across 25 polygons, including spot fires. P157.2
 comparison harness and metrics. P157.3 adds the SVG view. P157.5 corrects the north-first row
 mapping; the first P157.2 numbers were vertically flipped and are invalid. P157.6 adds
 per-cell fuel, blend, slope, aspect, and elevation to the Huygens growth engine. The observed-
-grid 402-minute case is 8,287 ha vs 10,219 ha (−18.9%), perimeter +12.2%, centroid 9.82 km,
-IoU 0.207, Sorensen 0.343, and 29.1° orientation error. It passes only the loose area,
+grid 402-minute case is 8,203 ha vs 10,219 ha (−19.7%), perimeter +11.6%, centroid 9.85 km,
+IoU 0.206, Sorensen 0.342, and 29.2° orientation error. It passes only the loose area,
 perimeter, and orientation screen; centroid and overlap fail. P157.7 adds time-dependent
-growth and a 1,372-minute time-matched run with hourly weather. That run is 29,989 ha
-(+193.5%), perimeter +230.0%, centroid 2.96 km, IoU 0.255, Sorensen 0.407, and 9.1°
+growth and a 1,372-minute time-matched run with hourly weather. That run is 29,509 ha
+(+188.8%), perimeter +222.8%, centroid 3.01 km, IoU 0.255, Sorensen 0.406, and 9.2°
 orientation error. It passes centroid and orientation but fails area, perimeter, and overlap.
 Spotting, hourly BUI, and an external Prometheus/FARSITE parity test remain missing.
 

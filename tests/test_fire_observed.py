@@ -12,6 +12,7 @@ import pytest
 from ws4.fire.observed import (
     OBSERVED_FIRE_VERSION,
     ObservedFireError,
+    _observed_fuel_parameters,
     load_dogrib,
     read_ascii_grid,
     read_kml_rings,
@@ -157,3 +158,12 @@ def test_fbp_fuel_grid_maps_dogrib_variants() -> None:
     assert fuel[row, col] == "M1"
     assert conifer[row, col] == pytest.approx(40.0)
     assert closure[row, col] == pytest.approx(80.0)
+
+
+def test_observed_fuel_parameter_variants() -> None:
+    assert _observed_fuel_parameters("D-2")[0] == "D1"
+    assert _observed_fuel_parameters("O-1a/O-1b")[0] == "O1B"
+    assert _observed_fuel_parameters("M-1 (05 PC)")[:2] == ("M1", 5.0)
+    assert _observed_fuel_parameters("M-3/M-4 (20 PDF)")[:3] == ("M3", 50.0, 20.0)
+    with pytest.raises(ValueError, match="non-fuel"):
+        _observed_fuel_parameters("Non-fuel")

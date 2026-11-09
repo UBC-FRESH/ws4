@@ -4631,6 +4631,7 @@ Parent issue: #923
 Branch: `feature/p157-observed-fire`
 Status: active
 Design note: `notes/design/ws4-fire-behaviour.md`
+Report: `notes/reports/p157-observed-validation.md`
 
 Goal: validate the P156 kernel and growth engine against a public observed fire perimeter,
 with explicit provenance, metrics, tolerances, and limitations.

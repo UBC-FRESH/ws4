@@ -10,6 +10,7 @@ import argparse
 import json
 import sys
 from pathlib import Path
+from typing import TYPE_CHECKING, Any
 
 import pandas as pd
 
@@ -17,9 +18,70 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from ws4.fire.comparison import DogribCase, run_dogrib_case  # noqa: E402
-from ws4.fire.observed import ObservedFire, load_dogrib  # noqa: E402
-from ws4.fire.observed_view import write_comparison_svg  # noqa: E402
+if TYPE_CHECKING:
+    from ws4.fire.comparison import DogribCase
+    from ws4.fire.observed import ObservedFire
+
+
+def load_dogrib(path: Path) -> ObservedFire:
+    """Load the observed fire without importing WS4 during doc audits.
+
+    Parameters
+    ----------
+    path : Path
+        Directory containing the Dogrib fixture.
+
+    Returns
+    -------
+    ObservedFire
+        The validated observed fire.
+    """
+    from ws4.fire.observed import load_dogrib as _load
+
+    return _load(path)
+
+
+def run_dogrib_case(fire: ObservedFire, **kwargs: Any) -> DogribCase:  # noqa: ANN401
+    """Run one Dogrib case without importing WS4 during doc audits.
+
+    Parameters
+    ----------
+    fire : ObservedFire
+        The observed fire.
+    **kwargs : Any
+        Keyword overrides passed to the comparison runner.
+
+    Returns
+    -------
+    DogribCase
+        The simulated case and comparison metrics.
+    """
+    from ws4.fire.comparison import run_dogrib_case as _run
+
+    return _run(fire, **kwargs)
+
+
+def write_comparison_svg(fire: ObservedFire, case: DogribCase, path: Path) -> Path:
+    """Write the comparison view without importing WS4 during doc audits.
+
+    Parameters
+    ----------
+    fire : ObservedFire
+        The observed fire.
+    case : DogribCase
+        The simulated case.
+    path : Path
+        Destination SVG path.
+
+    Returns
+    -------
+    Path
+        The written SVG path.
+    """
+    from ws4.fire.observed_view import write_comparison_svg as _write
+
+    return _write(fire, case, path)
+
 
 SCENARIOS: tuple[str, ...] = (
     "heterogeneous-hourly-1372",

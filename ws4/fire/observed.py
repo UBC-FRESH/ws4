@@ -185,6 +185,8 @@ def _observed_fuel_parameters(label: str) -> tuple[str, float, float, float]:
         raise ValueError("non-fuel label has no FBP parameters")
     conifer_match = re.search(r"\((\d+)\s*PC\)", text, flags=re.IGNORECASE)
     conifer = float(conifer_match.group(1)) if conifer_match else 50.0
+    dead_match = re.search(r"\((\d+)\s*PDF\)", text, flags=re.IGNORECASE)
+    dead_fir = float(dead_match.group(1)) if dead_match else 35.0
     base = text.split("/")[0].strip()
     base = re.sub(r"\(.*?\)", "", base).strip()
     lowered = text.lower()
@@ -202,7 +204,7 @@ def _observed_fuel_parameters(label: str) -> tuple[str, float, float, float]:
         fuel = canonical_fuel_type(base)
     except Exception as error:
         raise ValueError(f"unsupported observed FBP fuel label: {label!r}") from error
-    return fuel, conifer, 35.0, 80.0
+    return fuel, conifer, dead_fir, 80.0
 
 
 @dataclass(frozen=True)

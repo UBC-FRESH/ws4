@@ -462,12 +462,12 @@ items are enhancements and maintenance.
 - **Event and account integration.** `done` (P156.5, #895). Behaviour-driven fire events
   record the FBP inputs and outputs, and accounts summarize ROS, intensity, flame length, and
   the area-weighted crown fraction. The viewer coupling remains P155.
-- **Observed-fire validation.** `partial` (P157.1/P157.2/P157.3/P157.5/P157.6). The Dogrib
+- **Observed-fire validation.** `negative` (P157.1–P157.7, P157.4 close-out). The Dogrib
   fixture, contract, comparison harness, SVG/API view, and per-cell fuel/terrain growth are
-  implemented. The observed-grid 402-minute case is −18.9% area, +12.2% perimeter, 9.82 km
-  centroid error, IoU 0.207, Sorensen 0.343, and 29.1° orientation error. It passes only the
+  implemented. The observed-grid 402-minute case is −19.7% area, +11.6% perimeter, 9.85 km
+  centroid error, IoU 0.206, Sorensen 0.342, and 29.2° orientation error. It passes only the
   loose area/perimeter/orientation screen; centroid and overlap fail. P157.7 adds time-matched
-  hourly growth: 29,989 ha (+193.5%), perimeter +230.0%, centroid 2.96 km, IoU 0.255, Sorensen
-  0.407, orientation 9.1°. It passes centroid/orientation but fails area/perimeter/overlap.
-  Hourly BUI, spotting, and an external Prometheus/FARSITE parity test remain missing. Target:
-  P157.4 close-out only after those limits are resolved or explicitly accepted.
+  hourly growth: 29,509 ha (+188.8%), perimeter +222.8%, centroid 3.01 km, IoU 0.255, Sorensen
+  0.406, orientation 9.2°. It passes centroid/orientation but fails area/perimeter/overlap.
+  Hourly BUI, spotting, and an external Prometheus/FARSITE parity test remain accepted limits;
+  P157.4 closes the phase as a negative validation result, not an operational match.

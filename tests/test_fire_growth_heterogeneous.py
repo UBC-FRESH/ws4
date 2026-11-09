@@ -294,3 +294,46 @@ def test_weather_steps_must_start_at_zero_and_be_ordered() -> None:
                 WeatherStep(0.0, 20.0, 270.0),
             ),
         )
+
+
+def test_weather_step_rejects_invalid_values() -> None:
+    with pytest.raises(FireFuelError):
+        WeatherStep(-1.0, 10.0, 270.0)
+    with pytest.raises(FireFuelError):
+        WeatherStep(0.0, 10.0, 270.0, ffmc=102.0)
+    with pytest.raises(FireFuelError):
+        WeatherStep(0.0, 10.0, 270.0, bui=-1.0)
+    with pytest.raises(FireFuelError, match="must not be empty"):
+        GrowthConfig(ignition_cells=((0, 0),), weather_steps=())
+
+
+def test_terrain_grid_rejects_a_bad_shape() -> None:
+    with pytest.raises(FireFuelError, match="slope_percent_grid"):
+        SiteGrid(
+            fuel_type="C2",
+            rows=3,
+            cols=3,
+            cell_size_m=10.0,
+            ffmc=90.0,
+            bui=40.0,
+            wind_kmh=15.0,
+            wind_direction_deg=270.0,
+            slope_percent=0.0,
+            aspect_deg=0.0,
+            slope_percent_grid=np.zeros((2, 2)),
+        )
+
+
+def test_nodata_elevation_is_filled_and_masked() -> None:
+    elevation = np.full((5, 5), 800.0)
+    elevation[0, 0] = -9999.0
+    slope, aspect = slope_aspect_from_elevation(elevation, 10.0, nodata=-9999.0)
+
+    assert slope[0, 0] == 0.0
+    assert aspect[0, 0] == 0.0
+    assert np.isfinite(slope).all()
+
+
+def test_elevation_with_no_valid_cells_fails() -> None:
+    with pytest.raises(FireFuelError, match="no valid cells"):
+        slope_aspect_from_elevation(np.full((3, 3), -9999.0), 10.0, nodata=-9999.0)

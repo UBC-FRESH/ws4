@@ -67,7 +67,7 @@ def test_reference_weather_matches_the_dogrib_stream() -> None:
     weather = reference_weather(fire)
 
     assert weather["ffmc"] == pytest.approx(92.7, abs=0.2)
-    assert weather["bui"] == pytest.approx(105.0, abs=0.5)
+    assert weather["bui"] == pytest.approx(98.7, abs=0.5)
     assert weather["wind_kmh"] == pytest.approx(21.0)
     assert weather["wind_direction_deg"] == pytest.approx(267.6, abs=1.0)
 
@@ -148,4 +148,20 @@ def test_hourly_weather_steps_cover_the_dogrib_event() -> None:
     assert overnight_ffmc is not None
     assert first_ffmc == pytest.approx(92.7, abs=0.2)
     assert overnight_ffmc < first_ffmc
-    assert steps[0].bui == pytest.approx(105.0, abs=0.5)
+    assert steps[0].bui == pytest.approx(98.7, abs=0.5)
+
+
+def test_dogrib_hourly_case_uses_weather_steps() -> None:
+    fire = load_dogrib(FIXTURE)
+    case = run_dogrib_case(
+        fire,
+        scenario="hourly-test",
+        heterogeneous=True,
+        hourly_weather=True,
+        duration_min=1.0,
+    )
+
+    assert case.weather_mode == "hourly"
+    assert case.growth.config.weather_steps is not None
+    assert len(case.growth.config.weather_steps) == 23
+    assert case.growth.summary()["weather_mode"] == "time_dependent"

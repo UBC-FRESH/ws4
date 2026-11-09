@@ -416,8 +416,8 @@ def reference_weather(fire: ObservedFire) -> dict[str, float]:
     """Return a reproducible reference weather state from the event stream.
 
     The helper aggregates the hourly stream to daily noon observations, uses the Prometheus
-    starting DMC 64 and DC 535, and runs the WS4 FWI sequence. The event-day FFMC and BUI are
-    returned with the median event-window wind.
+    sample starting codes FFMC 89, DMC 58, and DC 482, and runs the WS4 FWI sequence. The
+    event-day FFMC and BUI are returned with the median event-window wind.
 
     Parameters
     ----------
@@ -461,7 +461,7 @@ def reference_weather(fire: ObservedFire) -> dict[str, float]:
     if not daily:
         raise ComparisonError("weather stream has no daily noon observations")
     states: tuple[FWIState, ...] = fwi_sequence(
-        daily, initial=initial_fwi_state(ffmc=85.0, dmc=64.0, dc=535.0)
+        daily, initial=initial_fwi_state(ffmc=89.0, dmc=58.0, dc=482.0)
     )
     event_day = next(
         (index for index, item in enumerate(daily) if item.month == 10 and item.day == 16),
