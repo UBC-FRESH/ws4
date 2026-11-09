@@ -4950,6 +4950,10 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   IoU 0.304, Sorensen 0.466. External parity, burning-condition thresholds, WindNinja,
   hourly BUI, and spotting remain accepted limits. Closed as partial validation, not an
   operational match.
+- P157.10 BurnP3+FireSTARR Dogrib point-ignition run: BurnP3 2.6.10 / FireSTARR 1.5.7
+  produced 6,004 ha vs 10,132 observed (−40.7%), perimeter −24.5%, centroid 6.44 km,
+  IoU 0.103, Sorensen 0.187, orientation 17.1°. This is point ignition only; Scenario 2b
+  start-perimeter and wind patches are not supported by the FireSTARR transformer.
 - P157.10 BurnP3 setup: installed SyncroSim 3.1.32 Linux, BurnP3+ 2.6.11,
   BurnP3+FireSTARR 1.5.7, the bundled FireSTARR binary, and R/rsyncrosim. Remaining work is
   the R `arrow` package and a BurnP3 library/Dogrib scenario. No BurnP3 model run yet.
