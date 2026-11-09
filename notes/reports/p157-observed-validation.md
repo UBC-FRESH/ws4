@@ -67,10 +67,12 @@ These are screening tolerances for the first observed case, not operational acce
 | IoU | ≥0.30 | 0.070 | fail |
 | Sorensen | ≥0.45 | 0.131 | fail |
 
-The base case captures the coarse scale, ellipse orientation, and head rate of spread. It does
-not reproduce the observed footprint: the simulated perimeter is too small and its centroid is
-14 km from the observed centroid. That is the central result of this validation, not a hidden
-calibration target.
+The base case does **not** capture the observed footprint. The 3.1° value is only agreement
+between the principal axes of the two burned-pixel sets; it is not directional or shape
+agreement. The −12.1% value compares raster perimeters, not shapes. A compact blob can have a
+similar raster perimeter to a long, narrow run. The meaningful checks fail: area is 38.8% low,
+the centroid is 14.29 km away, and IoU is 0.070. That is the central result of this validation,
+not a hidden calibration target.
 
 ## Sensitivity set
 
@@ -95,7 +97,8 @@ perimeter and does not improve overlap. Removing wind changes the orientation, a
 - The observed-fire contract and the Dogrib fixture load reproducibly.
 - The 402-minute run starts from the observed perimeter and is deterministic.
 - The comparison harness computes area, perimeter, centroid, IoU, Sorensen, and orientation.
-- The base case passes the coarse area/perimeter/orientation screen.
+- The base case passes only the loose area/perimeter/orientation screen. That screen is not a
+  validation pass, and the footprint checks fail.
 - The base case fails the centroid and overlap screen, and the sensitivity set does not rescue
   it.
 

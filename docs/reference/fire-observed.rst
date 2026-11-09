@@ -92,8 +92,8 @@ The base-case result is characterized, not accepted for footprint:
 - centroid distance 14.29 km;
 - IoU 0.070 and Sorensen 0.131.
 
-The coarse area, perimeter, and orientation screen passes; the centroid and overlap screen
-fails. The full evidence is in ``notes/reports/p157-observed-validation.md`` and
+The loose area, perimeter, and orientation screen passes; that is not a validation pass. The
+centroid and overlap screen fails. The full evidence is in ``notes/reports/p157-observed-validation.md`` and
 ``notes/reports/p157-dogrib-results.csv``. The same view is served read-only at
 ``/api/fire/observed/dogrib.svg``.
 

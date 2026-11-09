@@ -4899,7 +4899,8 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   starts from the observed 935 ha perimeter and runs 402 minutes with homogeneous C2, FFMC
   92.7, BUI 105, wind 21 km/h, and 32% slope. It produces 6,259 ha against 10,219 ha observed
   (−38.8% area bias), −12.1% perimeter bias, 3.1° orientation error, 14.29 km centroid error,
-  and IoU 0.070. The coarse screen passes; the footprint screen fails. Added 8 comparison
+  and IoU 0.070. The loose screen passes; the footprint screen fails. The loose screen is not a
+  validation pass. Added 8 comparison
   tests, `notes/reports/p157-observed-validation.md`, `p157-dogrib-results.csv`, and
   `p157-dogrib-summary.json`. Dashboard: **GREEN**.
 
