@@ -5062,3 +5062,15 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   Fixed 5×5 search (25 runs), weighted score over the P157 metrics, and Dogrib Scenario 2b as
   holdout-only. Decision rules separate calibration-only from supported transfer and allow a
   no-go. No calibration numbers exist at registration. Dashboard: **GREEN**.
+
+- P161.4: implemented the two registered multipliers and ran the fixed 25-point Hay River
+  grid. The baseline is 10,846 ha against 2,987 ha observed (+263.1% area, +223.1% perimeter,
+  IoU 0.275, Sorensen 0.431, centroid 1.43 km, orientation 27.6°). Every grid point burned all
+  10,846 burnable cells and produced the same score 1.3436; there is no parameter sensitivity.
+  The arbitrary boundary point `0.70, 0.50` was applied once to Dogrib and degraded the
+  holdout (2,203 ha, −78.4% area, IoU 0.160, Sorensen 0.275). Calibration fails; P161 closes
+  no-go. Do not tune around the saturated case. Dashboard: **GREEN**.
+- P161.5: closed P161 as a calibration no-go. The second-fire fixture and calibration harness
+  are retained, but the saturated Hay River grid cannot identify the two multipliers. No
+  parameter set is selected and no transferable calibration claim is made. Report:
+  `notes/reports/p161-closeout.md`. Dashboard: **GREEN**.

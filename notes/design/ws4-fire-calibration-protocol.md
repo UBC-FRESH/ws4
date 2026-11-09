@@ -1,6 +1,6 @@
 # Fire-model calibration and holdout protocol
 
-Status: pre-registered before fitting
+Status: pre-registered before fitting; result no-go (see P161 close-out)
 Phase: P161.3 (#957)
 Branch: `feature/p161-second-fire-calibration`
 Calibration fire: Hay River / K'atl'odeeche (2023_320)

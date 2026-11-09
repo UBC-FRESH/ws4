@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pandas as pd
 import pytest
-from ws4.fire.comparison import observed_mask
+from ws4.fire.comparison import observed_mask, run_observed_case
 from ws4.fire.observed import load_hay_river
 
 FIXTURE = Path(__file__).parent / "fixtures" / "fire" / "hay_river_2023"
@@ -63,3 +63,21 @@ def test_hay_river_summary_is_json_ready() -> None:
     provenance = summary["provenance"]
     assert isinstance(provenance, dict)
     assert provenance["fire_id"] == "2023_320"
+
+
+def test_hay_river_case_uses_calibration_multipliers() -> None:
+    """The generic runner passes the registered multipliers to growth."""
+    fire = load_hay_river(FIXTURE)
+    case = run_observed_case(
+        fire,
+        scenario="multiplier-test",
+        ffmc=92.92,
+        bui=73.28,
+        duration_min=60.0,
+        wind_multiplier=0.85,
+        head_ros_multiplier=0.75,
+    )
+
+    assert case.growth.config.wind_multiplier == pytest.approx(0.85)
+    assert case.growth.config.head_ros_multiplier == pytest.approx(0.75)
+    assert 0.0 <= case.metrics.iou <= 1.0

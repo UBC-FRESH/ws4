@@ -38,6 +38,8 @@ Working notes for WS4. Notes are living: update them in the same change set as t
   2023 fire, and the calibration/holdout constraints.
 - `design/ws4-fire-calibration-protocol.md` — P161.3 pre-registered parameters, objective,
   search grid, decision rule, and Dogrib holdout.
+- `reports/p161-closeout.md` — P161 no-go: the Hay River grid saturated the domain and the
+  multipliers had no effect.
 - `design/ws4-optimization-stack.md` — the optimization stack and the execution substrate.
 - `design/weighted-goal-programming-aspirations.md` — targets are weighted aspirations, not hard bounds; maximum even-flow harvest and priority-tier caveats.
 - `design/gpu-effect-cache-interactivity.md` — target-independent GPU cache basis, lazy column extension, and live target editing.
