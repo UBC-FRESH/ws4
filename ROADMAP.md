@@ -155,7 +155,7 @@ exists and the maintainer approves it.
 | P154 TSA 29 GPU stock | #912 | `feature/p154-tsa29-stock` | complete |
 | P155 3D fire scene and synthetic tree stands | #877 | `feature/p155-fire-3d` | complete |
 | P156 Credible fire behaviour and growth | #890 | `feature/p156-fire-behaviour` | complete |
-| P158 Plan scenario matrix | #928 | `feature/p158-plan-matrix` | active |
+| P158 Plan scenario matrix | #928 | `feature/p158-plan-matrix` | complete |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -4629,8 +4629,9 @@ Acceptance:
 
 Parent issue: #928
 Branch: `feature/p158-plan-matrix`
-Status: active
-Report: `notes/reports/p158-plan-matrix.md`
+Status: complete
+Merge commits: `335a2b8`, `7079d61`, `5ff39f4`, `bbc9de8`
+Report: `notes/reports/p158-closeout.md`
 Batch report: `notes/reports/p158-batch-composer.md`
 Scenario report: `notes/reports/p158-scenarios.md`
 
@@ -4640,7 +4641,7 @@ Goal: make multi-target scenario authoring and observation legible in Plan.
 - [x] P158.2 Named scenarios, drafts, save-as, and target diffs (#933)
 - [x] P158.3 Batch target composer over accounts and period ranges (#931)
 - [x] P158.4 Penalty ledger, binding ranks, and scenario comparison (#935)
-- [ ] P158.5 Plan usability and tablet regression pass
+- [x] P158.5 Plan usability and tablet regression pass (#937)
 
 Acceptance:
 

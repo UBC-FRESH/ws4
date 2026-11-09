@@ -4899,3 +4899,7 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P158.4: added the Plan penalty ledger ranking active targets by priority-weighted
   penalty, with realized/gap/weight/priority/share/status and a binding-only filter.
   Flow targets now report a real penalty in the run target evaluation.
+
+- P158 close-out: merged the scenario matrix, batch composer, named scenario library,
+  target diff, and penalty ledger. Desktop/tablet regression at 1500, 1200, and 1024 px
+  showed no page overflow or browser errors. Parent #928 closed; dashboard **GREEN**.
