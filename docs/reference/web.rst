@@ -53,7 +53,8 @@ The browser shell is organised around four workspaces, plus optional **Fire**,
 **Console**, and **SDMD** workspaces when their artifacts and feature flags are present:
 
 - **Map** — layers, treatment/cumulative views, and block detail.
-- **Plan** — the account browser, target editor, and solve controls.
+- **Plan** — the account browser, batch target composer, target editor, scenario matrix,
+  charts, and solve controls.
 - **Results** — Reports, Compare, and Search as nested sections.
 - **Data** — the dataset summary plus LiDAR and Carbon when the selected run/dataset
   actually has them.
@@ -84,6 +85,29 @@ legend follows the active view (A/B/both comparison, base attribute, cumulative 
 periods, or the LiDAR scale). Clicking a block adds a dark outline and fills the detail
 panel; the outline is available in both MapLibre and the SVG fallback. **Map engine** and
 **Unavailable layers** are compact disclosure rows, not active controls.
+
+The Plan **penalty ledger** ranks active targets by priority-weighted penalty and shows
+realized value, gap, weights, priority, share of the objective, and status. Flow targets
+contribute their actual flow penalty, and **Binding only** filters the ledger to targets
+currently outside their band.
+
+Plan also has a **scenario library**. Save the current editor rows under a name without
+changing the live target file; load a saved scenario into the editor; reload the live
+targets; and inspect a diff between the editor and live targets before publishing. A
+scenario is stored as `runs/scenarios/<slug>/targets.yaml` with a small metadata record.
+
+Use **Batch add targets** after selecting accounts in the account browser: choose a
+period range or all periods, a level/minimum/maximum or even-flow mode, bounds, weights,
+priority, and normalization. The composer previews the new rows, refuses duplicates, and
+updates the matrix after saving. It is intentionally an immediate target-file write in
+this slice; named drafts and save-as remain P158.2.
+
+The Plan workspace starts with a **Scenario matrix**: one row per target account and one
+column per period, showing the target band, realized value, gap, and status without
+requiring charts to be pinned. Clicking an account row filters the target editor; clicking
+a period cell selects that period and opens the corresponding chart readout. The matrix
+also marks flow targets and inactive rows; **Only failing** hides accounts with no
+violating target cell.
 
 The supported planning surfaces start at **1024×768 in landscape**, including the iPad
 Pro landscape sizes; phone layouts are not a supported target. The primary navigation

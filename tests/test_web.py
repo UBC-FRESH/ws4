@@ -2677,3 +2677,60 @@ def test_fire_scene_discovery_payload_and_vendored_viewer(tmp_path: Path) -> Non
     manifest = client.get("/api/fire/runs/run1").json()
     assert manifest["scene"] == "fire_scene"
     assert manifest["manifest"]["tree_count"] == len(trees.trees)
+
+
+def test_scenario_library_saves_and_loads_without_touching_live_targets(tmp_path: Path) -> None:
+    """A scenario snapshot is validated, reloadable, and separate from the live target file."""
+    client, live_targets = _app(tmp_path)
+    rows = client.get("/api/targets.json").json()
+    before = live_targets.read_text(encoding="utf-8")
+    rows[0]["minimum"] = 12345.0
+    response = client.post(
+        "/api/scenarios",
+        json={
+            "name": "Higher volume floor",
+            "description": "P158 test",
+            "targets": rows,
+        },
+    )
+    assert response.status_code == 200, response.text
+    saved = response.json()
+    assert saved["name"] == "Higher volume floor"
+    assert saved["target_count"] == len(rows)
+    assert live_targets.read_text(encoding="utf-8") == before
+
+    listed = client.get("/api/scenarios").json()
+    assert any(item["id"] == saved["id"] for item in listed)
+    loaded = client.get(f"/api/scenarios/{saved['id']}")
+    assert loaded.status_code == 200
+    loaded_rows = loaded.json()["targets"]
+    assert loaded_rows[0]["minimum"] == 12345.0
+
+    deleted = client.delete(f"/api/scenarios/{saved['id']}")
+    assert deleted.status_code == 200
+    assert not (tmp_path / "runs" / "scenarios" / saved["id"]).exists()
+
+
+def test_scenario_library_rejects_invalid_names_and_documents(tmp_path: Path) -> None:
+    """Scenario creation fails before writing an invalid snapshot."""
+    client, _targets = _app(tmp_path)
+    assert client.post("/api/scenarios", json={"name": "", "targets": []}).status_code == 422
+    rows = client.get("/api/targets.json").json()
+    rows[0].pop("period", None)
+    rows[0].pop("year", None)
+    assert client.post("/api/scenarios", json={"name": "bad", "targets": rows}).status_code == 422
+
+
+def test_run_targets_reports_a_flow_penalty(tmp_path: Path) -> None:
+    """Flow targets contribute a real penalty to the ledger, not a null placeholder."""
+    client, targets = _app(tmp_path)
+    targets.write_text(
+        "targets:\n"
+        "  - account: feature.Volume\n    period: 1\n    flow: even\n"
+        "    minimum: -5\n    maximum: 5\n    min_weight: 10\n    max_weight: 10\n",
+        encoding="utf-8",
+    )
+    rows = client.get("/api/runs/run1/targets").json()
+    assert rows[0]["flow"] == "even"
+    assert rows[0]["penalty"] is not None
+    assert rows[0]["penalty"] > 0.0

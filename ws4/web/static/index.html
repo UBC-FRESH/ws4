@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>WS4</title>
-  <link rel="stylesheet" href="static/style.css?v=115">
+  <link rel="stylesheet" href="static/style.css?v=118">
   <link rel="stylesheet" href="static/vendor/maplibre-gl.css">
   <script type="importmap">
     {
@@ -18,7 +18,7 @@
 <body>
   <a class="skip-link" href="#map-wrap">Skip to map</a>
   <header>
-    <div class="brand"><strong>WS4</strong><span class="build">v113</span><span id="dataset-name" class="dataset-name"></span></div>
+    <div class="brand"><strong>WS4</strong><span class="build">v118</span><span id="dataset-name" class="dataset-name"></span></div>
     <label class="skin-control">Skin <select id="skin"></select></label>
     <label>Run <select id="run"></select></label>
     <div class="period-control">
@@ -67,7 +67,25 @@
           <button id="run-profile" type="button">Run profile</button>
           <span id="profile-status" class="hint"></span>
         </div>
-        <div id="target-summary" class="target-summary" aria-live="polite" hidden></div>
+        <div id="scenario-bar" class="scenario-bar">
+          <div class="scenario-row">
+            <label>Scenario <select id="scenario-select"><option value="">Live targets</option></select></label>
+            <button id="scenario-load" type="button">Load into editor</button>
+            <button id="scenario-reload" type="button">Reload live</button>
+            <button id="scenario-delete" type="button" disabled>Delete</button>
+          </div>
+          <div class="scenario-row">
+            <input id="scenario-name" type="text" placeholder="New scenario name" autocomplete="off">
+            <input id="scenario-description" type="text" placeholder="Description (optional)" autocomplete="off">
+            <button id="scenario-save" type="button">Save as scenario</button>
+            <span id="scenario-status" class="hint"></span>
+          </div>
+          <details id="scenario-diff" class="scenario-diff" hidden>
+            <summary id="scenario-diff-summary">Target diff from live</summary>
+            <div id="scenario-diff-body"></div>
+          </details>
+        </div>
+        <div id="target-summary" class="target-summary" aria-live="polite" hidden></div>        <div id="target-summary" class="target-summary" aria-live="polite" hidden></div>
         <p id="targets-empty" class="hint">no targets yet — pick an account below</p>
         <div id="account-browser" class="account-browser">
           <div class="account-browser-head">
@@ -97,7 +115,40 @@
             <p id="new-target-status" class="hint"></p>
           </div>
         </div>
-        <div id="watch-panel" class="watch" hidden></div>
+        <details id="batch-targets" class="batch-targets">
+          <summary>Batch add targets</summary>
+          <div class="batch-grid">
+            <p class="hint">Select one or more accounts in the browser, then add a level band or even-flow guard over a period range.</p>
+            <div class="batch-periods">
+              <label>From <input id="batch-start" type="number" min="1" step="1" value="1"></label>
+              <label>To <input id="batch-end" type="number" min="1" step="1" value="1"></label>
+              <label><input id="batch-all" type="checkbox"> All periods</label>
+              <label>Width <input id="batch-width" type="number" min="1" step="1" value="10"></label>
+            </div>
+            <label>Mode
+              <select id="batch-mode">
+                <option value="level">Level band (min + max)</option>
+                <option value="min">Minimum only</option>
+                <option value="max">Maximum only</option>
+                <option value="flow">Even-flow guard</option>
+              </select>
+            </label>
+            <div class="batch-values">
+              <label>Min <input id="batch-min" type="number" step="any"></label>
+              <label>Max <input id="batch-max" type="number" step="any"></label>
+              <label>Min w <input id="batch-min-weight" type="number" min="0" step="any" value="1"></label>
+              <label>Max w <input id="batch-max-weight" type="number" min="0" step="any" value="1"></label>
+            </div>
+            <div class="batch-values">
+              <label>Priority <input id="batch-priority" type="number" min="1" step="1" value="1"></label>
+              <label>Normalize <select id="batch-normalization"><option value="none">none</option><option value="auto">auto</option></select></label>
+            </div>
+            <button id="batch-add" type="button">Add batch to targets</button>
+            <span id="batch-status" class="hint"></span>
+            <pre id="batch-preview" class="scaffold-preview" hidden></pre>
+          </div>
+        </details>
+        <div id="watch-panel" class="watch" hidden></div>        <div id="watch-panel" class="watch" hidden></div>
         <div id="target-filter-bar" class="target-filter-bar" hidden>
           <label class="visually-hidden" for="target-filter-search">Filter targets by account</label>
           <input id="target-filter-search" type="search" placeholder="Filter accounts…" autocomplete="off">
@@ -592,6 +643,42 @@
           <span id="target-chart-status" class="hint"></span>
         </div>
       </div>
+      <section id="scenario-matrix" class="scenario-matrix" hidden>
+        <div class="scenario-matrix-head">
+          <div>
+            <h2>Scenario matrix</h2>
+            <p class="hint">Every target account and period in one view: target band, realized value, gap, and status. Click an account to filter the editor; click a cell to inspect its period.</p>
+          </div>
+          <div class="scenario-matrix-controls">
+            <label><input id="matrix-only-failing" type="checkbox"> Only failing</label>
+            <span id="matrix-status" class="hint"></span>
+          </div>
+        </div>
+        <div id="matrix-scroll" class="matrix-scroll">
+          <table id="scenario-matrix-table"></table>
+        </div>
+      </section>
+      <section id="penalty-ledger" class="penalty-ledger" hidden>
+        <div class="penalty-ledger-head">
+          <div>
+            <h2>Penalty ledger</h2>
+            <p class="hint">Targets ranked by their weighted contribution to the objective. A binding target is currently below or above its band.</p>
+          </div>
+          <div class="penalty-ledger-controls">
+            <label><input id="penalty-binding-only" type="checkbox"> Binding only</label>
+            <span id="penalty-summary" class="hint"></span>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table id="penalty-table" hidden>
+            <thead><tr>
+              <th>Account</th><th>Period</th><th>Target</th><th>Realized</th><th>Gap</th><th>Weight</th><th>Priority</th><th>Penalty</th><th>Share</th><th>Status</th>
+            </tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <p id="penalty-empty" class="hint hidden">No realized target values for this run.</p>
+      </section>
       <div id="target-chart-grid" class="target-chart-grid"></div>
       <p id="target-chart-empty" class="target-chart-empty">Pin a target in the table to open its chart.</p>
     </section>
@@ -745,6 +832,6 @@
     <p class="hint">Shortcuts pause while typing in an input, select, or editor.</p>
   </dialog>
   <script src="static/vendor/maplibre-gl.js"></script>
-  <script type="module" src="static/app.js?v=115"></script>
+  <script type="module" src="static/app.js?v=118"></script>
 </body>
 </html>

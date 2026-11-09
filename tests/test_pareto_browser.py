@@ -44,7 +44,7 @@ def _portfolio(tmp_path: Path) -> tuple[Path, Path]:
         encoding="utf-8",
     )
     (run / "account_values.csv").write_text(
-        "offset,account,value\n0,feature.Volume,1000\n1,feature.Volume,1100\n",
+        "offset,account,value\n0,feature.Volume,1000\n1,feature.Volume,1100\n0,feature.Old,200\n",
         encoding="utf-8",
     )
     (run / "schedule.csv").write_text("block_id,treatment,offset\n", encoding="utf-8")
@@ -110,7 +110,7 @@ def _portfolio(tmp_path: Path) -> tuple[Path, Path]:
         "  - account: feature.Volume\n    period: 3\n    minimum: 1000\n"
         "  - account: feature.Volume\n    period: 4\n    minimum: 1000\n"
         "  - account: feature.Volume\n    period: 5\n    minimum: 1000\n"
-        "  - account: feature.Old\n    period: 1\n    minimum: 200\n",
+        "  - account: feature.Old\n    period: 1\n    minimum: 400\n",
         encoding="utf-8",
     )
     return runs, targets
@@ -214,6 +214,44 @@ def test_pareto_workspace_renders_and_filters(tmp_path: Path) -> None:
         thread.join(timeout=10)
 
 
+def test_plan_scenario_matrix_shows_targets_and_realized(tmp_path: Path) -> None:
+    """The Plan matrix exposes all target accounts and their realized values."""
+    server, thread, url = _server(tmp_path)
+    try:
+        with sync_playwright() as playwright:
+            try:
+                browser = playwright.chromium.launch(
+                    headless=True,
+                    args=["--use-gl=swiftshader", "--enable-webgl"],
+                )
+            except Exception as error:  # pragma: no cover - browser not installed
+                pytest.skip(f"chromium is not available: {error}")
+            page = browser.new_page(viewport={"width": 1500, "height": 1000})
+            errors: list[str] = []
+            page.on("pageerror", lambda error: errors.append(str(error)))
+            page.goto(f"{url}/?run=run1&view=plan")
+            page.wait_for_function(
+                "document.querySelector('#scenario-matrix') && "
+                "!document.querySelector('#scenario-matrix').hidden",
+                timeout=15000,
+            )
+            page.wait_for_function(
+                "document.querySelectorAll('#scenario-matrix-table tbody tr').length > 0",
+                timeout=15000,
+            )
+            assert "accounts" in page.locator("#matrix-status").inner_text()
+            assert "failing" in page.locator("#matrix-status").inner_text()
+            assert "Volume" in page.locator("#scenario-matrix-table").inner_text()
+            assert page.locator("#scenario-matrix-table thead th").count() > 1
+            page.check("#matrix-only-failing")
+            page.wait_for_timeout(200)
+            assert errors == []
+            browser.close()
+    finally:
+        server.should_exit = True
+        thread.join(timeout=10)
+
+
 def test_run_health_shows_exact_replay(tmp_path: Path) -> None:
     """Run health marks a state run whose exact replay matched."""
     server, thread, url = _server(tmp_path)
@@ -236,6 +274,165 @@ def test_run_health_shows_exact_replay(tmp_path: Path) -> None:
                 timeout=15000,
             )
             assert "exact replay yes" in page.locator("#run-health-badges").inner_text()
+            assert errors == []
+            browser.close()
+    finally:
+        server.should_exit = True
+        thread.join(timeout=10)
+
+
+def test_plan_batch_targets_adds_multiple_accounts_and_periods(tmp_path: Path) -> None:
+    """The batch composer adds one target for each selected account and period."""
+    server, thread, url = _server(tmp_path)
+    try:
+        with sync_playwright() as playwright:
+            try:
+                browser = playwright.chromium.launch(
+                    headless=True,
+                    args=["--use-gl=swiftshader", "--enable-webgl"],
+                )
+            except Exception as error:  # pragma: no cover - browser not installed
+                pytest.skip(f"chromium is not available: {error}")
+            page = browser.new_page(viewport={"width": 1500, "height": 1000})
+            errors: list[str] = []
+            page.on("pageerror", lambda error: errors.append(str(error)))
+            page.goto(f"{url}/?run=run1&view=plan")
+            page.wait_for_function(
+                "!document.querySelector('#workspace-plan').hidden && "
+                "document.querySelectorAll('#targets-table tbody tr:not(.target-detail)')"
+                ".length >= 6",
+                timeout=15000,
+            )
+            initial = page.locator("#targets-table tbody tr:not(.target-detail)").count()
+            page.locator("#batch-targets summary").click()
+            page.check("#account-multi")
+            page.evaluate(
+                "() => { for (const account of ['feature.Volume', 'feature.Old']) { "
+                "const el = document.querySelector(`.account-leaf[data-account='${account}']`); "
+                "let detail = el && el.closest('details'); "
+                "while (detail) { detail.open = true; "
+                "detail = detail.parentElement && detail.parentElement.closest('details'); } } }"
+            )
+            page.locator(".account-leaf[data-account='feature.Volume']").click()
+            page.evaluate(
+                "() => { const el = document.querySelector("
+                "\".account-leaf[data-account='feature.Old']\"); "
+                "let detail = el && el.closest('details'); "
+                "while (detail) { detail.open = true; "
+                "detail = detail.parentElement && detail.parentElement.closest('details'); } }"
+            )
+            page.locator(".account-leaf[data-account='feature.Old']").click()
+            page.fill("#batch-start", "6")
+            page.fill("#batch-end", "6")
+            page.select_option("#batch-mode", "level")
+            page.fill("#batch-min", "1000")
+            page.fill("#batch-max", "2000")
+            page.click("#batch-add")
+            page.wait_for_function(
+                "document.querySelectorAll('#targets-table tbody tr:not(.target-detail)').length"
+                f" > {initial}",
+                timeout=15000,
+            )
+            assert page.locator("#batch-status").inner_text()
+            assert errors == []
+            browser.close()
+    finally:
+        server.should_exit = True
+        thread.join(timeout=10)
+
+
+def test_plan_scenario_library_saves_loads_and_diffs(tmp_path: Path) -> None:
+    """A named scenario is separate from live targets and can be loaded as a draft."""
+    server, thread, url = _server(tmp_path)
+    try:
+        with sync_playwright() as playwright:
+            try:
+                browser = playwright.chromium.launch(
+                    headless=True,
+                    args=["--use-gl=swiftshader", "--enable-webgl"],
+                )
+            except Exception as error:  # pragma: no cover - browser not installed
+                pytest.skip(f"chromium is not available: {error}")
+            page = browser.new_page(viewport={"width": 1500, "height": 1000})
+            errors: list[str] = []
+            page.on("pageerror", lambda error: errors.append(str(error)))
+            page.goto(f"{url}/?run=run1&view=plan")
+            page.wait_for_function(
+                "!document.querySelector('#workspace-plan').hidden && "
+                "document.querySelectorAll('#targets-table tbody tr:not(.target-detail)')"
+                ".length >= 6",
+                timeout=15000,
+            )
+            live_before = (tmp_path / "targets.yaml").read_text(encoding="utf-8")
+            page.locator('#targets-table [data-field="minimum"]').first.fill("9999")
+            page.fill("#scenario-name", "P158 test scenario")
+            page.click("#scenario-save")
+            page.wait_for_function(
+                "document.querySelector('#scenario-status').textContent.includes('saved scenario')",
+                timeout=15000,
+            )
+            assert (tmp_path / "targets.yaml").read_text(encoding="utf-8") == live_before
+            assert page.locator("#scenario-select option").count() > 1
+            page.wait_for_function(
+                "document.querySelector('#scenario-diff-summary').textContent.includes('~1')",
+                timeout=15000,
+            )
+            page.click("#scenario-reload")
+            page.wait_for_function(
+                "document.querySelector('#scenario-diff-summary').textContent"
+                ".includes('no changes')",
+                timeout=15000,
+            )
+            scenario_id = page.locator("#scenario-select option").nth(1).get_attribute("value")
+            page.select_option("#scenario-select", scenario_id)
+            page.click("#scenario-load")
+            page.wait_for_function(
+                "document.querySelector('#scenario-diff-summary').textContent.includes('~1')",
+                timeout=15000,
+            )
+            assert (
+                page.locator('#targets-table [data-field="minimum"]').first.input_value() == "9999"
+            )
+            assert errors == []
+            browser.close()
+    finally:
+        server.should_exit = True
+        thread.join(timeout=10)
+
+
+def test_plan_penalty_ledger_shows_binding_targets(tmp_path: Path) -> None:
+    """The Plan ledger ranks realized target penalties and identifies bindings."""
+    server, thread, url = _server(tmp_path)
+    try:
+        with sync_playwright() as playwright:
+            try:
+                browser = playwright.chromium.launch(
+                    headless=True,
+                    args=["--use-gl=swiftshader", "--enable-webgl"],
+                )
+            except Exception as error:  # pragma: no cover - browser not installed
+                pytest.skip(f"chromium is not available: {error}")
+            page = browser.new_page(viewport={"width": 1500, "height": 1000})
+            errors: list[str] = []
+            page.on("pageerror", lambda error: errors.append(str(error)))
+            page.goto(f"{url}/?run=run1&view=plan")
+            page.wait_for_function(
+                "document.querySelector('#penalty-ledger') && "
+                "!document.querySelector('#penalty-ledger').hidden",
+                timeout=15000,
+            )
+            page.wait_for_function(
+                "document.querySelectorAll('#penalty-table tbody tr').length > 0",
+                timeout=15000,
+            )
+            assert "binding" in page.locator("#penalty-summary").inner_text()
+            assert (
+                "below" in page.locator("#penalty-table").inner_text().lower()
+                or "above" in page.locator("#penalty-table").inner_text().lower()
+            )
+            page.check("#penalty-binding-only")
+            page.wait_for_timeout(200)
+            assert page.locator("#penalty-table tbody tr").count() >= 1
             assert errors == []
             browser.close()
     finally:

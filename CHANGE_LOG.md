@@ -4959,3 +4959,22 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   1.07 km, IoU 0.304, Sorensen 0.466. Added point-ignition, fuel-break, weather-patch, and
   wind-patch tests. No external Prometheus/FARSITE parity, burning-condition thresholds,
   WindNinja scenarios, hourly BUI, or spotting. Dashboard: **GREEN**.
+- P158.1: added the Plan Scenario matrix with account-by-period target bands, realized
+  values, gaps, status colouring, flow markers, failing-only filtering, and cell
+  navigation. Added a browser regression test.
+
+- P158.3: added Plan's batch target composer: multi-account selection, period ranges or
+  all periods, level/min/max/even-flow modes, weights, priority, normalization, duplicate
+  detection, and a preview before writing. Added a browser regression test.
+
+- P158.2: added named scenario snapshots under the runs scenario library, save-as/load
+  into the editor, reload live targets, and a target diff against the live file. Loading a
+  scenario is non-destructive; publishing still uses Save targets.
+
+- P158.4: added the Plan penalty ledger ranking active targets by priority-weighted
+  penalty, with realized/gap/weight/priority/share/status and a binding-only filter.
+  Flow targets now report a real penalty in the run target evaluation.
+
+- P158 close-out: merged the scenario matrix, batch composer, named scenario library,
+  target diff, and penalty ledger. Desktop/tablet regression at 1500, 1200, and 1024 px
+  showed no page overflow or browser errors. Parent #928 closed; dashboard **GREEN**.

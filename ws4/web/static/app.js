@@ -4,7 +4,7 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/OrbitControls.js";
 
-const state = { run: null, year: 0, features: [], view: { s: 1, x: 0, y: 0 }, base: null, skin: null, targets: [], pickedAccount: null, selectedAccounts: new Set(), targetCells: new Map(), watched: new Set(), targetSignature: "", windowValues: new Map(), series: new Map(), runPaused: false, live: { active: false, schedule: new Map(), total: 0 }, history: [], periods: [], periodIndex: 0, periodWidth: 1, yearChosen: false, chatSession: null, chatBusy: false, compareView: false, compare: null, compareAccounts: [], compareToken: 0, compareInitialized: false, layers: null, layerMode: 'current', patchClasses: new Set(), patchCatalog: [], compartmentAccounts: [], compartmentClasses: [], compartmentAccount: '', selectedCompartments: new Set(), baseAttributes: [], baseAttribute: '', roads: [], showRoads: false, usedRoads: [], showUsedRoads: false, blockElements: new Map(), mapEngine: (typeof window.maplibregl !== 'undefined' ? 'maplibre' : 'svg'), mapLibre: null, mapLibreReady: false, mapLoading: false, suppressViewportReload: false, mapTotals: null, mapFitted: false, lidar: null, lidarField: '', lidarRange: null, carbon: null, carbonAccount: '', workspace: 'map', subview: { results: 'reports', data: 'dataset' }, datasetSummary: null, geometryAvailable: true, selectedBlock: null, selectedGeometry: null, pendingBlock: null, pendingPeriod: null, urlReady: false, targetSeries: null, chartDirty: false, targetSort: { key: null, direction: 1 }, sdmd: { available: false, regions: [], aus: [], region: '', au: '', source: '', detail: null, plots: [], yield: [], points: null, regimes: [], preview: null, trajectory: '', trajectoryData: null, yieldMetric: 'volume_m3_ha' }, runSource: null, runSummary: null, fire: { scenes: [], selected: '', selectedB: '', payloads: new Map(), activePayload: null, playing: false }, console: { schema: null, token: '', job: null, timer: null, offset: 0, busy: false }, portfolioScan: [], portfolioTargets: [], pareto: { available: false, artifact: '', data: null, chart: null, cloud: null, selected: null, pinned: [], screen: [], artifacts: [] } };
+const state = { run: null, year: 0, features: [], view: { s: 1, x: 0, y: 0 }, base: null, skin: null, targets: [], pickedAccount: null, selectedAccounts: new Set(), targetCells: new Map(), watched: new Set(), targetSignature: "", windowValues: new Map(), series: new Map(), runPaused: false, live: { active: false, schedule: new Map(), total: 0 }, history: [], periods: [], periodIndex: 0, periodWidth: 1, yearChosen: false, chatSession: null, chatBusy: false, compareView: false, compare: null, compareAccounts: [], compareToken: 0, compareInitialized: false, layers: null, layerMode: 'current', patchClasses: new Set(), patchCatalog: [], compartmentAccounts: [], compartmentClasses: [], compartmentAccount: '', selectedCompartments: new Set(), baseAttributes: [], baseAttribute: '', roads: [], showRoads: false, usedRoads: [], showUsedRoads: false, blockElements: new Map(), mapEngine: (typeof window.maplibregl !== 'undefined' ? 'maplibre' : 'svg'), mapLibre: null, mapLibreReady: false, mapLoading: false, suppressViewportReload: false, mapTotals: null, mapFitted: false, lidar: null, lidarField: '', lidarRange: null, carbon: null, carbonAccount: '', workspace: 'map', subview: { results: 'reports', data: 'dataset' }, datasetSummary: null, geometryAvailable: true, selectedBlock: null, selectedGeometry: null, pendingBlock: null, pendingPeriod: null, urlReady: false, targetSeries: null, chartDirty: false, targetSort: { key: null, direction: 1 }, sdmd: { available: false, regions: [], aus: [], region: '', au: '', source: '', detail: null, plots: [], yield: [], points: null, regimes: [], preview: null, trajectory: '', trajectoryData: null, yieldMetric: 'volume_m3_ha' }, runSource: null, runSummary: null, scenario: { liveRows: [], list: [], loadedId: '', source: 'Live targets' }, realized: new Map(), fire: { scenes: [], selected: '', selectedB: '', payloads: new Map(), activePayload: null, playing: false }, console: { schema: null, token: '', job: null, timer: null, offset: 0, busy: false }, portfolioScan: [], portfolioTargets: [], pareto: { available: false, artifact: '', data: null, chart: null, cloud: null, selected: null, pinned: [], screen: [], artifacts: [] } };
 
 state.estate3d = { open: false, features: [], yaw: -0.55, zoom: 1, exaggeration: 1, hits: [] };
 const ESTATE_3D_LIMIT = 2000;
@@ -6013,7 +6013,229 @@ function renderTargetChart(account, periods) {
   return card;
 }
 
+function matrixTargetLabel(cell) {
+  const min = cell.minimum;
+  const max = cell.maximum;
+  let label = '—';
+  if (min !== null && min !== undefined && max !== null && max !== undefined) {
+    label = `${compactNumber(min)}–${compactNumber(max)}`;
+  } else if (min !== null && min !== undefined) {
+    label = `≥${compactNumber(min)}`;
+  } else if (max !== null && max !== undefined) {
+    label = `≤${compactNumber(max)}`;
+  }
+  if (cell.flow) label += ` · ${cell.flow}`;
+  return label;
+}
+
+function matrixGap(cell) {
+  if (cell.achieved === null || cell.achieved === undefined) return null;
+  const value = Number(cell.achieved);
+  if (cell.minimum !== null && cell.minimum !== undefined && value < Number(cell.minimum)) {
+    return value - Number(cell.minimum);
+  }
+  if (cell.maximum !== null && cell.maximum !== undefined && value > Number(cell.maximum)) {
+    return value - Number(cell.maximum);
+  }
+  return null;
+}
+
+function renderScenarioMatrix() {
+  const section = $('scenario-matrix');
+  const table = $('scenario-matrix-table');
+  const status = $('matrix-status');
+  if (!section || !table || !status) return;
+  const accounts = [...new Set(state.targets.map((row) => row.account))].sort((a, b) => a.localeCompare(b));
+  const periods = state.targetSeries?.periods?.length
+    ? state.targetSeries.periods
+    : (state.periods.length ? state.periods : targetPeriodsFromRows());
+  if (!accounts.length || !periods.length) {
+    section.hidden = true;
+    return;
+  }
+  const onlyFailing = Boolean($('matrix-only-failing')?.checked);
+  const rows = accounts.map((account) => {
+    const cells = targetChartCells(account);
+    const failing = cells.some((cell) => ['below', 'above'].includes(targetStatus(cell, cell.achieved)));
+    return { account, cells, failing };
+  });
+  const visible = onlyFailing ? rows.filter((row) => row.failing) : rows;
+  section.hidden = false;
+  table.replaceChildren();
+  const head = document.createElement('thead');
+  const headRow = document.createElement('tr');
+  const accountHead = document.createElement('th');
+  accountHead.scope = 'col';
+  accountHead.textContent = 'Account';
+  headRow.append(accountHead);
+  for (const period of periods) {
+    const cell = document.createElement('th');
+    cell.scope = 'col';
+    cell.textContent = `P${Number(period.index) + 1}`;
+    cell.title = period.label ?? `period ${Number(period.index) + 1}`;
+    headRow.append(cell);
+  }
+  head.append(headRow);
+  table.append(head);
+  const body = document.createElement('tbody');
+  const failingCells = rows.reduce(
+    (total, row) => total + row.cells.filter((cell) => ['below', 'above'].includes(targetStatus(cell, cell.achieved))).length,
+    0
+  );
+  for (const { account, cells } of visible) {
+    const tr = document.createElement('tr');
+    const accountCell = document.createElement('th');
+    accountCell.scope = 'row';
+    accountCell.className = 'matrix-account';
+    const label = accountTableLabel(account);
+    const root = document.createElement('span');
+    root.className = 'account-root';
+    root.textContent = label.root;
+    const name = document.createElement('span');
+    name.className = 'matrix-account-name';
+    name.textContent = label.label;
+    name.title = account;
+    accountCell.append(root, name);
+    const unit = accountUnit(account, false);
+    if (unit) {
+      const badge = document.createElement('span');
+      badge.className = 'account-unit';
+      badge.textContent = unit;
+      accountCell.append(badge);
+    }
+    const accountRows = state.targets.filter((row) => row.account === account);
+    if (accountRows.some((row) => row.flow)) {
+      const flow = document.createElement('span');
+      flow.className = 'matrix-flow';
+      flow.textContent = accountRows.find((row) => row.flow)?.flow ?? 'flow';
+      accountCell.append(flow);
+    }
+    accountCell.title = `Filter the target editor to ${account}`;
+    accountCell.addEventListener('click', () => {
+      $('target-filter-search').value = account;
+      $('target-filter-status').value = '';
+      applyTargetFilter();
+      $('target-filter-search').focus();
+    });
+    tr.append(accountCell);
+    for (const period of periods) {
+      const cell = cells[Number(period.index)] ?? chartCell(account, period);
+      const achieved = cell.achieved;
+      const stateName = targetStatus(cell, achieved);
+      const cellNode = document.createElement('td');
+      cellNode.className = `matrix-cell ${stateName}`;
+      if (cell.active === false) cellNode.classList.add('off');
+      if (cell.minimum === null && cell.maximum === null && cell.flow) cellNode.classList.add('flow-only');
+      const target = document.createElement('span');
+      target.className = 'matrix-target';
+      target.textContent = matrixTargetLabel(cell);
+      const realized = document.createElement('span');
+      realized.className = 'matrix-realized';
+      realized.textContent = achieved === null || achieved === undefined
+        ? '—'
+        : compactNumber(achieved);
+      const gap = matrixGap(cell);
+      const gapNode = document.createElement('span');
+      gapNode.className = 'matrix-gap';
+      gapNode.textContent = gap === null ? '' : `Δ${compactNumber(gap)}`;
+      cellNode.append(target, realized, gapNode);
+      const bits = [
+        period.label ?? `P${Number(period.index) + 1}`,
+        `target min ${cell.minimum ?? '—'}`,
+        `max ${cell.maximum ?? '—'}`,
+        `realized ${achieved ?? '—'}`,
+        stateName,
+      ];
+      if (cell.flow) bits.push(`flow ${cell.flow}`);
+      if (cell.active === false) bits.push('inactive');
+      cellNode.title = bits.join(' · ');
+      cellNode.addEventListener('click', () => {
+        setPeriod(Number(period.index));
+        syncNavigation();
+      });
+      tr.append(cellNode);
+    }
+    body.append(tr);
+  }
+  table.append(body);
+  const suffix = onlyFailing ? ` · ${visible.length} of ${rows.length} shown` : '';
+  status.textContent = `${rows.length} account${rows.length === 1 ? '' : 's'} · ${periods.length} periods · ${failingCells} failing cell${failingCells === 1 ? '' : 's'}${suffix}`;
+}
+
+function penaltyTargetLabel(row) {
+  if (row.flow) {
+    const low = row.minimum ?? '—';
+    const high = row.maximum ?? '—';
+    return `${row.flow} ${low}..${high}%`;
+  }
+  if (row.minimum !== null && row.maximum !== null) return `${compactNumber(row.minimum)}..${compactNumber(row.maximum)}`;
+  if (row.minimum !== null) return `≥${compactNumber(row.minimum)}`;
+  if (row.maximum !== null) return `≤${compactNumber(row.maximum)}`;
+  return '—';
+}
+
+function penaltyGap(row, value) {
+  if (row.flow || value === null || value === undefined) return '—';
+  if (row.minimum !== null && value < row.minimum) return compactNumber(value - row.minimum);
+  if (row.maximum !== null && value > row.maximum) return compactNumber(value - row.maximum);
+  return '—';
+}
+
+function renderPenaltyLedger() {
+  const section = $('penalty-ledger');
+  const table = $('penalty-table');
+  const body = table?.querySelector('tbody');
+  const summary = $('penalty-summary');
+  const empty = $('penalty-empty');
+  if (!section || !table || !body || !summary || !empty) return;
+  const active = state.targets.filter((row) => row.active !== false);
+  const maxPriority = Math.max(1, ...active.map((row) => Number(row.priority) || 1));
+  const entries = active.map((row) => {
+    const realized = state.realized.get(String(row.index));
+    const value = realized?.value ?? null;
+    const penalty = Number(realized?.penalty ?? 0);
+    const factor = 1e9 ** (maxPriority - (Number(row.priority) || 1));
+    return { row, value, penalty, weighted: penalty * factor, status: realized?.status ?? statusOf(row, value) };
+  });
+  const binding = entries.filter((entry) => entry.penalty > 0);
+  const total = entries.reduce((sum, entry) => sum + entry.weighted, 0);
+  const visible = $('penalty-binding-only').checked ? binding : entries;
+  visible.sort((left, right) => right.weighted - left.weighted);
+  section.hidden = false;
+  empty.hidden = visible.length > 0;
+  table.hidden = visible.length === 0;
+  summary.textContent = `${binding.length} binding · ${entries.length - binding.length} met/inactive`;
+  body.replaceChildren();
+  for (const entry of visible.slice(0, 30)) {
+    const row = document.createElement('tr');
+    const label = accountTableLabel(entry.row.account);
+    const cells = [
+      `${label.root ? `${label.root} · ` : ''}${label.label}`,
+      entry.row.period === null || entry.row.period === undefined ? `year ${entry.row.year}` : `P${entry.row.period}`,
+      penaltyTargetLabel(entry.row),
+      entry.value === null || entry.value === undefined ? '—' : compactNumber(entry.value),
+      penaltyGap(entry.row, entry.value),
+      `min ${entry.row.min_weight ?? 1} · max ${entry.row.max_weight ?? 1}`,
+      String(entry.row.priority ?? 1),
+      compactNumber(entry.penalty),
+      total > 0 ? `${((entry.weighted / total) * 100).toFixed(1)}%` : '—',
+      entry.status,
+    ];
+    for (const [index, value] of cells.entries()) {
+      const cell = document.createElement('td');
+      cell.textContent = value;
+      if (index === 9) cell.className = entry.status;
+      row.append(cell);
+    }
+    row.title = `${entry.row.account} · ${entry.status} · weighted penalty ${compactNumber(entry.weighted)}`;
+    body.append(row);
+  }
+}
+
 function renderTargetCharts() {
+  renderScenarioMatrix();
+  renderScenarioDiff();
+  renderPenaltyLedger();
   const grid = $('target-chart-grid');
   const empty = $('target-chart-empty');
   const count = $('target-chart-count');
@@ -6849,6 +7071,183 @@ async function postTargets(rows, message) {
   }
 }
 
+function batchMaxPeriod() {
+  const fromSeries = state.targetSeries?.periods?.length ?? 0;
+  return Math.max(1, fromSeries || targetPeriodsFromRows().length || 1);
+}
+
+function syncBatchDefaults() {
+  const end = $('batch-end');
+  const start = $('batch-start');
+  const width = $('batch-width');
+  const max = batchMaxPeriod();
+  if (!end?.dataset.synced || Number(end.value) < 1 || Number(end.value) > max) {
+    start.value = '1';
+    end.value = String(max);
+    end.dataset.synced = '1';
+  }
+  if (width && !width.dataset.synced) {
+    const existing = state.targets.find((row) => Number(row.period_width) > 0)?.period_width ?? 10;
+    width.value = String(existing);
+    width.dataset.synced = '1';
+  }
+}
+
+function buildBatchRows() {
+  const accounts = [...state.selectedAccounts].sort((a, b) => a.localeCompare(b));
+  const mode = $('batch-mode').value;
+  let start = Number($('batch-start').value);
+  let end = Number($('batch-end').value);
+  const width = Number($('batch-width').value);
+  const minText = $('batch-min').value.trim();
+  const maxText = $('batch-max').value.trim();
+  const minimum = minText === '' ? null : Number(minText);
+  const maximum = maxText === '' ? null : Number(maxText);
+  const minWeight = Number($('batch-min-weight').value);
+  const maxWeight = Number($('batch-max-weight').value);
+  const priority = Number($('batch-priority').value);
+  const normalization = $('batch-normalization').value;
+  if (!accounts.length) return { error: 'select one or more accounts in the browser', additions: [], conflicts: 0 };
+  if (!Number.isInteger(start) || start < 1) return { error: 'start period must be a whole number of at least 1', additions: [], conflicts: 0 };
+  if (!Number.isInteger(end) || end < start) return { error: 'end period must be at least the start period', additions: [], conflicts: 0 };
+  if (!Number.isInteger(width) || width < 1) return { error: 'period width must be a whole number of at least 1', additions: [], conflicts: 0 };
+  if (minimum !== null && !Number.isFinite(minimum)) return { error: 'minimum must be a number', additions: [], conflicts: 0 };
+  if (maximum !== null && !Number.isFinite(maximum)) return { error: 'maximum must be a number', additions: [], conflicts: 0 };
+  if (minimum !== null && maximum !== null && minimum > maximum) return { error: 'minimum is above maximum', additions: [], conflicts: 0 };
+  if (!Number.isFinite(minWeight) || minWeight < 0) return { error: 'minimum weight must be zero or more', additions: [], conflicts: 0 };
+  if (!Number.isFinite(maxWeight) || maxWeight < 0) return { error: 'maximum weight must be zero or more', additions: [], conflicts: 0 };
+  if (!Number.isInteger(priority) || priority < 1) return { error: 'priority must be a positive integer', additions: [], conflicts: 0 };
+  if (mode === 'level' && (minimum === null || maximum === null)) {
+    return { error: 'level mode needs both minimum and maximum', additions: [], conflicts: 0 };
+  }
+  if (mode === 'min' && minimum === null) return { error: 'minimum mode needs a minimum', additions: [], conflicts: 0 };
+  if (mode === 'max' && maximum === null) return { error: 'maximum mode needs a maximum', additions: [], conflicts: 0 };
+  if (mode === 'flow' && (minimum === null || maximum === null)) {
+    return { error: 'even-flow mode needs a minimum and maximum percentage', additions: [], conflicts: 0 };
+  }
+  const existing = new Set(state.targets.map(targetKey));
+  const rows = collectTargets();
+  const additions = [];
+  let conflicts = 0;
+  if (mode === 'flow') {
+    for (const account of accounts) {
+      const row = {
+        index: rows.length + additions.length,
+        account,
+        period: start,
+        year: start * width,
+        period_width: width,
+        flow: 'even',
+        flow_start_period: start,
+        flow_end_period: end,
+        shape: 'non_linear',
+        minimum,
+        maximum,
+        min_weight: minWeight,
+        max_weight: maxWeight,
+        priority,
+        normalization,
+        active: true,
+      };
+      if (existing.has(targetKey(row))) conflicts += 1;
+      else additions.push(row);
+    }
+  } else {
+    for (const account of accounts) {
+      for (let period = start; period <= end; period += 1) {
+        const row = {
+          index: rows.length + additions.length,
+          account,
+          period,
+          year: period * width,
+          period_width: width,
+          flow: '',
+          shape: 'linear',
+          minimum: mode === 'max' ? null : minimum,
+          maximum: mode === 'min' ? null : maximum,
+          min_weight: minWeight,
+          max_weight: maxWeight,
+          priority,
+          normalization,
+          active: true,
+        };
+        if (existing.has(targetKey(row))) conflicts += 1;
+        else additions.push(row);
+      }
+    }
+  }
+  return { error: '', additions, conflicts, accounts: accounts.length, start, end, width, mode };
+}
+
+function renderBatchPreview() {
+  const preview = $('batch-preview');
+  const status = $('batch-status');
+  if (!preview || !status) return;
+  const result = buildBatchRows();
+  if (result.error) {
+    preview.hidden = true;
+    status.textContent = result.error;
+    return;
+  }
+  const total = result.additions.length;
+  status.textContent = result.conflicts
+    ? `${total} new · ${result.conflicts} already exist`
+    : `${total} new target${total === 1 ? '' : 's'}`;
+  preview.hidden = total === 0;
+  preview.textContent = result.additions
+    .slice(0, 8)
+    .map((row) => `${row.account} · P${row.period} · ${row.flow ? `flow ${row.flow}` : `min ${row.minimum ?? '—'} max ${row.maximum ?? '—'}`}`)
+    .join('\n') + (total > 8 ? `\n… ${total - 8} more` : '');
+}
+
+async function addBatchTargets() {
+  const status = $('batch-status');
+  const result = buildBatchRows();
+  if (result.error) {
+    status.textContent = result.error;
+    return;
+  }
+  if (!result.additions.length) {
+    status.textContent = 'nothing to add; the selected rows already exist';
+    return;
+  }
+  const rows = collectTargets();
+  const additions = result.additions.map((row, index) => ({ ...row, index: rows.length + index }));
+  const saved = await postTargets([...rows, ...additions], `added ${additions.length} targets`);
+  if (saved) {
+    status.textContent = `added ${additions.length} target${additions.length === 1 ? '' : 's'}`;
+    renderBatchPreview();
+  }
+}
+
+function syncBatchAll() {
+  const all = $('batch-all').checked;
+  $('batch-end').disabled = all;
+  if (all) {
+    $('batch-end').value = String(batchMaxPeriod());
+    $('batch-start').value = '1';
+  }
+  renderBatchPreview();
+}
+
+function wireBatchTargets() {
+  if (!$('batch-add')) return;
+  $('batch-all').addEventListener('change', syncBatchAll);
+  $('batch-mode').addEventListener('change', () => {
+    const mode = $('batch-mode').value;
+    $('batch-min').disabled = mode === 'max';
+    $('batch-max').disabled = mode === 'min';
+    renderBatchPreview();
+  });
+  for (const id of ['batch-start', 'batch-end', 'batch-width', 'batch-min', 'batch-max', 'batch-min-weight', 'batch-max-weight', 'batch-priority', 'batch-normalization']) {
+    $(id).addEventListener('input', renderBatchPreview);
+    $(id).addEventListener('change', renderBatchPreview);
+  }
+  $('batch-add').addEventListener('click', addBatchTargets);
+  syncBatchDefaults();
+  syncBatchAll();
+}
+
 async function addTarget() {
   const accounts = state.selectedAccounts.size
     ? [...state.selectedAccounts]
@@ -6906,7 +7305,212 @@ async function removeTarget(index) {
   await postTargets(rows, 'removed target');
 }
 
-async function loadTargets() {
+function scenarioField(row, field) {
+  if (field === 'notes') return String(row.notes ?? '');
+  if (field === 'active') return row.active !== false;
+  if (field === 'flow') return String(row.flow ?? '');
+  const value = row[field];
+  return value === null || value === undefined ? '' : String(value);
+}
+
+function scenarioDiffEntries() {
+  const live = new Map((state.scenario.liveRows ?? []).map((row) => [targetKey(row), row]));
+  const current = new Map(collectTargets().map((row) => [targetKey(row), row]));
+  const fields = [
+    'minimum',
+    'maximum',
+    'min_weight',
+    'max_weight',
+    'priority',
+    'normalization',
+    'active',
+    'flow',
+    'flow_start_period',
+    'flow_end_period',
+    'shape',
+    'notes',
+  ];
+  const entries = [];
+  for (const [key, row] of current) {
+    const previous = live.get(key);
+    if (!previous) {
+      entries.push({ mark: '+', className: 'diff-added', account: row.account, fields: 'added' });
+      continue;
+    }
+    const changes = fields
+      .filter((field) => scenarioField(previous, field) !== scenarioField(row, field))
+      .map((field) => `${field}: ${scenarioField(previous, field) || '—'} → ${scenarioField(row, field) || '—'}`);
+    if (changes.length) {
+      entries.push({
+        mark: '~',
+        className: 'diff-changed',
+        account: `${row.account} · P${row.period ?? row.year}`,
+        fields: changes.join(' · '),
+      });
+    }
+  }
+  for (const [key, row] of live) {
+    if (!current.has(key)) {
+      entries.push({ mark: '-', className: 'diff-removed', account: row.account, fields: 'removed' });
+    }
+  }
+  return entries;
+}
+
+function renderScenarioDiff() {
+  const panel = $('scenario-diff');
+  const body = $('scenario-diff-body');
+  const summary = $('scenario-diff-summary');
+  if (!panel || !body || !summary) return;
+  if (!state.scenario.liveRows.length) {
+    panel.hidden = true;
+    return;
+  }
+  const entries = scenarioDiffEntries();
+  panel.hidden = false;
+  const added = entries.filter((entry) => entry.mark === '+').length;
+  const removed = entries.filter((entry) => entry.mark === '-').length;
+  const changed = entries.filter((entry) => entry.mark === '~').length;
+  summary.textContent = entries.length
+    ? `Target diff from live: +${added} · −${removed} · ~${changed}`
+    : 'Target diff from live: no changes';
+  body.replaceChildren();
+  if (!entries.length) {
+    const note = document.createElement('p');
+    note.className = 'hint';
+    note.textContent = 'The editor matches the live target file.';
+    body.append(note);
+    return;
+  }
+  for (const entry of entries.slice(0, 80)) {
+    const row = document.createElement('div');
+    row.className = 'scenario-diff-row';
+    const mark = document.createElement('span');
+    mark.className = `diff-mark ${entry.className}`;
+    mark.textContent = entry.mark;
+    const account = document.createElement('span');
+    account.className = 'diff-account';
+    account.textContent = entry.account;
+    account.title = entry.account;
+    const fields = document.createElement('span');
+    fields.className = 'diff-fields';
+    fields.textContent = entry.fields;
+    row.append(mark, account, fields);
+    body.append(row);
+  }
+}
+
+async function loadScenarioList() {
+  const select = $('scenario-select');
+  if (!select) return;
+  try {
+    const list = await api('api/scenarios');
+    state.scenario.list = Array.isArray(list) ? list : [];
+  } catch {
+    state.scenario.list = [];
+  }
+  const previous = state.scenario.loadedId || select.value;
+  select.replaceChildren();
+  const live = document.createElement('option');
+  live.value = '';
+  live.textContent = 'Live targets';
+  select.append(live);
+  for (const item of state.scenario.list) {
+    const option = document.createElement('option');
+    option.value = item.id;
+    option.textContent = `${item.name} · ${item.target_count} targets`;
+    option.title = item.description || item.name;
+    select.append(option);
+  }
+  if ([...select.options].some((option) => option.value === previous)) select.value = previous;
+  $('scenario-delete').disabled = !select.value;
+}
+
+async function loadSelectedScenario() {
+  const select = $('scenario-select');
+  const status = $('scenario-status');
+  if (!select.value) {
+    await loadTargets();
+    status.textContent = 'editing live targets';
+    return;
+  }
+  status.textContent = 'loading scenario…';
+  try {
+    const scenario = await api(`api/scenarios/${encodeURIComponent(select.value)}`);
+    state.scenario.loadedId = select.value;
+    await loadTargets(scenario.targets, { source: scenario.name });
+    state.scenario.source = scenario.name;
+    status.textContent = `editing ${scenario.name}; save targets to publish`;
+    $('scenario-select').value = select.value;
+    $('scenario-delete').disabled = false;
+  } catch (error) {
+    status.textContent = `scenario load failed: ${error.message}`;
+  }
+}
+
+async function saveScenario() {
+  const name = $('scenario-name').value.trim();
+  const status = $('scenario-status');
+  if (!name) {
+    status.textContent = 'enter a scenario name';
+    $('scenario-name').focus();
+    return;
+  }
+  status.textContent = 'saving scenario…';
+  try {
+    const scenario = await api('api/scenarios', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        name,
+        description: $('scenario-description').value.trim(),
+        targets: collectTargets(),
+      }),
+    });
+    state.scenario.loadedId = scenario.id;
+    state.scenario.source = scenario.name;
+    await loadScenarioList();
+    $('scenario-select').value = scenario.id;
+    $('scenario-delete').disabled = false;
+    status.textContent = `saved scenario ${scenario.name}; live targets unchanged`;
+  } catch (error) {
+    status.textContent = `scenario save failed: ${error.message}`;
+  }
+}
+
+async function deleteSelectedScenario() {
+  const select = $('scenario-select');
+  const status = $('scenario-status');
+  if (!select.value) return;
+  try {
+    await api(`api/scenarios/${encodeURIComponent(select.value)}`, { method: 'DELETE' });
+    state.scenario.loadedId = '';
+    select.value = '';
+    await loadScenarioList();
+    status.textContent = 'scenario deleted';
+  } catch (error) {
+    status.textContent = `scenario delete failed: ${error.message}`;
+  }
+}
+
+function wireScenarioBar() {
+  if (!$('scenario-select')) return;
+  $('scenario-load').addEventListener('click', loadSelectedScenario);
+  $('scenario-reload').addEventListener('click', async () => {
+    await loadTargets();
+    $('scenario-status').textContent = 'editing live targets';
+  });
+  $('scenario-save').addEventListener('click', saveScenario);
+  $('scenario-delete').addEventListener('click', deleteSelectedScenario);
+  $('scenario-select').addEventListener('change', () => {
+    $('scenario-delete').disabled = !$('scenario-select').value;
+  });
+  $('targets-table').addEventListener('input', renderScenarioDiff);
+  $('targets-table').addEventListener('change', renderScenarioDiff);
+  loadScenarioList();
+}
+
+async function loadTargets(rowsOverride = null, { source = 'live' } = {}) {
   const empty = $('targets-empty');
   const table = $('targets-table');
   const button = $('save-targets');
@@ -6914,9 +7518,17 @@ async function loadTargets() {
     state.chartDirty = false;
     setChartStatus('');
     state.targetCells = new Map();
+    state.realized = new Map();
     state.windowValues = new Map();
-    const rows = await api('api/targets.json');
+    const rows = rowsOverride ?? await api('api/targets.json');
     rows.forEach((row) => { row.active = row.active !== false; });
+    if (rowsOverride === null) {
+      state.scenario.liveRows = rows.map((row) => ({ ...row }));
+      state.scenario.loadedId = '';
+      state.scenario.source = 'Live targets';
+    } else {
+      state.scenario.source = source;
+    }
     state.targets = rows;
     populateScanAccounts();
     renderPortfolioScan();
@@ -6987,6 +7599,7 @@ async function loadTargets() {
       const realized = await api(`api/runs/${encodeURIComponent(state.run)}/targets`);
       for (const item of realized) {
         values[item.index] = item.value;
+        state.realized.set(String(item.index), item);
       }
     } catch { /* no realized values for this run */ }
     rows.forEach((row, index) => {
@@ -7161,6 +7774,10 @@ async function loadTargets() {
     renderWatchPanel();
     renderTargetCharts();
     renderAccountTree();
+    syncBatchDefaults();
+    renderBatchPreview();
+    renderScenarioDiff();
+    await loadScenarioList();
     if (state.skin) applySkin(state.skin);
   } catch (error) {
     empty.hidden = false;
@@ -9234,6 +9851,8 @@ function wireControls() {
     state.targetSort = { key: null, direction: 1 };
     applyTargetSort();
   });
+  $('matrix-only-failing').addEventListener('change', renderScenarioMatrix);
+  $('penalty-binding-only').addEventListener('change', renderPenaltyLedger);
   $('target-filter-search').addEventListener('input', applyTargetFilter);
   $('target-filter-status').addEventListener('change', applyTargetFilter);
   $('target-filter-clear').addEventListener('click', clearTargetFilters);
@@ -9519,6 +10138,8 @@ async function start() {
   wireFire();
   wirePortfolioScan();
   wireScaffoldTargets();
+  wireBatchTargets();
+  wireScenarioBar();
   loadWatched();
   try {
     const summary = await api('api/summary');

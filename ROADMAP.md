@@ -156,6 +156,7 @@ exists and the maintainer approves it.
 | P155 3D fire scene and synthetic tree stands | #877 | `feature/p155-fire-3d` | complete |
 | P156 Credible fire behaviour and growth | #890 | `feature/p156-fire-behaviour` | complete |
 | P157 Observed fire and perimeter validation | #923 | `feature/p157-observed-fire` | pr-open |
+| P158 Plan scenario matrix | #928 | `feature/p158-plan-matrix` | complete |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -4655,3 +4656,30 @@ Acceptance:
 - The report separates standard, model-to-model, and observed-fire evidence.
 - `python scripts/dashboard.py` is green.
 - No merge, tag, release, or settings change without approval.
+
+## Phase 158: Plan scenario matrix
+
+Parent issue: #928
+Branch: `feature/p158-plan-matrix`
+Status: complete
+Merge commits: `335a2b8`, `7079d61`, `5ff39f4`, `bbc9de8`
+Report: `notes/reports/p158-closeout.md`
+Batch report: `notes/reports/p158-batch-composer.md`
+Scenario report: `notes/reports/p158-scenarios.md`
+
+Goal: make multi-target scenario authoring and observation legible in Plan.
+
+- [x] P158.1 Add the Plan scenario matrix (#929)
+- [x] P158.2 Named scenarios, drafts, save-as, and target diffs (#933)
+- [x] P158.3 Batch target composer over accounts and period ranges (#931)
+- [x] P158.4 Penalty ledger, binding ranks, and scenario comparison (#935)
+- [x] P158.5 Plan usability and tablet regression pass (#937)
+
+Acceptance:
+
+- Every target account and period is visible at once with target bands, realized values,
+  gaps, and status.
+- Flow and level targets are distinguishable without opening a detail row.
+- Operators can inspect a cell without pinning a chart.
+- The target table and matrix stay consistent after edits and live updates.
+- Browser and dashboard tests pass.
