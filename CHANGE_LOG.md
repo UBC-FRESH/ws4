@@ -5019,3 +5019,11 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   at 16,241 ha (+58.9%), perimeter +75.9%, IoU 0.385, Sorensen 0.556, centroid 1.77 km, and
   6.5°; the literal minimum would stop growth. WindNinja 2c/2d and the fixed matrix remain
   P160.2/P160.3. Dashboard: **GREEN**.
+
+- P160.2: added `ws4.fire.wind` for the Dogrib WindNinja inputs. The loader validates paired
+  angle/velocity ESRI ASCII grids, records method/source/geometry provenance, rejects missing
+  or mismatched pairs, and selects the nearest direction grid by circular distance. Added the
+  `fire-wind` reference page and a synthetic-pair test suite. The full conservation-of-mass and
+  conservation-of-mass-and-momentum grids remain untracked because the archive has no explicit
+  licence file; the docs record the public archive path and the 2c/2d member names. Dashboard:
+  **GREEN**.

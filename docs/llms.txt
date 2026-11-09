@@ -71,5 +71,6 @@
 - [VRI to FBP mapping](reference/fire-vri.html): the VRI stand contract, deterministic FBP fuel-type rules, and provenance.
 - [Fire growth benchmark](reference/fire-benchmark.html): the FBP ellipse benchmark, the scenario ensemble, and the reported tolerances.
 - [Observed-fire contract](reference/fire-observed.html): the Dogrib validation fixture, the observed-fire data contract, and its limits.
+- [WindNinja wind grids](reference/fire-wind.html): angle and velocity pairs, direction selection, and provenance.
 - [Fire scene and synthetic trees](reference/fire-scene.html): the synthetic tree inventory, the portable scene package, and the standalone 3D fire viewer.
 - [API reference](api/index.html): the repository tooling's public functions, with their parameters, types, and return values. The package API is rendered on the reference pages above.

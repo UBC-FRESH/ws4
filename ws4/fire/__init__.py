@@ -86,6 +86,15 @@ from .vri import (
     map_vri_stand,
     map_vri_table,
 )
+from .wind import (
+    WindNinjaGrid,
+    angular_distance,
+    grid_cell_for_xy,
+    load_windninja_directory,
+    nearest_wind_direction,
+    read_windninja_pair,
+    wind_grid_at,
+)
 
 __all__ = [
     "ANDERSON_13",
@@ -125,6 +134,8 @@ __all__ = [
     "SiteGrid",
     "VriError",
     "VriStand",
+    "WindNinjaGrid",
+    "angular_distance",
     "buildup_effect",
     "buildup_index",
     "canonical_fuel_type",
@@ -144,13 +155,18 @@ __all__ = [
     "fragment_ignition_events",
     "fragment_ignition_times",
     "fwi_sequence",
+    "grid_cell_for_xy",
     "grow_fire",
     "initial_fwi_state",
     "initial_spread_index",
     "length_to_breadth",
+    "load_windninja_directory",
     "map_vri_stand",
     "map_vri_table",
+    "nearest_wind_direction",
+    "read_windninja_pair",
     "surface_fire",
     "surface_fuel_consumption",
     "van_wagner_active_crown",
+    "wind_grid_at",
 ]
