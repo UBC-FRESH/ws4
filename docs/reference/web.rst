@@ -86,6 +86,11 @@ periods, or the LiDAR scale). Clicking a block adds a dark outline and fills the
 panel; the outline is available in both MapLibre and the SVG fallback. **Map engine** and
 **Unavailable layers** are compact disclosure rows, not active controls.
 
+The Plan **penalty ledger** ranks active targets by priority-weighted penalty and shows
+realized value, gap, weights, priority, share of the objective, and status. Flow targets
+contribute their actual flow penalty, and **Binding only** filters the ledger to targets
+currently outside their band.
+
 Plan also has a **scenario library**. Save the current editor rows under a name without
 changing the live target file; load a saved scenario into the editor; reload the live
 targets; and inspect a diff between the editor and live targets before publishing. A

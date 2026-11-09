@@ -162,3 +162,5 @@ Working notes for WS4. Notes are living: update them in the same change set as t
   next scenario-authoring slices.
 - `reports/p158-batch-composer.md` — P158.3 multi-account and period-range target authoring.
 - `reports/p158-scenarios.md` — named Plan scenarios, reload-live, and target diffs.
+- `reports/p158-penalty-ledger.md` — Plan objective composition, binding ranks, and flow
+  penalties.

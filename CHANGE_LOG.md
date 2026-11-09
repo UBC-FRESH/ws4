@@ -4895,3 +4895,7 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P158.2: added named scenario snapshots under the runs scenario library, save-as/load
   into the editor, reload live targets, and a target diff against the live file. Loading a
   scenario is non-destructive; publishing still uses Save targets.
+
+- P158.4: added the Plan penalty ledger ranking active targets by priority-weighted
+  penalty, with realized/gap/weight/priority/share/status and a binding-only filter.
+  Flow targets now report a real penalty in the run target evaluation.

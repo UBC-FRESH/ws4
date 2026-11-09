@@ -4,7 +4,7 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/OrbitControls.js";
 
-const state = { run: null, year: 0, features: [], view: { s: 1, x: 0, y: 0 }, base: null, skin: null, targets: [], pickedAccount: null, selectedAccounts: new Set(), targetCells: new Map(), watched: new Set(), targetSignature: "", windowValues: new Map(), series: new Map(), runPaused: false, live: { active: false, schedule: new Map(), total: 0 }, history: [], periods: [], periodIndex: 0, periodWidth: 1, yearChosen: false, chatSession: null, chatBusy: false, compareView: false, compare: null, compareAccounts: [], compareToken: 0, compareInitialized: false, layers: null, layerMode: 'current', patchClasses: new Set(), patchCatalog: [], compartmentAccounts: [], compartmentClasses: [], compartmentAccount: '', selectedCompartments: new Set(), baseAttributes: [], baseAttribute: '', roads: [], showRoads: false, usedRoads: [], showUsedRoads: false, blockElements: new Map(), mapEngine: (typeof window.maplibregl !== 'undefined' ? 'maplibre' : 'svg'), mapLibre: null, mapLibreReady: false, mapLoading: false, suppressViewportReload: false, mapTotals: null, mapFitted: false, lidar: null, lidarField: '', lidarRange: null, carbon: null, carbonAccount: '', workspace: 'map', subview: { results: 'reports', data: 'dataset' }, datasetSummary: null, geometryAvailable: true, selectedBlock: null, selectedGeometry: null, pendingBlock: null, pendingPeriod: null, urlReady: false, targetSeries: null, chartDirty: false, targetSort: { key: null, direction: 1 }, sdmd: { available: false, regions: [], aus: [], region: '', au: '', source: '', detail: null, plots: [], yield: [], points: null, regimes: [], preview: null, trajectory: '', trajectoryData: null, yieldMetric: 'volume_m3_ha' }, runSource: null, runSummary: null, scenario: { liveRows: [], list: [], loadedId: '', source: 'Live targets' }, fire: { scenes: [], selected: '', selectedB: '', payloads: new Map(), activePayload: null, playing: false }, console: { schema: null, token: '', job: null, timer: null, offset: 0, busy: false }, portfolioScan: [], portfolioTargets: [], pareto: { available: false, artifact: '', data: null, chart: null, cloud: null, selected: null, pinned: [], screen: [], artifacts: [] } };
+const state = { run: null, year: 0, features: [], view: { s: 1, x: 0, y: 0 }, base: null, skin: null, targets: [], pickedAccount: null, selectedAccounts: new Set(), targetCells: new Map(), watched: new Set(), targetSignature: "", windowValues: new Map(), series: new Map(), runPaused: false, live: { active: false, schedule: new Map(), total: 0 }, history: [], periods: [], periodIndex: 0, periodWidth: 1, yearChosen: false, chatSession: null, chatBusy: false, compareView: false, compare: null, compareAccounts: [], compareToken: 0, compareInitialized: false, layers: null, layerMode: 'current', patchClasses: new Set(), patchCatalog: [], compartmentAccounts: [], compartmentClasses: [], compartmentAccount: '', selectedCompartments: new Set(), baseAttributes: [], baseAttribute: '', roads: [], showRoads: false, usedRoads: [], showUsedRoads: false, blockElements: new Map(), mapEngine: (typeof window.maplibregl !== 'undefined' ? 'maplibre' : 'svg'), mapLibre: null, mapLibreReady: false, mapLoading: false, suppressViewportReload: false, mapTotals: null, mapFitted: false, lidar: null, lidarField: '', lidarRange: null, carbon: null, carbonAccount: '', workspace: 'map', subview: { results: 'reports', data: 'dataset' }, datasetSummary: null, geometryAvailable: true, selectedBlock: null, selectedGeometry: null, pendingBlock: null, pendingPeriod: null, urlReady: false, targetSeries: null, chartDirty: false, targetSort: { key: null, direction: 1 }, sdmd: { available: false, regions: [], aus: [], region: '', au: '', source: '', detail: null, plots: [], yield: [], points: null, regimes: [], preview: null, trajectory: '', trajectoryData: null, yieldMetric: 'volume_m3_ha' }, runSource: null, runSummary: null, scenario: { liveRows: [], list: [], loadedId: '', source: 'Live targets' }, realized: new Map(), fire: { scenes: [], selected: '', selectedB: '', payloads: new Map(), activePayload: null, playing: false }, console: { schema: null, token: '', job: null, timer: null, offset: 0, busy: false }, portfolioScan: [], portfolioTargets: [], pareto: { available: false, artifact: '', data: null, chart: null, cloud: null, selected: null, pinned: [], screen: [], artifacts: [] } };
 
 state.estate3d = { open: false, features: [], yaw: -0.55, zoom: 1, exaggeration: 1, hits: [] };
 const ESTATE_3D_LIMIT = 2000;
@@ -6162,9 +6162,80 @@ function renderScenarioMatrix() {
   status.textContent = `${rows.length} account${rows.length === 1 ? '' : 's'} · ${periods.length} periods · ${failingCells} failing cell${failingCells === 1 ? '' : 's'}${suffix}`;
 }
 
+function penaltyTargetLabel(row) {
+  if (row.flow) {
+    const low = row.minimum ?? '—';
+    const high = row.maximum ?? '—';
+    return `${row.flow} ${low}..${high}%`;
+  }
+  if (row.minimum !== null && row.maximum !== null) return `${compactNumber(row.minimum)}..${compactNumber(row.maximum)}`;
+  if (row.minimum !== null) return `≥${compactNumber(row.minimum)}`;
+  if (row.maximum !== null) return `≤${compactNumber(row.maximum)}`;
+  return '—';
+}
+
+function penaltyGap(row, value) {
+  if (row.flow || value === null || value === undefined) return '—';
+  if (row.minimum !== null && value < row.minimum) return compactNumber(value - row.minimum);
+  if (row.maximum !== null && value > row.maximum) return compactNumber(value - row.maximum);
+  return '—';
+}
+
+function renderPenaltyLedger() {
+  const section = $('penalty-ledger');
+  const table = $('penalty-table');
+  const body = table?.querySelector('tbody');
+  const summary = $('penalty-summary');
+  const empty = $('penalty-empty');
+  if (!section || !table || !body || !summary || !empty) return;
+  const active = state.targets.filter((row) => row.active !== false);
+  const maxPriority = Math.max(1, ...active.map((row) => Number(row.priority) || 1));
+  const entries = active.map((row) => {
+    const realized = state.realized.get(String(row.index));
+    const value = realized?.value ?? null;
+    const penalty = Number(realized?.penalty ?? 0);
+    const factor = 1e9 ** (maxPriority - (Number(row.priority) || 1));
+    return { row, value, penalty, weighted: penalty * factor, status: realized?.status ?? statusOf(row, value) };
+  });
+  const binding = entries.filter((entry) => entry.penalty > 0);
+  const total = entries.reduce((sum, entry) => sum + entry.weighted, 0);
+  const visible = $('penalty-binding-only').checked ? binding : entries;
+  visible.sort((left, right) => right.weighted - left.weighted);
+  section.hidden = false;
+  empty.hidden = visible.length > 0;
+  table.hidden = visible.length === 0;
+  summary.textContent = `${binding.length} binding · ${entries.length - binding.length} met/inactive`;
+  body.replaceChildren();
+  for (const entry of visible.slice(0, 30)) {
+    const row = document.createElement('tr');
+    const label = accountTableLabel(entry.row.account);
+    const cells = [
+      `${label.root ? `${label.root} · ` : ''}${label.label}`,
+      entry.row.period === null || entry.row.period === undefined ? `year ${entry.row.year}` : `P${entry.row.period}`,
+      penaltyTargetLabel(entry.row),
+      entry.value === null || entry.value === undefined ? '—' : compactNumber(entry.value),
+      penaltyGap(entry.row, entry.value),
+      `min ${entry.row.min_weight ?? 1} · max ${entry.row.max_weight ?? 1}`,
+      String(entry.row.priority ?? 1),
+      compactNumber(entry.penalty),
+      total > 0 ? `${((entry.weighted / total) * 100).toFixed(1)}%` : '—',
+      entry.status,
+    ];
+    for (const [index, value] of cells.entries()) {
+      const cell = document.createElement('td');
+      cell.textContent = value;
+      if (index === 9) cell.className = entry.status;
+      row.append(cell);
+    }
+    row.title = `${entry.row.account} · ${entry.status} · weighted penalty ${compactNumber(entry.weighted)}`;
+    body.append(row);
+  }
+}
+
 function renderTargetCharts() {
   renderScenarioMatrix();
   renderScenarioDiff();
+  renderPenaltyLedger();
   const grid = $('target-chart-grid');
   const empty = $('target-chart-empty');
   const count = $('target-chart-count');
@@ -7447,6 +7518,7 @@ async function loadTargets(rowsOverride = null, { source = 'live' } = {}) {
     state.chartDirty = false;
     setChartStatus('');
     state.targetCells = new Map();
+    state.realized = new Map();
     state.windowValues = new Map();
     const rows = rowsOverride ?? await api('api/targets.json');
     rows.forEach((row) => { row.active = row.active !== false; });
@@ -7527,6 +7599,7 @@ async function loadTargets(rowsOverride = null, { source = 'live' } = {}) {
       const realized = await api(`api/runs/${encodeURIComponent(state.run)}/targets`);
       for (const item of realized) {
         values[item.index] = item.value;
+        state.realized.set(String(item.index), item);
       }
     } catch { /* no realized values for this run */ }
     rows.forEach((row, index) => {
@@ -9776,6 +9849,7 @@ function wireControls() {
     applyTargetSort();
   });
   $('matrix-only-failing').addEventListener('change', renderScenarioMatrix);
+  $('penalty-binding-only').addEventListener('change', renderPenaltyLedger);
   $('target-filter-search').addEventListener('input', applyTargetFilter);
   $('target-filter-status').addEventListener('change', applyTargetFilter);
   $('target-filter-clear').addEventListener('click', clearTargetFilters);

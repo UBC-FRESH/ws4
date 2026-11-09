@@ -4639,7 +4639,7 @@ Goal: make multi-target scenario authoring and observation legible in Plan.
 - [x] P158.1 Add the Plan scenario matrix (#929)
 - [x] P158.2 Named scenarios, drafts, save-as, and target diffs (#933)
 - [x] P158.3 Batch target composer over accounts and period ranges (#931)
-- [ ] P158.4 Penalty ledger, binding ranks, and scenario comparison
+- [x] P158.4 Penalty ledger, binding ranks, and scenario comparison (#935)
 - [ ] P158.5 Plan usability and tablet regression pass
 
 Acceptance:
