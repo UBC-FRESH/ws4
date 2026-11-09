@@ -4734,7 +4734,7 @@ Goal: test whether the remaining Dogrib area/perimeter overprediction is explain
 documented Prometheus burning-condition thresholds and the WindNinja scenario 2c/2d wind
 grids, without calibrating WS4 to the observed perimeter.
 
-- [ ] P160.1 Burning-condition threshold contract and gate (#948)
+- [x] P160.1 Burning-condition threshold contract and gate (#948)
 - [ ] P160.2 WindNinja 2c/2d wind-grid inputs (#949)
 - [ ] P160.3 Run the 2b/2c/2d comparison matrix (#950)
 - [ ] P160.4 Close out with evidence and limits (#951)
