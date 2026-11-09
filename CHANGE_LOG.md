@@ -4891,3 +4891,7 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P158.3: added Plan's batch target composer: multi-account selection, period ranges or
   all periods, level/min/max/even-flow modes, weights, priority, normalization, duplicate
   detection, and a preview before writing. Added a browser regression test.
+
+- P158.2: added named scenario snapshots under the runs scenario library, save-as/load
+  into the editor, reload live targets, and a target diff against the live file. Loading a
+  scenario is non-destructive; publishing still uses Save targets.

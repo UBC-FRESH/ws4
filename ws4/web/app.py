@@ -1105,6 +1105,7 @@ def create_app(
     """
     dataset = Path(dataset).resolve()
     runs_root = Path(runs).resolve()
+    scenarios_root = runs_root / "scenarios"
     geometry_path = Path(geometry).resolve() if geometry is not None else None
     overview_path = Path(geometry_overview).resolve() if geometry_overview is not None else None
     land_base_path = Path(land_base).resolve() if land_base is not None else None
@@ -4122,6 +4123,82 @@ def create_app(
         """Return the live targets as rows the browser can edit."""
         return _target_rows_for(targets_path)
 
+    def _validate_targets(document: str) -> int:
+        """Validate a targets YAML document without touching the live targets file."""
+        parsed = yaml.safe_load(document)
+        if not isinstance(parsed, dict) or not parsed.get("targets"):
+            raise HTTPException(
+                status_code=422,
+                detail="the targets document needs a non-empty 'targets' list",
+            )
+        scenarios_root.mkdir(parents=True, exist_ok=True)
+        with tempfile.NamedTemporaryFile(
+            "w", suffix=".yaml", dir=scenarios_root, delete=False, encoding="utf-8"
+        ) as handle:
+            handle.write(document)
+            candidate = Path(handle.name)
+        try:
+            targets = load_targets(candidate)
+        except Exception as error:
+            candidate.unlink(missing_ok=True)
+            raise HTTPException(status_code=422, detail=str(error)) from error
+        candidate.unlink(missing_ok=True)
+        return len(targets)
+
+    def _scenario_slug(name: str) -> str:
+        """Return a unique filesystem-safe scenario slug."""
+        cleaned = re.sub(r"[^a-z0-9]+", "-", name.strip().lower()).strip("-")
+        if not cleaned:
+            raise HTTPException(status_code=422, detail="scenario name needs letters or digits")
+        base = cleaned[:64]
+        slug = base
+        suffix = 2
+        while (scenarios_root / slug).exists():
+            slug = f"{base}-{suffix}"
+            suffix += 1
+        return slug
+
+    def _scenario_entries() -> list[dict[str, Any]]:
+        """Return saved scenarios, newest first."""
+        if not scenarios_root.is_dir():
+            return []
+        entries: list[dict[str, Any]] = []
+        for directory in sorted(scenarios_root.iterdir()):
+            metadata_path = directory / "scenario.json"
+            targets_path = directory / "targets.yaml"
+            if not directory.is_dir() or not metadata_path.is_file() or not targets_path.is_file():
+                continue
+            try:
+                metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+            except (OSError, ValueError):
+                continue
+            if not isinstance(metadata, dict):
+                continue
+            entries.append(
+                {
+                    "id": directory.name,
+                    "name": str(metadata.get("name", directory.name)),
+                    "description": str(metadata.get("description", "")),
+                    "created_utc": metadata.get("created_utc"),
+                    "target_count": int(metadata.get("target_count", 0)),
+                    "source": metadata.get("source"),
+                }
+            )
+        entries.sort(key=lambda item: str(item.get("created_utc") or ""), reverse=True)
+        return entries
+
+    def _scenario_dir(scenario_id: str) -> Path:
+        """Return a saved scenario directory, refusing unknown ids."""
+        if not re.fullmatch(r"[a-z0-9][a-z0-9-]{0,80}", scenario_id):
+            raise HTTPException(status_code=404, detail="scenario was not found")
+        directory = scenarios_root / scenario_id
+        if (
+            not (directory / "targets.yaml").is_file()
+            or not (directory / "scenario.json").is_file()
+        ):
+            raise HTTPException(status_code=404, detail="scenario was not found")
+        return directory
+
     def _write_targets(document: str) -> int:
         """Validate a targets document with the optimizer's loader, then replace the file."""
         if targets_path is None:
@@ -4199,6 +4276,61 @@ def create_app(
             "profile": name,
             "source": str(profile.targets),
         }
+
+    @app.get("/api/scenarios")
+    def list_scenarios() -> list[dict[str, Any]]:
+        """Return the saved target scenarios."""
+        return _scenario_entries()
+
+    @app.post("/api/scenarios")
+    def save_scenario(body: Annotated[dict[str, Any], Body()]) -> dict[str, Any]:
+        """Save the editor rows as a named, validated scenario without touching live targets."""
+        name = str(body.get("name", "")).strip()
+        if not name:
+            raise HTTPException(status_code=422, detail="scenario name is required")
+        rows = body.get("targets")
+        if not isinstance(rows, list) or not rows:
+            raise HTTPException(status_code=422, detail="scenario targets must be a non-empty list")
+        cleaned = [
+            {key: value for key, value in row.items() if key != "kind"}
+            for row in rows
+            if isinstance(row, dict)
+        ]
+        if not cleaned:
+            raise HTTPException(status_code=422, detail="scenario targets must be objects")
+        document = yaml.safe_dump({"targets": cleaned}, sort_keys=False)
+        count = _validate_targets(document)
+        scenarios_root.mkdir(parents=True, exist_ok=True)
+        slug = _scenario_slug(name)
+        directory = scenarios_root / slug
+        directory.mkdir()
+        (directory / "targets.yaml").write_text(document, encoding="utf-8")
+        metadata = {
+            "name": name,
+            "description": str(body.get("description", "")).strip(),
+            "created_utc": datetime.now().astimezone().isoformat(),
+            "target_count": count,
+            "source": str(targets_path) if targets_path is not None else None,
+        }
+        (directory / "scenario.json").write_text(
+            json.dumps(metadata, indent=2) + "\n", encoding="utf-8"
+        )
+        return {"id": slug, **metadata}
+
+    @app.get("/api/scenarios/{scenario_id}")
+    def get_scenario(scenario_id: str) -> dict[str, Any]:
+        """Return one saved scenario and its editable target rows."""
+        directory = _scenario_dir(scenario_id)
+        metadata = json.loads((directory / "scenario.json").read_text(encoding="utf-8"))
+        rows = _target_rows_for(directory / "targets.yaml")
+        return {"id": scenario_id, **metadata, "targets": rows}
+
+    @app.delete("/api/scenarios/{scenario_id}")
+    def delete_scenario(scenario_id: str) -> dict[str, Any]:
+        """Delete one saved scenario."""
+        directory = _scenario_dir(scenario_id)
+        shutil.rmtree(directory)
+        return {"deleted": scenario_id}
 
     @app.get("/api/targets", response_class=PlainTextResponse)
     def get_targets() -> str:

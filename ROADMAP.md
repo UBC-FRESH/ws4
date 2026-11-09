@@ -4632,11 +4632,12 @@ Branch: `feature/p158-plan-matrix`
 Status: active
 Report: `notes/reports/p158-plan-matrix.md`
 Batch report: `notes/reports/p158-batch-composer.md`
+Scenario report: `notes/reports/p158-scenarios.md`
 
 Goal: make multi-target scenario authoring and observation legible in Plan.
 
 - [x] P158.1 Add the Plan scenario matrix (#929)
-- [ ] P158.2 Named scenarios, drafts, save-as, and target diffs
+- [x] P158.2 Named scenarios, drafts, save-as, and target diffs (#933)
 - [x] P158.3 Batch target composer over accounts and period ranges (#931)
 - [ ] P158.4 Penalty ledger, binding ranks, and scenario comparison
 - [ ] P158.5 Plan usability and tablet regression pass
