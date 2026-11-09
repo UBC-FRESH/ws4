@@ -4911,3 +4911,8 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   `docs/_static/fire-dogrib-view.svg`, and served read-only at
   `GET /api/fire/observed/dogrib.svg`. The Fire workspace has an **Observed comparison**
   button. Added 3 view tests, 2 API tests, and docs. Dashboard: **GREEN**.
+
+- P157.3 correction: the view no longer says "Matched 402 min". It says "Run 402 min" and
+  "Target 17 Oct 11:52", and the report states that the 402-minute run is **not time-matched**
+  to the 1,372-minute observed final. The earlier wording implied a time alignment that does
+  not exist in the fixture.

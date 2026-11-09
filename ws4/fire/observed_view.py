@@ -124,7 +124,8 @@ def render_comparison_svg(
         for index, line in enumerate(metric_lines)
     )
     note_lines = [
-        f"Matched {case.duration_min:.0f} min",
+        f"Run {case.duration_min:.0f} min",
+        f"Target {fire.event_end:%d %b %H:%M}",
         f"Fuel {case.fuel_type}",
         f"FFMC {case.ffmc:.1f} · BUI {case.bui:.0f}",
         f"Wind {case.wind_kmh:.0f} km/h",

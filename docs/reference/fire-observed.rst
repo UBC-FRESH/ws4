@@ -84,6 +84,10 @@ same grid and reports area bias, perimeter bias, centroid distance, IoU, Sorense
 principal-axis orientation. ``run_dogrib_case`` starts from the observed 13:00 perimeter,
 uses a homogeneous C2 fuel approximation, and runs for 402 minutes.
 
+The comparison is not time-matched. The run is 402 minutes, while the only final observed
+perimeter is at 11:52 the next day, 1,372 minutes after the start. The scores therefore mix
+model error with the missing 16 hours of observed growth.
+
 The base-case result is characterized, not accepted for footprint:
 
 - area 6,259 ha vs 10,219 ha (−38.8%);

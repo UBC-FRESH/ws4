@@ -41,5 +41,5 @@
     <text x="-4" y="30" class="scale">N</text>
   </g>
   <text x="780" y="112" class="metric">Simulated 6,259 ha</text><text x="780" y="131" class="metric">Observed 10,219 ha</text><text x="780" y="150" class="metric">Area bias -38.8%</text><text x="780" y="169" class="metric">Perimeter bias -12.1%</text><text x="780" y="188" class="metric">Centroid 14.29 km</text><text x="780" y="207" class="metric">IoU 0.070   Sorensen 0.131</text><text x="780" y="226" class="metric">Orientation 3.1°</text>
-  <text x="780" y="263" class="legend">Matched 402 min</text><text x="780" y="280" class="legend">Fuel C2</text><text x="780" y="297" class="legend">FFMC 92.7 · BUI 105</text><text x="780" y="314" class="legend">Wind 21 km/h</text><text x="780" y="331" class="legend">No spotting</text>
+  <text x="780" y="263" class="legend">Run 402 min</text><text x="780" y="280" class="legend">Target 17 Oct 11:52</text><text x="780" y="297" class="legend">Fuel C2</text><text x="780" y="314" class="legend">FFMC 92.7 · BUI 105</text><text x="780" y="331" class="legend">Wind 21 km/h</text><text x="780" y="348" class="legend">No spotting</text>
 </svg>

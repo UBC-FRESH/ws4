@@ -27,6 +27,15 @@ from the observed 13:00 perimeter and run through the 6.7-hour wind event?
 The run is a base case, not a calibrated case. Fuel, slope, and weather are homogeneous
 approximations of a heterogeneous fire.
 
+## Time alignment
+
+The run is 402 minutes, from 13:00 to about 19:42 local. The only final observed perimeter
+is at 11:52 the next day, 1,372 minutes after the start. The comparison is therefore **not
+time-matched**: a 6.7-hour simulation is scored against a 23-hour observed final. The
+observed final also contains later growth and spot fires. The 800-minute sensitivity is still
+not time-matched. This makes the area, centroid, and overlap results a joint test of model
+and time mismatch, not a clean 6.7-hour test.
+
 ## Base-case metrics
 
 | Metric | Value |
