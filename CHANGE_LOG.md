@@ -5056,3 +5056,9 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   validation tests, and the observed-fire docs. The fixture is 131 × 117 at 100 m, UTM zone
   11N; final rasterized area is 2,987 ha. The raw CFSDS/FireSTARR data remain untracked.
   Dashboard: **GREEN**.
+
+- P161.3: pre-registered the calibration protocol before fitting. Two global parameters only:
+  `wind_multiplier` 0.70–1.30 and `head_ros_multiplier` 0.50–1.50, with 1.0/1.0 as baseline.
+  Fixed 5×5 search (25 runs), weighted score over the P157 metrics, and Dogrib Scenario 2b as
+  holdout-only. Decision rules separate calibration-only from supported transfer and allow a
+  no-go. No calibration numbers exist at registration. Dashboard: **GREEN**.
