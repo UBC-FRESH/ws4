@@ -110,7 +110,7 @@ def _portfolio(tmp_path: Path) -> tuple[Path, Path]:
         "  - account: feature.Volume\n    period: 3\n    minimum: 1000\n"
         "  - account: feature.Volume\n    period: 4\n    minimum: 1000\n"
         "  - account: feature.Volume\n    period: 5\n    minimum: 1000\n"
-        "  - account: feature.Old\n    period: 1\n    minimum: 200\n",
+        "  - account: feature.Old\n    period: 1\n    minimum: 400\n",
         encoding="utf-8",
     )
     return runs, targets
@@ -393,6 +393,46 @@ def test_plan_scenario_library_saves_loads_and_diffs(tmp_path: Path) -> None:
             assert (
                 page.locator('#targets-table [data-field="minimum"]').first.input_value() == "9999"
             )
+            assert errors == []
+            browser.close()
+    finally:
+        server.should_exit = True
+        thread.join(timeout=10)
+
+
+def test_plan_penalty_ledger_shows_binding_targets(tmp_path: Path) -> None:
+    """The Plan ledger ranks realized target penalties and identifies bindings."""
+    server, thread, url = _server(tmp_path)
+    try:
+        with sync_playwright() as playwright:
+            try:
+                browser = playwright.chromium.launch(
+                    headless=True,
+                    args=["--use-gl=swiftshader", "--enable-webgl"],
+                )
+            except Exception as error:  # pragma: no cover - browser not installed
+                pytest.skip(f"chromium is not available: {error}")
+            page = browser.new_page(viewport={"width": 1500, "height": 1000})
+            errors: list[str] = []
+            page.on("pageerror", lambda error: errors.append(str(error)))
+            page.goto(f"{url}/?run=run1&view=plan")
+            page.wait_for_function(
+                "document.querySelector('#penalty-ledger') && "
+                "!document.querySelector('#penalty-ledger').hidden",
+                timeout=15000,
+            )
+            page.wait_for_function(
+                "document.querySelectorAll('#penalty-table tbody tr').length > 0",
+                timeout=15000,
+            )
+            assert "binding" in page.locator("#penalty-summary").inner_text()
+            assert (
+                "below" in page.locator("#penalty-table").inner_text().lower()
+                or "above" in page.locator("#penalty-table").inner_text().lower()
+            )
+            page.check("#penalty-binding-only")
+            page.wait_for_timeout(200)
+            assert page.locator("#penalty-table tbody tr").count() >= 1
             assert errors == []
             browser.close()
     finally:

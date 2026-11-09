@@ -4036,9 +4036,11 @@ def create_app(
         rows: list[dict[str, Any]] = []
         horizon = max((year for year, _ in index), default=-1) + 1
         for target_index, target in enumerate(load_targets(target_file)):
+            penalty_value: float | None = None
             if target.flow:
                 series = flow_series(index, target, horizon)
                 flow_values = list(series.values())
+                penalty_value = flow_penalty(index, target, horizon)
                 value = (
                     max(flow_values)
                     if target.maximum is not None and flow_values
@@ -4049,7 +4051,7 @@ def create_app(
                 status = "inactive"
                 if target.active:
                     status = "met"
-                    if flow_penalty(index, target, horizon) > 0.0:
+                    if penalty_value > 0.0:
                         if (
                             target.maximum is not None
                             and flow_values
@@ -4060,6 +4062,7 @@ def create_app(
                             status = "below"
             else:
                 value = period_value(index, target)
+                penalty_value = penalty(value, target)
                 status = "inactive"
                 if target.active:
                     status = "met"
@@ -4077,7 +4080,7 @@ def create_app(
                     "flow": target.flow,
                     "value": value,
                     "raw_penalty": None if target.flow else raw_penalty(value, target),
-                    "penalty": None if target.flow else penalty(value, target),
+                    "penalty": penalty_value,
                     "scale": normalization_scale(target),
                     "normalization": target.normalization,
                     "priority": target.priority,

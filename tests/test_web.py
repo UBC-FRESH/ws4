@@ -2688,3 +2688,18 @@ def test_scenario_library_rejects_invalid_names_and_documents(tmp_path: Path) ->
     rows[0].pop("period", None)
     rows[0].pop("year", None)
     assert client.post("/api/scenarios", json={"name": "bad", "targets": rows}).status_code == 422
+
+
+def test_run_targets_reports_a_flow_penalty(tmp_path: Path) -> None:
+    """Flow targets contribute a real penalty to the ledger, not a null placeholder."""
+    client, targets = _app(tmp_path)
+    targets.write_text(
+        "targets:\n"
+        "  - account: feature.Volume\n    period: 1\n    flow: even\n"
+        "    minimum: -5\n    maximum: 5\n    min_weight: 10\n    max_weight: 10\n",
+        encoding="utf-8",
+    )
+    rows = client.get("/api/runs/run1/targets").json()
+    assert rows[0]["flow"] == "even"
+    assert rows[0]["penalty"] is not None
+    assert rows[0]["penalty"] > 0.0
