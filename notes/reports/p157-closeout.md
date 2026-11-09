@@ -103,5 +103,5 @@ Artifacts:
 
 ## Pull request
 
-The branch is queued for maintainer approval. Do not merge, tag, release, or change settings
+PR #943 is queued for maintainer approval. Do not merge, tag, release, or change settings
 without approval.

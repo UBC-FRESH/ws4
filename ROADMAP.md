@@ -4633,6 +4633,7 @@ Status: pr-open
 Design note: `notes/design/ws4-fire-behaviour.md`
 Report: `notes/reports/p157-closeout.md`
 Evidence: `notes/reports/p157-observed-validation.md`
+PR: #943
 
 Goal: validate the P156 kernel and growth engine against a public observed fire perimeter,
 with explicit provenance, metrics, tolerances, and limitations.
