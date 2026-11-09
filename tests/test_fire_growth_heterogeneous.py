@@ -10,6 +10,7 @@ from ws4.fire.fuel import FireFuelError
 from ws4.fire.growth import (
     GrowthConfig,
     SiteGrid,
+    WeatherStep,
     effective_wind,
     grow_fire,
     length_to_breadth,
@@ -225,3 +226,71 @@ def test_constant_heterogeneous_grid_preserves_the_analytic_ellipse() -> None:
 
     assert abs(comparison.area_relative_error) < 0.1
     assert abs(comparison.perimeter_relative_error) < 0.3
+
+
+def test_constant_weather_steps_match_the_static_run() -> None:
+    static = grow_fire(_constant_grid(), _config(minutes=20.0))
+    dynamic = grow_fire(
+        _constant_grid(),
+        GrowthConfig(
+            ignition_cells=((12, 12),),
+            max_time_min=20.0,
+            snapshot_interval_min=20.0,
+            neighbor_radius=2,
+            weather_steps=(WeatherStep(0.0, 15.0, 270.0, ffmc=90.0, bui=40.0),),
+        ),
+    )
+
+    assert np.array_equal(
+        np.isfinite(static.ignition_time_min), np.isfinite(dynamic.ignition_time_min)
+    )
+    assert np.allclose(
+        static.ignition_time_min[np.isfinite(static.ignition_time_min)],
+        dynamic.ignition_time_min[np.isfinite(dynamic.ignition_time_min)],
+    )
+    assert dynamic.summary()["weather_mode"] == "time_dependent"
+
+
+def test_a_wind_shift_delays_a_far_eastern_arrival() -> None:
+    grid = _constant_grid(rows=101, cols=101)
+    static = grow_fire(
+        grid,
+        GrowthConfig(
+            ignition_cells=((50, 50),),
+            max_time_min=180.0,
+            snapshot_interval_min=180.0,
+            neighbor_radius=2,
+        ),
+    )
+    shifted = grow_fire(
+        grid,
+        GrowthConfig(
+            ignition_cells=((50, 50),),
+            max_time_min=180.0,
+            snapshot_interval_min=180.0,
+            neighbor_radius=2,
+            weather_steps=(
+                WeatherStep(0.0, 20.0, 270.0, ffmc=90.0, bui=40.0),
+                WeatherStep(10.0, 0.0, 270.0, ffmc=90.0, bui=40.0),
+            ),
+        ),
+    )
+
+    static_arrival = static.ignition_time_min[50, 90]
+    shifted_arrival = shifted.ignition_time_min[50, 90]
+    assert np.isfinite(static_arrival)
+    assert np.isfinite(shifted_arrival)
+    assert shifted_arrival > static_arrival
+
+
+def test_weather_steps_must_start_at_zero_and_be_ordered() -> None:
+    with pytest.raises(FireFuelError, match="start at 0"):
+        GrowthConfig(ignition_cells=((0, 0),), weather_steps=(WeatherStep(1.0, 10.0, 270.0),))
+    with pytest.raises(FireFuelError, match="ordered"):
+        GrowthConfig(
+            ignition_cells=((0, 0),),
+            weather_steps=(
+                WeatherStep(0.0, 10.0, 270.0),
+                WeatherStep(0.0, 20.0, 270.0),
+            ),
+        )

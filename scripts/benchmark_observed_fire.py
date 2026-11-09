@@ -22,8 +22,10 @@ from ws4.fire.observed import ObservedFire, load_dogrib  # noqa: E402
 from ws4.fire.observed_view import write_comparison_svg  # noqa: E402
 
 SCENARIOS: tuple[str, ...] = (
+    "heterogeneous-hourly-1372",
     "heterogeneous",
     "homogeneous",
+    "heterogeneous-hourly-402",
     "heterogeneous-wind-27",
     "heterogeneous-no-wind",
     "heterogeneous-long-1372",
@@ -47,6 +49,14 @@ def run_scenario(fire: ObservedFire, name: str) -> DogribCase:
     """
     if name == "homogeneous":
         return run_dogrib_case(fire, scenario=name)
+    if name == "heterogeneous-hourly-1372":
+        return run_dogrib_case(
+            fire, scenario=name, heterogeneous=True, hourly_weather=True, duration_min=1372.0
+        )
+    if name == "heterogeneous-hourly-402":
+        return run_dogrib_case(
+            fire, scenario=name, heterogeneous=True, hourly_weather=True, duration_min=402.0
+        )
     if name == "heterogeneous-wind-27":
         return run_dogrib_case(fire, scenario=name, heterogeneous=True, wind_kmh=27.0)
     if name == "heterogeneous-no-wind":
@@ -80,13 +90,14 @@ def main() -> None:
     base_case: DogribCase | None = None
     for name in SCENARIOS:
         case = run_scenario(fire, name)
-        if name == "heterogeneous":
+        if name == "heterogeneous-hourly-1372":
             base_case = case
         row: dict[str, object] = {
             "scenario": case.scenario,
             "duration_min": case.duration_min,
             "fuel_type": case.fuel_type,
             "fuel_mode": case.fuel_mode,
+            "weather_mode": case.weather_mode,
             "ffmc": case.ffmc,
             "bui": case.bui,
             "wind_kmh": case.wind_kmh,

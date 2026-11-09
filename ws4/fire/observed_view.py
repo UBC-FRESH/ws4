@@ -128,6 +128,7 @@ def render_comparison_svg(
         f"Target {fire.event_end:%d %b %H:%M}",
         f"Fuel {case.fuel_mode}",
         f"FFMC {case.ffmc:.1f} · BUI {case.bui:.0f}",
+        f"Weather {case.weather_mode}",
         f"Wind {case.wind_kmh:.0f} km/h",
         "No spotting",
     ]

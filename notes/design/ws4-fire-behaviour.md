@@ -150,8 +150,11 @@ mapping; the first P157.2 numbers were vertically flipped and are invalid. P157.
 per-cell fuel, blend, slope, aspect, and elevation to the Huygens growth engine. The observed-
 grid 402-minute case is 8,287 ha vs 10,219 ha (−18.9%), perimeter +12.2%, centroid 9.82 km,
 IoU 0.207, Sorensen 0.343, and 29.1° orientation error. It passes only the loose area,
-perimeter, and orientation screen; centroid and overlap fail. The run is not time-matched, has
-no hourly weather or spotting, and has no external Prometheus/FARSITE parity test.
+perimeter, and orientation screen; centroid and overlap fail. P157.7 adds time-dependent
+growth and a 1,372-minute time-matched run with hourly weather. That run is 29,989 ha
+(+193.5%), perimeter +230.0%, centroid 2.96 km, IoU 0.255, Sorensen 0.407, and 9.1°
+orientation error. It passes centroid and orientation but fails area, perimeter, and overlap.
+Spotting, hourly BUI, and an external Prometheus/FARSITE parity test remain missing.
 
 ## 10. What follows
 

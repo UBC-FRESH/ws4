@@ -82,36 +82,30 @@ Comparison harness
 ``ws4.fire.comparison`` rasterizes the observed rings and the simulated burned mask onto the
 same grid and reports area bias, perimeter bias, centroid distance, IoU, Sorensen, and
 principal-axis orientation. ``run_dogrib_case`` starts from the observed 13:00 perimeter and
-can use either a homogeneous C2 reference or the observed per-cell fuel, blend, slope, aspect,
-and elevation grids. The benchmark base case uses the observed grid.
+can use a homogeneous C2 reference or the observed per-cell fuel, terrain, and hourly weather.
 
 ESRI ASCII grids store row zero at the north edge. P157.5 corrected an earlier north/south
-row flip in the comparison harness; the earlier P157.2 numbers are invalid.
+row flip; the earlier P157.2 numbers are invalid.
 
-The comparison is not time-matched. The run is 402 minutes, while the only final observed
-perimeter is at 11:52 the next day, 1,372 minutes after the start. The scores therefore mix
-model error with the missing 16 hours of observed growth. A 1,372-minute constant-weather run
-is also invalid because it overpredicts area by 385%.
+The primary case is now time-matched: observed grid, hourly weather, 1,372 minutes to the
+11:52 perimeter. FFMC starts at 92.7 and is advanced hourly; BUI is held at 105.0 because the
+stream has no hourly BUI conversion.
 
-Observed-grid case, 402 minutes:
+Time-matched observed-grid result:
 
-- area 8,287 ha vs 10,219 ha (−18.9%);
-- perimeter 179.8 km vs 160.2 km (+12.2%);
-- orientation error 29.1°;
-- centroid distance 9.82 km;
-- IoU 0.207 and Sorensen 0.343.
+- area 29,989 ha vs 10,219 ha (+193.5%);
+- perimeter 528.6 km vs 160.2 km (+230.0%);
+- centroid 2.96 km;
+- orientation error 9.1°;
+- IoU 0.255 and Sorensen 0.407.
 
-Homogeneous C2 reference:
+The 402-minute observed-grid case is not time-matched: 8,287 ha (−18.9%), perimeter +12.2%,
+centroid 9.82 km, IoU 0.207, Sorensen 0.343, orientation 29.1°. The homogeneous C2 reference
+is 14,126 ha (+38.2%), perimeter +76.2%, centroid 6.08 km, IoU 0.265, Sorensen 0.419,
+orientation 0.5°.
 
-- area 14,126 ha (+38.2%);
-- perimeter 282.2 km (+76.2%);
-- orientation error 0.5°;
-- centroid distance 6.08 km;
-- IoU 0.265 and Sorensen 0.419.
-
-The observed-grid case passes the loose area, perimeter, and orientation screen; that is not
-a validation pass. The centroid and overlap checks fail in both cases. The full evidence is
-in ``notes/reports/p157-observed-validation.md`` and
+The time-matched run passes the centroid and orientation checks but fails area, perimeter,
+IoU, and Sorensen. The full evidence is in ``notes/reports/p157-observed-validation.md`` and
 ``notes/reports/p157-dogrib-results.csv``. The same view is served read-only at
 ``/api/fire/observed/dogrib.svg``.
 
@@ -124,8 +118,9 @@ Limits
 
 - The spatial growth is an independent reimplementation of published FBP and Huygens logic.
   No runnable Prometheus/FARSITE oracle was used for parity.
-- The run uses one representative weather state, not the hourly stream.
+- Hourly FFMC uses the standard FFMC equation on hourly weather; BUI is held constant.
 - Spotting is absent; the observed final contains 25 polygons, including spot fires.
+- The time-matched run overpredicts area by 193%, so it is not an operational match.
 - The event window ends at the 11:52 perimeter in this archive. The Prometheus scenario text
   describes a slightly later end; the loader records the archive's actual timestamp.
 - The weather and perimeter times are local time. No daylight-saving conversion is applied.

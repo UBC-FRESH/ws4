@@ -12,6 +12,7 @@ from ws4.fire.comparison import (
     ComparisonError,
     centroid,
     compare_masks,
+    hourly_weather_steps,
     observed_mask,
     orientation,
     perimeter_length,
@@ -131,3 +132,20 @@ def test_dogrib_heterogeneous_case_uses_the_observed_grids() -> None:
     assert case.growth.spread_azimuth_deg_grid is not None
     positive = case.growth.head_ros_grid[case.growth.head_ros_grid > 0.0]
     assert len(np.unique(positive)) > 5
+
+
+def test_hourly_weather_steps_cover_the_dogrib_event() -> None:
+    fire = load_dogrib(FIXTURE)
+    steps = hourly_weather_steps(fire)
+
+    assert len(steps) == 23
+    assert steps[0].start_min == pytest.approx(0.0)
+    assert steps[0].wind_kmh == pytest.approx(21.0)
+    assert steps[-1].start_min == pytest.approx(1320.0)
+    first_ffmc = steps[0].ffmc
+    overnight_ffmc = steps[12].ffmc
+    assert first_ffmc is not None
+    assert overnight_ffmc is not None
+    assert first_ffmc == pytest.approx(92.7, abs=0.2)
+    assert overnight_ffmc < first_ffmc
+    assert steps[0].bui == pytest.approx(105.0, abs=0.5)

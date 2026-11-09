@@ -1,24 +1,24 @@
-# P157 Dogrib comparison: corrected orientation, homogeneous and heterogeneous cases
+# P157 Dogrib comparison: corrected rows, per-cell growth, and hourly weather
 
 Date: 2026-11-09
 Branch: `feature/p157-observed-fire`
-Tasks: P157.2 (#926), P157.5 (#939), P157.6 (#940)
+Tasks: P157.2 (#926), P157.5 (#939), P157.6 (#940), P157.7 (#941)
 Parent: P157 (#923)
 
 ## Correction
 
-The first P157.2 result was computed with a north/south row flip. The ESRI ASCII grids store
-row zero at the north edge, but the comparison harness mapped projected y to rows from the
-south edge. That flipped every observed mask and seeded the simulation in the wrong place.
+The first P157.2 result was computed with a north/south row flip. ESRI ASCII grids store row
+zero at the north edge, but the comparison harness mapped projected y to rows from the south
+edge. That flipped every observed mask and seeded the simulation in the wrong place.
 
 The earlier P157.2 numbers (6,259 ha, −38.8% area bias, 14.29 km centroid error, IoU 0.070)
-are invalid. They are retained only in git history. P157.5 fixes the row mapping and adds a
-top-row/bottom-row regression test.
+are invalid. P157.5 fixes the mapping and adds a top-row/bottom-row regression test.
 
 ## Question
 
-Can the P156 growth engine reproduce the observed Dogrib fire perimeter when it is started
-from the observed 13:00 perimeter and run through the 6.7-hour wind event?
+Can the WS4 FBP/Huygens growth engine reproduce the observed Dogrib perimeter when it starts
+from the observed 13:00 perimeter, uses the observed per-cell fuel and terrain, and runs with
+the hourly weather to the 11:52 target?
 
 ## Inputs
 
@@ -27,130 +27,111 @@ from the observed 13:00 perimeter and run through the 6.7-hour wind event?
 - Target: observed 2001-10-17 11:52 perimeter, 10,219 ha across 25 polygons, including spot
   fires.
 - Grid: 357 × 223 cells at 100 m; custom NAD83 Transverse Mercator; row zero north.
-- Weather: FFMC 92.7 and BUI 105.0 derived from the event weather stream with the Prometheus
-  starting DMC 64 and DC 535; wind 21.0 km/h from 267.6°.
-- Duration: 402 minutes (6.7 hours).
+- Fuel: observed FBP grid per cell. O1A/O1B maps to O1B; D1/D2 maps to D1; M1/M2 maps to M1
+  with the labelled conifer percentage. These are documented assumptions.
+- Terrain: slope and aspect derived from the north-first elevation grid; per-cell elevation.
+- Weather: hourly wind, temperature, relative humidity, and precipitation. FFMC starts at the
+  event-day value and is advanced with the standard FFMC equation on the hourly stream; BUI
+  is held at 105.0 because the stream has no defensible hourly BUI conversion.
+- Duration: 1,372 minutes, ending at the observed 11:52 perimeter.
 - Ignition: every burnable cell inside the observed start perimeter (686 cells).
-- Homogeneous reference: C2, 32% slope, 180° aspect.
-- Observed-grid case: canonical FBP fuel per cell, conifer percentages for M1/M2 labels,
-  slope and aspect derived from the north-first elevation grid, per-cell elevation for the
-  foliar-moisture calculation. O1A/O1B is mapped to O1B; D1/D2 is mapped to D1; M1/M2 is
-  mapped to M1 with the labelled conifer percentage. These mappings are documented
-  assumptions, not hidden calibration.
-
-Neither run is a calibrated case.
+- Spotting: absent.
 
 ## Time alignment
 
-The run is 402 minutes, from 13:00 to about 19:42 local. The only final observed perimeter
-is at 11:52 the next day, 1,372 minutes after the start. The comparison is therefore **not
-time-matched**: a 6.7-hour simulation is scored against a 23-hour observed final. The
-observed final also contains later growth and spot fires. The 1,372-minute sensitivity has
-the right duration but still uses one constant weather state, so it too is not a valid
-time-weather match. This makes the area, centroid, and overlap results a joint test of model,
-weather, and time mismatch, not a clean 6.7-hour test.
+This is the first time-matched run. It starts at 13:00 and ends at 11:52 the next day,
+1,372 minutes later. The earlier 402-minute cases are retained as sensitivity runs but are
+not time-matched to the final perimeter.
 
-## Observed-grid case
+## Primary result: observed grid, hourly weather, 1,372 minutes
 
 | Metric | Value |
 | --- | --- |
-| Simulated area | 8,287 ha |
+| Simulated area | 29,989 ha |
 | Observed area | 10,219 ha |
-| Area bias | −18.9% |
-| Simulated raster perimeter | 179.8 km |
+| Area bias | +193.5% |
+| Simulated raster perimeter | 528.6 km |
 | Observed raster perimeter | 160.2 km |
-| Perimeter bias | +12.2% |
-| Centroid distance | 9.82 km |
-| IoU | 0.207 |
-| Sorensen | 0.343 |
-| Orientation error | 29.1° |
-| Mean per-cell head ROS | 31.0 m/min |
-| Mean per-cell length-to-breadth | 3.15 |
+| Perimeter bias | +230.0% |
+| Centroid distance | 2.96 km |
+| IoU | 0.255 |
+| Sorensen | 0.407 |
+| Orientation error | 9.1° |
+| Start cells | 686 |
+| FFMC range | 92.7 → 84.7 |
+| BUI | 105.0 constant |
 
-## Homogeneous reference
+The time-matched run moves the centroid close to the observed centroid and aligns the
+principal axis. It grossly overpredicts area and perimeter: the simulated fire covers the
+observed footprint and a large area to the north, west, and south. It does not reproduce the
+observed final shape.
 
-| Metric | Value |
-| --- | --- |
-| Simulated area | 14,126 ha |
-| Area bias | +38.2% |
-| Perimeter bias | +76.2% |
-| Centroid distance | 6.08 km |
-| IoU | 0.265 |
-| Sorensen | 0.419 |
-| Orientation error | 0.5° |
-| Head ROS | 39.9 m/min |
-| Length-to-breadth | 3.26 |
-| Effective wind | 25.5 km/h at 55.5° |
+## Sensitivity set
 
-The observed-grid case improves area and perimeter but moves the centroid farther away and
-loses overlap. The homogeneous case has a better centroid and principal-axis alignment but
-grossly overpredicts area and perimeter. Neither is a footprint match.
+| Scenario | Duration | Weather | Area (ha) | Area bias | Perimeter bias | Centroid (km) | IoU | Sorensen | Orientation |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| observed grid, hourly | 1,372 | hourly | 29,989 | +193.5% | +230.0% | 2.96 | 0.255 | 0.407 | 9.1° |
+| observed grid | 402 | constant | 8,287 | −18.9% | +12.2% | 9.82 | 0.207 | 0.343 | 29.1° |
+| homogeneous C2 | 402 | constant | 14,126 | +38.2% | +76.2% | 6.08 | 0.265 | 0.419 | 0.5° |
+| observed grid, hourly | 402 | hourly | 17,446 | +70.7% | +112.4% | 5.11 | 0.188 | 0.316 | 13.2° |
+| observed grid, wind 27 | 402 | constant | 11,498 | +12.5% | +54.8% | 7.76 | 0.232 | 0.376 | 27.9° |
+| observed grid, no wind | 402 | constant | 5,603 | −45.2% | −33.3% | 12.24 | 0.130 | 0.230 | 27.2° |
+| observed grid | 1,372 | constant | 49,583 | +385.2% | +346.2% | 2.21 | 0.190 | 0.319 | 20.2° |
+
+The 1,372-minute constant-weather run is worse than the hourly run. The hourly FFMC drop
+reduces the overnight spread, but not enough to match the observed 10,219 ha. No case passes
+all screens.
+
+## Screening tolerances
+
+These are screening tolerances, not operational acceptance.
+
+| Check | Tolerance | Hourly 1,372 | Result |
+| --- | --- | --- | --- |
+| Area bias | ±50% | +193.5% | fail |
+| Perimeter bias | ±35% | +230.0% | fail |
+| Orientation error | ≤30° | 9.1° | pass |
+| Centroid distance | ≤5 km | 2.96 km | pass |
+| IoU | ≥0.30 | 0.255 | fail |
+| Sorensen | ≥0.45 | 0.407 | fail |
+
+The time-matched run passes the centroid and orientation checks but fails area, perimeter,
+IoU, and Sorensen. That is a different failure from the 402-minute case: the location is
+close, but the burned area is about three times too large.
 
 ## View
 
 ![Dogrib observed versus simulated perimeter](p157-dogrib-view.svg)
 
 The SVG is generated by `scripts/benchmark_observed_fire.py` and served read-only at
-`/api/fire/observed/dogrib.svg`. Orange is the observed-grid simulated mask; dashed blue is
-the observed 13:00 start; black is the observed final perimeter. The right panel carries the
-run and target times, inputs, and metric summary. The observed geometry is read-only.
-
-## Screening tolerances
-
-These are screening tolerances, not operational acceptance.
-
-| Check | Tolerance | Observed grid | Homogeneous | Result |
-| --- | --- | --- | --- | --- |
-| Area bias | ±50% | −18.9% | +38.2% | both pass |
-| Perimeter bias | ±35% | +12.2% | +76.2% | grid passes, homogeneous fails |
-| Orientation error | ≤30° | 29.1° | 0.5° | both pass |
-| Centroid distance | ≤5 km | 9.82 km | 6.08 km | both fail |
-| IoU | ≥0.30 | 0.207 | 0.265 | both fail |
-| Sorensen | ≥0.45 | 0.343 | 0.419 | both fail |
-
-The observed-grid case passes only the loose area, perimeter, and orientation screen. The
-centroid and overlap checks fail. The orientation value is a principal-axis statistic, not
-directional or shape agreement.
-
-## Sensitivity set
-
-All sensitivity runs use the observed fuel and terrain grids except the homogeneous row.
-
-| Scenario | Area (ha) | Area bias | Perimeter bias | Centroid (km) | IoU | Sorensen | Orientation error |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| observed grid | 8,287 | −18.9% | +12.2% | 9.82 | 0.207 | 0.343 | 29.1° |
-| homogeneous C2 | 14,126 | +38.2% | +76.2% | 6.08 | 0.265 | 0.419 | 0.5° |
-| grid, wind 27 km/h | 11,498 | +12.5% | +54.8% | 7.76 | 0.232 | 0.376 | 27.9° |
-| grid, no wind | 5,603 | −45.2% | −33.3% | 12.24 | 0.130 | 0.230 | 27.2° |
-| grid, 1,372 min | 49,583 | +385.2% | +346.2% | 2.21 | 0.190 | 0.319 | 20.2° |
-
-More wind improves the centroid but overpredicts area and perimeter. The 1,372-minute
-constant-weather run moves the centroid closer but burns almost five times the observed
-area; it is evidence that a single daytime weather state cannot represent the overnight
-event.
+`/api/fire/observed/dogrib.svg`. Orange is the hourly observed-grid simulation; dashed blue
+is the observed 13:00 start; black is the observed final perimeter. The right panel carries
+the run and target times, fuel, weather, and metric summary. The observed geometry is
+read-only.
 
 ## Validation performed
 
-- Top-row/bottom-row regression test for the observed raster mapping.
-- Homogeneous equivalence: a constant heterogeneous grid produces the same ignition mask
-  and arrival times as the existing homogeneous engine.
-- Exact ellipse: the constant heterogeneous grid preserves the analytic ellipse area and
-  perimeter within the existing benchmark tolerances.
-- Per-cell head ROS, length-to-breadth, and spread azimuth match the FBP kernel at the same
-  cell.
-- Two-fuel and terrain-gradient tests show local behaviour changes the front.
-- The Dogrib observed-grid case runs from the observed start perimeter and is deterministic.
+- North-first row mapping with a top-row/bottom-row regression test.
+- Homogeneous equivalence: a constant heterogeneous grid reproduces the existing homogeneous
+  engine.
+- Exact ellipse area and perimeter for a constant heterogeneous grid.
+- Per-cell head ROS, length-to-breadth, and spread azimuth against the FBP kernel.
+- Two-fuel and terrain-gradient tests.
+- Time-dependent weather: constant steps reproduce the static run; a wind shift delays a far
+  eastern arrival.
+- Hourly weather steps cover the 23-row Dogrib event; overnight FFMC is lower than the start.
 
 ## What this does not verify
 
 - **External model parity.** No runnable Prometheus/FARSITE oracle was used. This is an
   independent reimplementation of published FBP and Huygens logic, not a line-by-line parity
   test against a known-good executable.
-- **Hourly weather.** The run uses one representative weather state. The 1,372-minute
-  constant-weather run overpredicts area by 385%, so this is not a valid overnight run.
+- **Hourly BUI.** BUI is held at 105.0. The hourly FFMC is the standard FFMC equation applied
+  to hourly weather, which is an approximation.
 - **Spotting.** The observed final contains 25 polygons, including spot fires. The model has
   no spotting.
-- **Time alignment.** The 402-minute run is not matched to the 11:52 final perimeter.
+- **Fuel and weather uncertainty.** The observed fuel crosswalk and the constant BUI are
+  documented assumptions, not calibrated values.
 - **A regional calibration.** This is one historical case.
 
 ## Reproduction
@@ -167,8 +148,7 @@ Artifacts:
 
 ## Recommendation
 
-Do not close P157 as a validated observed-fire match. The observed-grid case is a real
-per-cell FBP/Huygens run and its standard-case validation passes, but the footprint checks
-fail and the time/weather match is missing. The next step is a time-dependent run with the
-hourly weather stream and the 11:52 target, then an external oracle comparison if a runnable
-Prometheus/FARSITE build is available. Do not calibrate the current cases to Dogrib.
+Do not close P157 as a validated observed-fire match. The time-matched run is now real, but
+it overpredicts area by 193% and fails perimeter and overlap. The next useful checks are an
+external Prometheus/FARSITE parity run and a documented treatment of spotting and hourly BUI.
+Do not calibrate the current cases to Dogrib.

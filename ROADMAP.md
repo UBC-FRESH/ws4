@@ -4640,7 +4640,7 @@ with explicit provenance, metrics, tolerances, and limitations.
 - [x] P157.3 Observed-vs-simulated perimeter view (#924)
 - [x] P157.5 Correct observed-grid row orientation (#939)
 - [x] P157.6 Heterogeneous spatial FBP growth (#940)
-- [ ] P157.7 Hourly weather and time-matched Dogrib run (#941)
+- [x] P157.7 Hourly weather and time-matched Dogrib run (#941)
 - [ ] P157.4 Verify and close out observed-fire validation (#927)
 
 Acceptance:

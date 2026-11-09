@@ -42,6 +42,7 @@ def test_render_comparison_svg_contains_both_perimeters_and_metrics(
     assert "Simulated" in svg
     assert "Run 30 min" in svg
     assert "Target 17 Oct 11:52" in svg
+    assert "Weather constant" in svg
     assert "No spotting" in svg
     assert svg.count("<path") >= 4
     assert len(svg) > 10_000

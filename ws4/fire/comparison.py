@@ -17,11 +17,18 @@ from dataclasses import dataclass
 import numpy as np
 import pandas as pd
 
-from .fwi import DailyWeather, FWIState, fwi_sequence, initial_fwi_state
+from .fwi import (
+    DailyWeather,
+    FWIState,
+    fine_fuel_moisture_code,
+    fwi_sequence,
+    initial_fwi_state,
+)
 from .growth import (
     GrowthConfig,
     GrowthResult,
     SiteGrid,
+    WeatherStep,
     grow_fire,
     slope_aspect_from_elevation,
 )
@@ -105,6 +112,8 @@ class DogribCase:
         FBP fuel-type label; for a heterogeneous run this is the fallback label.
     fuel_mode : str
         Fuel description, such as ``homogeneous C2`` or ``observed grid``.
+    weather_mode : str
+        Weather description, ``constant`` or ``hourly``.
     ffmc : float
         Fine Fuel Moisture Code.
     bui : float
@@ -130,6 +139,7 @@ class DogribCase:
     scenario: str
     fuel_type: str
     fuel_mode: str
+    weather_mode: str
     ffmc: float
     bui: float
     wind_kmh: float
@@ -153,6 +163,7 @@ class DogribCase:
             "scenario": self.scenario,
             "fuel_type": self.fuel_type,
             "fuel_mode": self.fuel_mode,
+            "weather_mode": self.weather_mode,
             "ffmc": self.ffmc,
             "bui": self.bui,
             "wind_kmh": self.wind_kmh,
@@ -468,12 +479,77 @@ def reference_weather(fire: ObservedFire) -> dict[str, float]:
     }
 
 
+def hourly_weather_steps(
+    fire: ObservedFire,
+    *,
+    ffmc: float | None = None,
+    bui: float | None = None,
+) -> tuple[WeatherStep, ...]:
+    """Build hourly wind steps from the observed weather stream.
+
+    FFMC starts at the event-day value and is advanced with the standard FFMC equation on the
+    hourly temperature, relative humidity, wind, and precipitation. BUI is held at the event-day
+    value because the hourly stream has no defensible hourly BUI conversion. This is a documented
+    approximation, not a claim of hourly FWI parity.
+
+    Parameters
+    ----------
+    fire : ObservedFire
+        Observed fire.
+    ffmc, bui : float or None, optional
+        Moisture codes; None uses the event-day reference values.
+
+    Returns
+    -------
+    tuple of WeatherStep
+        Ordered steps starting at 0.
+    """
+    reference = reference_weather(fire)
+    code = reference["ffmc"] if ffmc is None else ffmc
+    buildup = reference["bui"] if bui is None else bui
+    frame = fire.weather_between(fire.event_start, fire.event_end)
+    if frame["local_time"].iloc[0] != fire.event_start:
+        raise ComparisonError("weather stream does not start at the event start")
+    winds = frame["wind_speed_kmh"].astype(float).tolist()
+    directions = frame["wind_direction_deg"].astype(float).tolist()
+    temperatures = frame["temperature_c"].astype(float).tolist()
+    humidities = frame["relative_humidity_percent"].astype(float).tolist()
+    precipitation = frame["precipitation_mm"].astype(float).tolist()
+    steps: list[WeatherStep] = []
+    current_ffmc = code
+    for index, (wind, direction, temperature, humidity, rain) in enumerate(
+        zip(
+            winds,
+            directions,
+            temperatures,
+            humidities,
+            precipitation,
+            strict=True,
+        )
+    ):
+        if index > 0:
+            current_ffmc = fine_fuel_moisture_code(current_ffmc, temperature, humidity, wind, rain)
+        steps.append(
+            WeatherStep(
+                start_min=float(index * 60),
+                wind_kmh=wind,
+                wind_direction_deg=direction,
+                ffmc=current_ffmc,
+                bui=buildup,
+            )
+        )
+    if not steps or steps[0].start_min != 0.0:
+        raise ComparisonError("weather stream does not start at the event start")
+    return tuple(steps)
+
+
 def run_dogrib_case(
     fire: ObservedFire,
     *,
     scenario: str = "base",
     fuel_type: str = "C2",
     heterogeneous: bool = False,
+    hourly_weather: bool = False,
     ffmc: float | None = None,
     bui: float | None = None,
     wind_kmh: float | None = None,
@@ -494,6 +570,8 @@ def run_dogrib_case(
         Homogeneous FBP fuel-type fallback (default ``C2``).
     heterogeneous : bool, optional
         Use the observed per-cell fuel, blend, and terrain grids (default False).
+    hourly_weather : bool, optional
+        Use the observed hourly wind steps (default False).
     ffmc, bui, wind_kmh, wind_direction_deg : float or None, optional
         Weather overrides; None uses :func:`reference_weather`.
     slope_percent : float, optional
@@ -516,10 +594,18 @@ def run_dogrib_case(
     weather = reference_weather(fire)
     ffmc_value = weather["ffmc"] if ffmc is None else ffmc
     bui_value = weather["bui"] if bui is None else bui
-    wind_value = weather["wind_kmh"] if wind_kmh is None else wind_kmh
-    direction_value = (
-        weather["wind_direction_deg"] if wind_direction_deg is None else wind_direction_deg
-    )
+    if hourly_weather:
+        steps = hourly_weather_steps(fire, ffmc=ffmc_value, bui=bui_value)
+        wind_value = steps[0].wind_kmh
+        direction_value = steps[0].wind_direction_deg
+        weather_mode = "hourly"
+    else:
+        steps = None
+        wind_value = weather["wind_kmh"] if wind_kmh is None else wind_kmh
+        direction_value = (
+            weather["wind_direction_deg"] if wind_direction_deg is None else wind_direction_deg
+        )
+        weather_mode = "constant"
     rows, cols = fire.grid.nrows, fire.grid.ncols
     if heterogeneous:
         fuel_grid = fire.fbp_fuel_grid()
@@ -575,6 +661,7 @@ def run_dogrib_case(
             max_time_min=duration_min,
             snapshot_interval_min=duration_min,
             neighbor_radius=2,
+            weather_steps=steps,
         ),
     )
     simulated = np.isfinite(growth.ignition_time_min)
@@ -584,6 +671,7 @@ def run_dogrib_case(
         scenario=scenario,
         fuel_type=fuel_type,
         fuel_mode=fuel_mode,
+        weather_mode=weather_mode,
         ffmc=ffmc_value,
         bui=bui_value,
         wind_kmh=wind_value,

@@ -4933,3 +4933,12 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   29.1° orientation error. The run passes only the loose area/perimeter/orientation screen;
   centroid and overlap fail. No external Prometheus/FARSITE parity, hourly weather, or
   spotting yet. Dashboard: **GREEN**.
+
+- P157.7: added time-dependent growth. `WeatherStep` and `GrowthConfig.weather_steps` drive a
+  FIFO edge-travel integration through piecewise-constant weather. The Dogrib case builds 23
+  hourly steps from the weather stream, advances FFMC with the standard equation, and holds BUI
+  at 105.0. The 1,372-minute observed-grid run is 29,989 ha vs 10,219 (+193.5%), perimeter
+  +230.0%, centroid 2.96 km, IoU 0.255, Sorensen 0.407, orientation 9.1°. It passes centroid
+  and orientation but fails area, perimeter, and overlap. The 1,372-minute constant-weather run
+  is 49,583 ha (+385.2%). Added wind-shift, constant-step, and hourly-step tests. No external
+  Prometheus/FARSITE parity, hourly BUI, or spotting. Dashboard: **GREEN**.

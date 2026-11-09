@@ -466,6 +466,8 @@ items are enhancements and maintenance.
   fixture, contract, comparison harness, SVG/API view, and per-cell fuel/terrain growth are
   implemented. The observed-grid 402-minute case is −18.9% area, +12.2% perimeter, 9.82 km
   centroid error, IoU 0.207, Sorensen 0.343, and 29.1° orientation error. It passes only the
-  loose area/perimeter/orientation screen; centroid and overlap fail. Hourly weather,
-  time-matched growth, spotting, and an external Prometheus/FARSITE parity test are missing.
-  Target: P157.7 then P157.4 close-out.
+  loose area/perimeter/orientation screen; centroid and overlap fail. P157.7 adds time-matched
+  hourly growth: 29,989 ha (+193.5%), perimeter +230.0%, centroid 2.96 km, IoU 0.255, Sorensen
+  0.407, orientation 9.1°. It passes centroid/orientation but fails area/perimeter/overlap.
+  Hourly BUI, spotting, and an external Prometheus/FARSITE parity test remain missing. Target:
+  P157.4 close-out only after those limits are resolved or explicitly accepted.
