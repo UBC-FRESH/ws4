@@ -5035,3 +5035,9 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   Sorensen 0.430, centroid 6.80 km, and 15.7°; conservation of mass and momentum (2d) is
   5,251 ha (−48.6%), perimeter −14.9%, IoU 0.237, Sorensen 0.384, centroid 8.99 km, and
   32.3°. Neither wind method explains the 2b overprediction. Dashboard: **GREEN**.
+
+- P160.4: closed out the phase with the fixed 2b/2c/2d matrix. The threshold gate leaves 2b
+  unchanged; the literal RH reading stops growth; the WindNinja 2c/2d grids underburn and fail
+  the spatial screens. Recorded the third-party data licence limit, the nearest-direction
+  selection limit, and the recommendation to acquire a second independent fire before fitting.
+  No calibration was performed. Dashboard: **GREEN**.

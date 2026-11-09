@@ -158,7 +158,7 @@ exists and the maintainer approves it.
 | P157 Observed fire and perimeter validation | #923 | `feature/p157-observed-fire` | pr-open |
 | P158 Plan scenario matrix | #928 | `feature/p158-plan-matrix` | complete |
 | P159 Fire surrogate feasibility | #946 | `feature/p159-fire-surrogate` | planned |
-| P160 Dogrib burning conditions and wind-grid fidelity | #947 | `feature/p160-dogrib-wind-thresholds` | active |
+| P160 Dogrib burning conditions and wind-grid fidelity | #947 | `feature/p160-dogrib-wind-thresholds` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -4725,11 +4725,12 @@ Acceptance:
 
 Parent issue: #947
 Branch: `feature/p160-dogrib-wind-thresholds`
-Status: active
+Status: pr-open
 Design note: `notes/design/ws4-fire-behaviour.md`
 Evidence: `notes/reports/p157-observed-validation.md`
 Matrix: `notes/reports/p160-dogrib-matrix.md`
-Close-out: `notes/reports/p157-closeout.md`
+Report: `notes/reports/p160-closeout.md`
+PR: #947
 
 Goal: test whether the remaining Dogrib area/perimeter overprediction is explained by the
 documented Prometheus burning-condition thresholds and the WindNinja scenario 2c/2d wind
@@ -4738,7 +4739,7 @@ grids, without calibrating WS4 to the observed perimeter.
 - [x] P160.1 Burning-condition threshold contract and gate (#948)
 - [x] P160.2 WindNinja 2c/2d wind-grid inputs (#949)
 - [x] P160.3 Run the 2b/2c/2d comparison matrix (#950)
-- [ ] P160.4 Close out with evidence and limits (#951)
+- [x] P160.4 Close out with evidence and limits (#951)
 
 Acceptance:
 
