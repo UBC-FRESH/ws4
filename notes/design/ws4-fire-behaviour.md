@@ -144,8 +144,14 @@ Prometheus source, archive, custom NAD83 Transverse Mercator, 100 m grid, local 
 ignition point, hourly weather, FBP fuel grid, elevation grid, and observed perimeters. The
 loader validates grid agreement, fuel lookup coverage, hourly weather continuity, event-window
 coverage, ignition containment, and perimeter overlap. The fixture has a 935 ha start perimeter
-and a 10,223 ha final perimeter across 25 polygons, including spot fires. The comparison
-harness and metrics are P157.2.
+and a 10,223 ha final perimeter across 25 polygons, including spot fires. P157.2 adds the
+comparison harness and metrics. P157.3 adds the SVG view. P157.5 corrects the north-first row
+mapping; the first P157.2 numbers were vertically flipped and are invalid. P157.6 adds
+per-cell fuel, blend, slope, aspect, and elevation to the Huygens growth engine. The observed-
+grid 402-minute case is 8,287 ha vs 10,219 ha (−18.9%), perimeter +12.2%, centroid 9.82 km,
+IoU 0.207, Sorensen 0.343, and 29.1° orientation error. It passes only the loose area,
+perimeter, and orientation screen; centroid and overlap fail. The run is not time-matched, has
+no hourly weather or spotting, and has no external Prometheus/FARSITE parity test.
 
 ## 10. What follows
 
@@ -169,8 +175,9 @@ harness and metrics are P157.2.
   separate.
 - The derived intensity and flame length depend on the heat yield and consumption fraction;
   those are scene parameters and must be visible in the event record.
-- The growth grid is homogeneous in fuel and weather; heterogeneous fuel is a later task. The
-  event log and accounts carry the kernel outputs; the P155 viewer coupling is separate.
+- The growth grid supports per-cell fuel and terrain. Weather is still one representative
+  state; hourly weather is the next task. The event log and accounts carry the kernel outputs;
+  the P155 viewer coupling is separate.
 - The growth perimeter is the raster cell-edge length, not a sub-cell contour. The circle
   perimeter is about 16 percent above the analytic circle on the test grid.
 - C6 slope adjustment is unsupported; the engine raises rather than silently substituting a

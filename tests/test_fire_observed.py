@@ -6,6 +6,7 @@ import json
 import shutil
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 import pytest
 from ws4.fire.observed import (
@@ -133,3 +134,26 @@ def test_loader_rejects_a_weather_gap(tmp_path: Path) -> None:
     weather.to_csv(broken / "weather_B3_hourly_20010925to1030.csv", index=False)
     with pytest.raises(ObservedFireError, match="gap"):
         load_dogrib(broken)
+
+
+def test_fbp_fuel_grid_maps_dogrib_variants() -> None:
+    fire = load_dogrib(FIXTURE)
+    fuel = fire.fbp_fuel_grid()
+    conifer, dead, closure = fire.fbp_blend_grids()
+
+    assert fuel.shape == fire.fuel_codes.shape
+    assert set(fuel[fuel != None]) <= {  # noqa: E711 - object array comparison
+        "C1",
+        "C2",
+        "C3",
+        "C4",
+        "C7",
+        "D1",
+        "O1B",
+        "M1",
+    }
+    assert dead.shape == closure.shape == fuel.shape
+    row, col = np.argwhere(fire.fuel_codes == 640)[0]
+    assert fuel[row, col] == "M1"
+    assert conifer[row, col] == pytest.approx(40.0)
+    assert closure[row, col] == pytest.approx(80.0)

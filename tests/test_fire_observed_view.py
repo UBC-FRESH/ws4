@@ -34,7 +34,7 @@ def test_render_comparison_svg_contains_both_perimeters_and_metrics(
     assert 'fill="#ff7a33"' in svg
     assert 'stroke="#2d6cdf"' in svg
     assert 'stroke="#111111"' in svg
-    assert "P157.2 base case" in svg
+    assert "Dogrib comparison" in svg
     assert "16 Oct 2001 13:00" in svg
     assert "17 Oct 2001 11:52" in svg
     assert "RWF085" in svg

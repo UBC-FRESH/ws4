@@ -101,3 +101,33 @@ def test_bad_ring_fails() -> None:
     grid = ObservedGrid(2, 2, 0.0, 0.0, 10.0, -9999.0, "local")
     with pytest.raises(ComparisonError, match="three points"):
         rasterize_rings((((0.0, 0.0), (1.0, 1.0)),), grid)
+
+
+def test_rasterize_rings_uses_north_first_grid_rows() -> None:
+    grid = ObservedGrid(4, 4, 0.0, 0.0, 10.0, -9999.0, "local")
+    top = ((0.0, 30.0), (10.0, 30.0), (10.0, 40.0), (0.0, 40.0))
+    bottom = ((0.0, 0.0), (10.0, 0.0), (10.0, 10.0), (0.0, 10.0))
+
+    top_mask = rasterize_rings((top,), grid)
+    bottom_mask = rasterize_rings((bottom,), grid)
+
+    assert bool(top_mask[0, 0])
+    assert not bool(top_mask[3, 0])
+    assert bool(bottom_mask[3, 0])
+    assert not bool(bottom_mask[0, 0])
+    assert centroid(top_mask, grid) == pytest.approx((5.0, 35.0))
+    assert centroid(bottom_mask, grid) == pytest.approx((5.0, 5.0))
+
+
+def test_dogrib_heterogeneous_case_uses_the_observed_grids() -> None:
+    fire = load_dogrib(FIXTURE)
+    case = run_dogrib_case(
+        fire, scenario="heterogeneous-test", heterogeneous=True, duration_min=1.0
+    )
+
+    assert case.fuel_mode == "observed grid"
+    assert case.growth.head_ros_grid is not None
+    assert case.growth.length_to_breadth_grid is not None
+    assert case.growth.spread_azimuth_deg_grid is not None
+    positive = case.growth.head_ros_grid[case.growth.head_ros_grid > 0.0]
+    assert len(np.unique(positive)) > 5

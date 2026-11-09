@@ -21,7 +21,13 @@ from ws4.fire.comparison import DogribCase, run_dogrib_case  # noqa: E402
 from ws4.fire.observed import ObservedFire, load_dogrib  # noqa: E402
 from ws4.fire.observed_view import write_comparison_svg  # noqa: E402
 
-SCENARIOS: tuple[str, ...] = ("base", "wind-27", "wind-43", "flat", "no-wind", "long-800")
+SCENARIOS: tuple[str, ...] = (
+    "heterogeneous",
+    "homogeneous",
+    "heterogeneous-wind-27",
+    "heterogeneous-no-wind",
+    "heterogeneous-long-1372",
+)
 
 
 def run_scenario(fire: ObservedFire, name: str) -> DogribCase:
@@ -39,17 +45,15 @@ def run_scenario(fire: ObservedFire, name: str) -> DogribCase:
     DogribCase
         The simulated growth and comparison.
     """
-    if name == "wind-27":
-        return run_dogrib_case(fire, scenario=name, wind_kmh=27.0)
-    if name == "wind-43":
-        return run_dogrib_case(fire, scenario=name, wind_kmh=43.0)
-    if name == "flat":
-        return run_dogrib_case(fire, scenario=name, slope_percent=0.0)
-    if name == "no-wind":
-        return run_dogrib_case(fire, scenario=name, wind_kmh=0.0)
-    if name == "long-800":
-        return run_dogrib_case(fire, scenario=name, duration_min=800.0)
-    return run_dogrib_case(fire, scenario=name)
+    if name == "homogeneous":
+        return run_dogrib_case(fire, scenario=name)
+    if name == "heterogeneous-wind-27":
+        return run_dogrib_case(fire, scenario=name, heterogeneous=True, wind_kmh=27.0)
+    if name == "heterogeneous-no-wind":
+        return run_dogrib_case(fire, scenario=name, heterogeneous=True, wind_kmh=0.0)
+    if name == "heterogeneous-long-1372":
+        return run_dogrib_case(fire, scenario=name, heterogeneous=True, duration_min=1372.0)
+    return run_dogrib_case(fire, scenario=name, heterogeneous=True)
 
 
 def main() -> None:
@@ -76,12 +80,13 @@ def main() -> None:
     base_case: DogribCase | None = None
     for name in SCENARIOS:
         case = run_scenario(fire, name)
-        if name == "base":
+        if name == "heterogeneous":
             base_case = case
         row: dict[str, object] = {
             "scenario": case.scenario,
             "duration_min": case.duration_min,
             "fuel_type": case.fuel_type,
+            "fuel_mode": case.fuel_mode,
             "ffmc": case.ffmc,
             "bui": case.bui,
             "wind_kmh": case.wind_kmh,

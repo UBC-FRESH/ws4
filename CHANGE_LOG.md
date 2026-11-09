@@ -4902,7 +4902,8 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   and IoU 0.070. The loose screen passes; the footprint screen fails. The loose screen is not a
   validation pass. Added 8 comparison
   tests, `notes/reports/p157-observed-validation.md`, `p157-dogrib-results.csv`, and
-  `p157-dogrib-summary.json`. Dashboard: **GREEN**.
+  `p157-dogrib-summary.json`. Dashboard: **GREEN**. **Correction:** these numbers were
+  computed with a north/south row flip and are invalid; see P157.5.
 
 - P157.3: added `ws4/fire/observed_view.py`, a standalone SVG comparison view that draws the
   simulated burned mask, the observed 13:00 start perimeter, the observed final perimeter, the
@@ -4916,3 +4917,19 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   "Target 17 Oct 11:52", and the report states that the 402-minute run is **not time-matched**
   to the 1,372-minute observed final. The earlier wording implied a time alignment that does
   not exist in the fixture.
+
+- P157.5: fixed the observed-grid row mapping. ESRI ASCII row zero is north, but
+  `rasterize_rings`, `centroid`, and `orientation` previously treated it as south. Added a
+  top-row/bottom-row regression test. The corrected homogeneous 402-minute run is 14,126 ha
+  vs 10,219 ha (+38.2%), perimeter +76.2%, centroid 6.08 km, IoU 0.265, Sorensen 0.419, and
+  0.5° orientation error. The earlier P157.2 numbers (6,259 ha, −38.8%, 14.29 km, IoU 0.070)
+  were an artefact of the flip. Regenerated the report and view. Dashboard: **GREEN**.
+
+- P157.6: added per-cell fuel, blend, slope, aspect, and elevation to `SiteGrid` and the
+  Huygens growth engine. Added `slope_aspect_from_elevation`, observed FBP fuel/blend grids,
+  and an observed-grid Dogrib case. Validated homogeneous equivalence, exact ellipse area and
+  perimeter, per-cell FBP head ROS, and terrain gradients. Observed-grid 402-minute result:
+  8,287 ha vs 10,219 (−18.9%), perimeter +12.2%, centroid 9.82 km, IoU 0.207, Sorensen 0.343,
+  29.1° orientation error. The run passes only the loose area/perimeter/orientation screen;
+  centroid and overlap fail. No external Prometheus/FARSITE parity, hourly weather, or
+  spotting yet. Dashboard: **GREEN**.

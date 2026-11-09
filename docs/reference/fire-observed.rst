@@ -81,23 +81,37 @@ Comparison harness
 
 ``ws4.fire.comparison`` rasterizes the observed rings and the simulated burned mask onto the
 same grid and reports area bias, perimeter bias, centroid distance, IoU, Sorensen, and
-principal-axis orientation. ``run_dogrib_case`` starts from the observed 13:00 perimeter,
-uses a homogeneous C2 fuel approximation, and runs for 402 minutes.
+principal-axis orientation. ``run_dogrib_case`` starts from the observed 13:00 perimeter and
+can use either a homogeneous C2 reference or the observed per-cell fuel, blend, slope, aspect,
+and elevation grids. The benchmark base case uses the observed grid.
+
+ESRI ASCII grids store row zero at the north edge. P157.5 corrected an earlier north/south
+row flip in the comparison harness; the earlier P157.2 numbers are invalid.
 
 The comparison is not time-matched. The run is 402 minutes, while the only final observed
 perimeter is at 11:52 the next day, 1,372 minutes after the start. The scores therefore mix
-model error with the missing 16 hours of observed growth.
+model error with the missing 16 hours of observed growth. A 1,372-minute constant-weather run
+is also invalid because it overpredicts area by 385%.
 
-The base-case result is characterized, not accepted for footprint:
+Observed-grid case, 402 minutes:
 
-- area 6,259 ha vs 10,219 ha (−38.8%);
-- perimeter 140.8 km vs 160.2 km (−12.1%);
-- orientation error 3.1°;
-- centroid distance 14.29 km;
-- IoU 0.070 and Sorensen 0.131.
+- area 8,287 ha vs 10,219 ha (−18.9%);
+- perimeter 179.8 km vs 160.2 km (+12.2%);
+- orientation error 29.1°;
+- centroid distance 9.82 km;
+- IoU 0.207 and Sorensen 0.343.
 
-The loose area, perimeter, and orientation screen passes; that is not a validation pass. The
-centroid and overlap screen fails. The full evidence is in ``notes/reports/p157-observed-validation.md`` and
+Homogeneous C2 reference:
+
+- area 14,126 ha (+38.2%);
+- perimeter 282.2 km (+76.2%);
+- orientation error 0.5°;
+- centroid distance 6.08 km;
+- IoU 0.265 and Sorensen 0.419.
+
+The observed-grid case passes the loose area, perimeter, and orientation screen; that is not
+a validation pass. The centroid and overlap checks fail in both cases. The full evidence is
+in ``notes/reports/p157-observed-validation.md`` and
 ``notes/reports/p157-dogrib-results.csv``. The same view is served read-only at
 ``/api/fire/observed/dogrib.svg``.
 
@@ -108,8 +122,10 @@ centroid and overlap screen fails. The full evidence is in ``notes/reports/p157-
 Limits
 ------
 
-- This is an observed-fire data contract, not yet a simulation comparison. P157.2 adds the
-  metrics and tolerances.
+- The spatial growth is an independent reimplementation of published FBP and Huygens logic.
+  No runnable Prometheus/FARSITE oracle was used for parity.
+- The run uses one representative weather state, not the hourly stream.
+- Spotting is absent; the observed final contains 25 polygons, including spot fires.
 - The event window ends at the 11:52 perimeter in this archive. The Prometheus scenario text
   describes a slightly later end; the loader records the archive's actual timestamp.
 - The weather and perimeter times are local time. No daylight-saving conversion is applied.

@@ -50,6 +50,7 @@ class FakeCase:
         self.scenario = scenario
         self.duration_min = 402.0
         self.fuel_type = "C2"
+        self.fuel_mode = "homogeneous C2"
         self.ffmc = 92.7
         self.bui = 105.0
         self.wind_kmh = 21.0
@@ -82,12 +83,23 @@ def test_scenario_overrides_are_explicit(monkeypatch: pytest.MonkeyPatch) -> Non
         case = module.run_scenario(fire, name)
         assert case.scenario == name
 
-    assert calls[0] == {"scenario": "base"}
-    assert calls[1] == {"scenario": "wind-27", "wind_kmh": 27.0}
-    assert calls[2] == {"scenario": "wind-43", "wind_kmh": 43.0}
-    assert calls[3] == {"scenario": "flat", "slope_percent": 0.0}
-    assert calls[4] == {"scenario": "no-wind", "wind_kmh": 0.0}
-    assert calls[5] == {"scenario": "long-800", "duration_min": 800.0}
+    assert calls[0] == {"scenario": "heterogeneous", "heterogeneous": True}
+    assert calls[1] == {"scenario": "homogeneous"}
+    assert calls[2] == {
+        "scenario": "heterogeneous-wind-27",
+        "heterogeneous": True,
+        "wind_kmh": 27.0,
+    }
+    assert calls[3] == {
+        "scenario": "heterogeneous-no-wind",
+        "heterogeneous": True,
+        "wind_kmh": 0.0,
+    }
+    assert calls[4] == {
+        "scenario": "heterogeneous-long-1372",
+        "heterogeneous": True,
+        "duration_min": 1372.0,
+    }
 
 
 def test_main_writes_results(
@@ -112,5 +124,5 @@ def test_main_writes_results(
     assert summary.is_file()
     frame = pd.read_csv(output)
     assert list(frame["scenario"]) == list(module.SCENARIOS)
-    assert "base" in capsys.readouterr().out
+    assert "heterogeneous" in capsys.readouterr().out
     assert "RWF085" in summary.read_text(encoding="utf-8")

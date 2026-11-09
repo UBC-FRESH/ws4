@@ -462,8 +462,10 @@ items are enhancements and maintenance.
 - **Event and account integration.** `done` (P156.5, #895). Behaviour-driven fire events
   record the FBP inputs and outputs, and accounts summarize ROS, intensity, flame length, and
   the area-weighted crown fraction. The viewer coupling remains P155.
-- **Observed-fire validation.** `partial` (P157.1/P157.2, #925/#926). The Dogrib fixture,
-  observed-fire contract, and comparison harness are implemented. The homogeneous base case
-  passes the area/perimeter/orientation screen but fails the centroid and overlap screen
-  (14.29 km centroid error, IoU 0.070). Heterogeneous fuel/terrain and spotting are the next
-  modelling steps. P157.3 adds the read-only SVG view and API endpoint. Target: P157.4.
+- **Observed-fire validation.** `partial` (P157.1/P157.2/P157.3/P157.5/P157.6). The Dogrib
+  fixture, contract, comparison harness, SVG/API view, and per-cell fuel/terrain growth are
+  implemented. The observed-grid 402-minute case is −18.9% area, +12.2% perimeter, 9.82 km
+  centroid error, IoU 0.207, Sorensen 0.343, and 29.1° orientation error. It passes only the
+  loose area/perimeter/orientation screen; centroid and overlap fail. Hourly weather,
+  time-matched growth, spotting, and an external Prometheus/FARSITE parity test are missing.
+  Target: P157.7 then P157.4 close-out.

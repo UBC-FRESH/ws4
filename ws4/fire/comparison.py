@@ -18,7 +18,13 @@ import numpy as np
 import pandas as pd
 
 from .fwi import DailyWeather, FWIState, fwi_sequence, initial_fwi_state
-from .growth import GrowthConfig, GrowthResult, SiteGrid, grow_fire
+from .growth import (
+    GrowthConfig,
+    GrowthResult,
+    SiteGrid,
+    grow_fire,
+    slope_aspect_from_elevation,
+)
 from .observed import ObservedFire, ObservedGrid
 
 
@@ -96,7 +102,9 @@ class DogribCase:
     scenario : str
         Scenario label.
     fuel_type : str
-        Homogeneous FBP fuel type.
+        FBP fuel-type label; for a heterogeneous run this is the fallback label.
+    fuel_mode : str
+        Fuel description, such as ``homogeneous C2`` or ``observed grid``.
     ffmc : float
         Fine Fuel Moisture Code.
     bui : float
@@ -121,6 +129,7 @@ class DogribCase:
 
     scenario: str
     fuel_type: str
+    fuel_mode: str
     ffmc: float
     bui: float
     wind_kmh: float
@@ -143,6 +152,7 @@ class DogribCase:
         return {
             "scenario": self.scenario,
             "fuel_type": self.fuel_type,
+            "fuel_mode": self.fuel_mode,
             "ffmc": self.ffmc,
             "bui": self.bui,
             "wind_kmh": self.wind_kmh,
@@ -198,10 +208,13 @@ def rasterize_rings(
         max_y = max(point[1] for point in ring)
         col_start = max(0, math.floor((min_x - grid.xll) / grid.cell_size_m))
         col_end = min(grid.ncols - 1, math.floor((max_x - grid.xll) / grid.cell_size_m))
-        row_start = max(0, math.floor((min_y - grid.yll) / grid.cell_size_m))
-        row_end = min(grid.nrows - 1, math.floor((max_y - grid.yll) / grid.cell_size_m))
+        row_start = max(0, grid.nrows - 1 - math.floor((max_y - grid.yll) / grid.cell_size_m))
+        row_end = min(
+            grid.nrows - 1,
+            grid.nrows - 1 - math.floor((min_y - grid.yll) / grid.cell_size_m),
+        )
         for row in range(row_start, row_end + 1):
-            y = grid.yll + (row + 0.5) * grid.cell_size_m
+            y = grid.yll + (grid.nrows - row - 0.5) * grid.cell_size_m
             for col in range(col_start, col_end + 1):
                 x = grid.xll + (col + 0.5) * grid.cell_size_m
                 if _point_in_ring(x, y, ring):
@@ -267,7 +280,7 @@ def centroid(mask: np.ndarray, grid: ObservedGrid) -> tuple[float, float]:
     if len(rows) == 0:
         raise ComparisonError("cannot compute a centroid for an empty mask")
     x = grid.xll + (float(np.mean(cols)) + 0.5) * grid.cell_size_m
-    y = grid.yll + (float(np.mean(rows)) + 0.5) * grid.cell_size_m
+    y = grid.yll + (grid.nrows - float(np.mean(rows)) - 0.5) * grid.cell_size_m
     return x, y
 
 
@@ -289,7 +302,7 @@ def orientation(mask: np.ndarray) -> float:
     rows, cols = np.where(mask)
     if len(rows) < 3:
         return 0.0
-    coordinates = np.column_stack((cols.astype(float), rows.astype(float)))
+    coordinates = np.column_stack((cols.astype(float), -rows.astype(float)))
     coordinates -= coordinates.mean(axis=0)
     covariance = np.cov(coordinates, rowvar=False)
     eigenvalues, eigenvectors = np.linalg.eigh(covariance)
@@ -460,6 +473,7 @@ def run_dogrib_case(
     *,
     scenario: str = "base",
     fuel_type: str = "C2",
+    heterogeneous: bool = False,
     ffmc: float | None = None,
     bui: float | None = None,
     wind_kmh: float | None = None,
@@ -477,7 +491,9 @@ def run_dogrib_case(
     scenario : str, optional
         Scenario label.
     fuel_type : str, optional
-        Homogeneous FBP fuel type (default ``C2``).
+        Homogeneous FBP fuel-type fallback (default ``C2``).
+    heterogeneous : bool, optional
+        Use the observed per-cell fuel, blend, and terrain grids (default False).
     ffmc, bui, wind_kmh, wind_direction_deg : float or None, optional
         Weather overrides; None uses :func:`reference_weather`.
     slope_percent : float, optional
@@ -504,8 +520,27 @@ def run_dogrib_case(
     direction_value = (
         weather["wind_direction_deg"] if wind_direction_deg is None else wind_direction_deg
     )
-    fuel_grid = fire.fuel_type_grid()
-    burnable = np.array([[value is not None for value in row] for row in fuel_grid], dtype=bool)
+    rows, cols = fire.grid.nrows, fire.grid.ncols
+    if heterogeneous:
+        fuel_grid = fire.fbp_fuel_grid()
+        conifer_grid, dead_grid, closure_grid = fire.fbp_blend_grids()
+        slope_grid, aspect_grid = slope_aspect_from_elevation(
+            fire.elevation_m, fire.grid.cell_size_m, nodata=fire.grid.nodata
+        )
+        burnable = np.array([[value is not None for value in row] for row in fuel_grid], dtype=bool)
+        fuel_mode = "observed grid"
+    else:
+        observed_fuels = fire.fuel_type_grid()
+        burnable = np.array(
+            [[value is not None for value in row] for row in observed_fuels], dtype=bool
+        )
+        fuel_grid = None
+        slope_grid = np.full((rows, cols), slope_percent, dtype=float)
+        aspect_grid = np.full((rows, cols), aspect_deg, dtype=float)
+        conifer_grid = np.full((rows, cols), 50.0, dtype=float)
+        dead_grid = np.full((rows, cols), 35.0, dtype=float)
+        closure_grid = np.full((rows, cols), 80.0, dtype=float)
+        fuel_mode = f"homogeneous {fuel_type}"
     start_mask = observed_mask(fire, 0)
     start_mask &= burnable
     start_cells = tuple(
@@ -515,8 +550,8 @@ def run_dogrib_case(
         raise ComparisonError("observed start perimeter has no burnable cells")
     grid = SiteGrid(
         fuel_type=fuel_type,
-        rows=fire.grid.nrows,
-        cols=fire.grid.ncols,
+        rows=rows,
+        cols=cols,
         cell_size_m=fire.grid.cell_size_m,
         ffmc=ffmc_value,
         bui=bui_value,
@@ -525,6 +560,13 @@ def run_dogrib_case(
         slope_percent=slope_percent,
         aspect_deg=aspect_deg,
         burnable=burnable,
+        fuel_type_grid=fuel_grid,
+        slope_percent_grid=slope_grid,
+        aspect_deg_grid=aspect_grid,
+        elevation_m_grid=fire.elevation_m,
+        conifer_percent_grid=conifer_grid,
+        dead_fir_percent_grid=dead_grid,
+        crown_closure_percent_grid=closure_grid,
     )
     growth = grow_fire(
         grid,
@@ -541,6 +583,7 @@ def run_dogrib_case(
     return DogribCase(
         scenario=scenario,
         fuel_type=fuel_type,
+        fuel_mode=fuel_mode,
         ffmc=ffmc_value,
         bui=bui_value,
         wind_kmh=wind_value,

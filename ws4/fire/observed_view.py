@@ -126,7 +126,7 @@ def render_comparison_svg(
     note_lines = [
         f"Run {case.duration_min:.0f} min",
         f"Target {fire.event_end:%d %b %H:%M}",
-        f"Fuel {case.fuel_type}",
+        f"Fuel {case.fuel_mode}",
         f"FFMC {case.ffmc:.1f} · BUI {case.bui:.0f}",
         f"Wind {case.wind_kmh:.0f} km/h",
         "No spotting",
@@ -157,7 +157,7 @@ def render_comparison_svg(
     Prometheus Dogrib sample</text>
   <rect x="{panel_x}" y="64" width="{panel_width - 12}" height="{height - 128}"
     rx="8" fill="#f5f7f5" stroke="#d9e1da"/>
-  <text x="{metric_x}" y="88" class="subtitle">P157.2 base case</text>
+  <text x="{metric_x}" y="88" class="subtitle">Dogrib comparison</text>
   <path d="{simulated_path}" fill="{_SIMULATED_COLOR}" fill-opacity="0.32"
     stroke="{_SIMULATED_COLOR}" stroke-width="1.1"/>
   <path d="{start_path}" fill="none" stroke="{_OBSERVED_START_COLOR}"

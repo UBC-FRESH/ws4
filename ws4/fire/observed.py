@@ -24,6 +24,8 @@ from typing import Final
 import numpy as np
 import pandas as pd
 
+from .fbp import canonical_fuel_type
+
 OBSERVED_FIRE_VERSION: Final[str] = "ws4.observed-fire.v1"
 DOGRIB_CRS: Final[str] = (
     "+proj=tmerc +lat_0=0 +lon_0=-115 +k=0.9992 +x_0=500000 +y_0=0 +datum=NAD83 +units=m +no_defs"
@@ -176,6 +178,33 @@ class ObservedPerimeter:
         }
 
 
+def _observed_fuel_parameters(label: str) -> tuple[str, float, float, float]:
+    """Map one observed lookup label to a canonical FBP fuel and blend parameters."""
+    text = label.strip()
+    if text.lower() == "non-fuel":
+        raise ValueError("non-fuel label has no FBP parameters")
+    conifer_match = re.search(r"\((\d+)\s*PC\)", text, flags=re.IGNORECASE)
+    conifer = float(conifer_match.group(1)) if conifer_match else 50.0
+    base = text.split("/")[0].strip()
+    base = re.sub(r"\(.*?\)", "", base).strip()
+    lowered = text.lower()
+    if "o-1a" in lowered and "o-1b" in lowered:
+        base = "O1B"
+    elif "d-1" in lowered and "d-2" in lowered:
+        base = "D1"
+    elif "m-3" in lowered and "m-4" in lowered:
+        base = "M3"
+    elif "m-1" in lowered and "m-2" in lowered:
+        base = "M1"
+    if base.strip().upper().replace("-", "") == "D2":
+        base = "D1"
+    try:
+        fuel = canonical_fuel_type(base)
+    except Exception as error:
+        raise ValueError(f"unsupported observed FBP fuel label: {label!r}") from error
+    return fuel, conifer, 35.0, 80.0
+
+
 @dataclass(frozen=True)
 class ObservedFire:
     """A public observed fire and the inputs needed to compare a simulation.
@@ -282,6 +311,63 @@ class ObservedFire:
             for col in range(self.grid.ncols):
                 result[row, col] = self.fuel_type_at(row, col)
         return result
+
+    def fbp_fuel_grid(self) -> np.ndarray:
+        """Return the canonical FBP fuel type for every grid cell.
+
+        Returns
+        -------
+        numpy.ndarray
+            Object array of canonical fuel names or ``None`` for non-fuel cells.
+
+        Raises
+        ------
+        ObservedFireError
+            If a lookup label cannot be mapped to a supported FBP type.
+        """
+        fuel, _conifer, _dead, _closure = self._fbp_parameters()
+        return fuel
+
+    def fbp_blend_grids(self) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """Return per-cell conifer, dead-fir, and crown-closure percentages.
+
+        Returns
+        -------
+        tuple of numpy.ndarray
+            Conifer percent, dead-fir percent, and crown closure percent.
+
+        Raises
+        ------
+        ObservedFireError
+            If a lookup label cannot be mapped to a supported FBP type.
+        """
+        _fuel, conifer, dead, closure = self._fbp_parameters()
+        return conifer, dead, closure
+
+    def _fbp_parameters(
+        self,
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+        """Return per-cell FBP fuel and blend grids from the lookup table."""
+        cache: dict[int, tuple[str | None, float, float, float]] = {}
+        for code, label in self.fuel_lookup.items():
+            if label is None:
+                cache[code] = (None, 50.0, 35.0, 80.0)
+                continue
+            try:
+                cache[code] = _observed_fuel_parameters(label)
+            except ValueError as error:
+                raise ObservedFireError(str(error)) from error
+        fuel = np.empty(self.fuel_codes.shape, dtype=object)
+        conifer = np.full(self.fuel_codes.shape, 50.0, dtype=float)
+        dead = np.full(self.fuel_codes.shape, 35.0, dtype=float)
+        closure = np.full(self.fuel_codes.shape, 80.0, dtype=float)
+        for row in range(self.grid.nrows):
+            for col in range(self.grid.ncols):
+                code = int(self.fuel_codes[row, col])
+                if code not in cache:
+                    raise ObservedFireError(f"unknown observed fuel code: {code}")
+                fuel[row, col], conifer[row, col], dead[row, col], closure[row, col] = cache[code]
+        return fuel, conifer, dead, closure
 
     def weather_between(self, start: datetime, end: datetime) -> pd.DataFrame:
         """Return the hourly weather rows in a closed time window.
