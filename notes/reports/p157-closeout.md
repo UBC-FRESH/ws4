@@ -107,6 +107,7 @@ Artifacts:
 - `notes/reports/p157-dogrib-summary.json`
 - `notes/reports/p157-dogrib-view.svg`
 - `docs/_static/fire-dogrib-view.svg`
+- `notes/design/ws4-open-fire-model-reuse.md` (Planscape review and P159 plan)
 
 ## Prometheus/Wine attempt
 

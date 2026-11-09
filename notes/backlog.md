@@ -470,3 +470,21 @@ items are enhancements and maintenance.
   WindNinja scenarios, hourly BUI, spotting, and external Prometheus/FARSITE parity remain
   missing. P157.4 accepts these limits and closes the phase as a partial validation result,
   not an operational match.
+- **Planscape and burn-emulator review.** `done`. Reviewed the Planscape planning platform,
+  its external burn-emulator client, and the burn-emulator surrogate. Planscape has no fire
+  spread engine or observed-fire calibration. The burn-emulator trains a CNN on Pyretechnics
+  burns and leaves quantitative evaluation as a TODO; it does not validate against observed
+  fire. The reuse decision and licence limits are in
+  `notes/design/ws4-open-fire-model-reuse.md`.
+- **WS4 fire surrogate.** `open` (P159, #946). Generate a deterministic synthetic burn corpus
+  from the P156 kernel, train a compact surrogate, and evaluate it on held-out synthetic runs
+  and Dogrib as out-of-distribution evidence. No web dependency and no operational claim until
+  the error gate passes. Target: P159.
+- **Observed-fire calibration protocol.** `blocked`. A credible fit needs a calibration fire
+  separate from the holdout, explicit parameter bounds and objective, and full weather/fuel/
+  ignition provenance. Dogrib is validation-only; do not fit to it. Target: a later phase after
+  a second independent fire is acquired.
+- **Pyretechnics cross-check.** `blocked`. Pyretechnics is a credible model-to-model reference
+  for the Rothermel/FBP equations, but its community/commercial licence and US FBFM fuel models
+  need a licence decision and a documented Canadian FBP crosswalk first. If approved, use it
+  as model-to-model evidence, not observed-fire calibration. Target: P159 gate or later.

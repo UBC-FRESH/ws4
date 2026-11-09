@@ -4996,3 +4996,11 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P158 close-out: merged the scenario matrix, batch composer, named scenario library,
   target diff, and penalty ledger. Desktop/tablet regression at 1500, 1200, and 1024 px
   showed no page overflow or browser errors. Parent #928 closed; dashboard **GREEN**.
+
+- P159 planning: reviewed `OurPlanscape/Planscape` and `OurPlanscape/burn-emulator` for
+  reusable fire-model validation and calibration work. Planscape contains no fire-spread
+  engine or observed-fire calibration; its burn emulator is a CNN surrogate of Pyretechnics
+  and leaves quantitative evaluation as a TODO. Recorded the licences, the calibration gap,
+  the Pyretechnics cross-check gate, and the bounded surrogate plan in
+  `notes/design/ws4-open-fire-model-reuse.md`. Opened planned phase P159 (#946); no branch,
+  code, or model training started. Dashboard: **GREEN**.
