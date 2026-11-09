@@ -87,8 +87,10 @@ These are explicit limitations of the phase, not hidden assumptions:
 
 Do not describe this model as operationally validated for observed fire perimeters. Keep the
 area/perimeter failure and the accepted limits visible. The next useful work is the documented
-burning-condition thresholds, WindNinja scenarios 2c/2d, and an external Prometheus/FARSITE
-parity run. Do not calibrate the current cases to Dogrib.
+burning-condition thresholds, WindNinja scenarios 2c/2d, and a BurnP3/Prometheus reference
+comparison (#945). Prometheus installs under Wine but its GUI exits with a native
+`SEHException`; BurnP3+FireSTARR is the most reproducible Linux path. Do not calibrate the
+current cases to Dogrib.
 
 ## Reproduction
 
