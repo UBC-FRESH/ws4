@@ -39,7 +39,6 @@ burnP3PlusFireSTARR      1.5.7
 
 ## Next
 
-- Install `arrow` from a compatible R/Conda source.
 - Create or import a BurnP3+FireSTARR library.
 - Populate the Dogrib inputs and run the FireSTARR transformer.
 - Compare the resulting perimeter with observed, WS4 Scenario 2b, and the direct
