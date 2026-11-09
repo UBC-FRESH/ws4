@@ -100,6 +100,7 @@ def test_fire_workspace_opens_scene_and_comparison(tmp_path: Path) -> None:
                 "document.querySelector('#fire-summary').textContent.includes('run1-scene')",
                 timeout=15000,
             )
+            page.locator("#fire-observed").wait_for(state="visible", timeout=15000)
             page.wait_for_function(
                 "document.querySelectorAll('#fire-tree option').length > 0",
                 timeout=15000,

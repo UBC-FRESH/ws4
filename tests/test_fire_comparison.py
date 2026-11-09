@@ -1,0 +1,196 @@
+"""Tests for the observed-perimeter comparison harness."""
+
+from __future__ import annotations
+
+import json
+import math
+from pathlib import Path
+
+import numpy as np
+import pytest
+from ws4.fire.comparison import (
+    ComparisonError,
+    centroid,
+    compare_masks,
+    hourly_weather_steps,
+    observed_mask,
+    orientation,
+    perimeter_length,
+    rasterize_rings,
+    reference_weather,
+    run_dogrib_case,
+)
+from ws4.fire.observed import ObservedGrid, load_dogrib
+
+FIXTURE = Path(__file__).parent / "fixtures" / "fire" / "dogrib"
+
+
+def test_compare_masks_reports_area_perimeter_overlap_and_orientation() -> None:
+    grid = ObservedGrid(3, 3, 0.0, 0.0, 10.0, -9999.0, "local")
+    simulated = np.array([[1, 1, 0], [1, 0, 0], [0, 0, 0]], dtype=bool)
+    observed = np.array([[1, 1, 1], [1, 0, 0], [0, 0, 0]], dtype=bool)
+
+    metrics = compare_masks(simulated, observed, grid)
+
+    assert metrics.area_sim_ha == pytest.approx(0.03)
+    assert metrics.area_obs_ha == pytest.approx(0.04)
+    assert metrics.area_bias == pytest.approx(-0.25)
+    assert metrics.perimeter_sim_m == pytest.approx(80.0)
+    assert metrics.perimeter_obs_m == pytest.approx(100.0)
+    assert metrics.perimeter_bias == pytest.approx(-0.2)
+    assert metrics.iou == pytest.approx(0.75)
+    assert metrics.sorensen == pytest.approx(6 / 7)
+    assert metrics.centroid_distance_m == pytest.approx(math.hypot(4.1666667, 0.8333333))
+
+
+def test_rasterize_rings_and_perimeter_length() -> None:
+    grid = ObservedGrid(4, 4, 0.0, 0.0, 10.0, -9999.0, "local")
+    ring = ((0.0, 0.0), (20.0, 0.0), (20.0, 20.0), (0.0, 20.0))
+
+    mask = rasterize_rings((ring,), grid)
+
+    assert mask.sum() == 4
+    assert perimeter_length(mask, 10.0) == pytest.approx(80.0)
+    assert centroid(mask, grid) == pytest.approx((10.0, 10.0))
+
+
+def test_orientation_is_axial() -> None:
+    horizontal = np.zeros((5, 9), dtype=bool)
+    horizontal[2, :] = True
+    vertical = horizontal.T
+    assert orientation(horizontal) == pytest.approx(0.0)
+    assert orientation(vertical) == pytest.approx(90.0)
+
+
+def test_reference_weather_matches_the_dogrib_stream() -> None:
+    fire = load_dogrib(FIXTURE)
+    weather = reference_weather(fire)
+
+    assert weather["ffmc"] == pytest.approx(92.7, abs=0.2)
+    assert weather["bui"] == pytest.approx(98.7, abs=0.5)
+    assert weather["wind_kmh"] == pytest.approx(21.0)
+    assert weather["wind_direction_deg"] == pytest.approx(267.6, abs=1.0)
+
+
+def test_observed_masks_match_the_recorded_perimeters() -> None:
+    fire = load_dogrib(FIXTURE)
+    start = observed_mask(fire, 0)
+    final = observed_mask(fire, -1)
+
+    assert start.sum() * fire.grid.cell_size_m**2 / 10_000.0 == pytest.approx(935.1, rel=0.01)
+    assert final.sum() * fire.grid.cell_size_m**2 / 10_000.0 == pytest.approx(10223.3, rel=0.01)
+
+
+def test_dogrib_case_runs_and_serializes() -> None:
+    fire = load_dogrib(FIXTURE)
+    case = run_dogrib_case(fire, scenario="test", duration_min=60.0)
+
+    assert case.start_cells > 0
+    assert case.growth.burned_area_ha > 0.0
+    assert 0.0 <= case.metrics.iou <= 1.0
+    assert 0.0 <= case.metrics.sorensen <= 1.0
+    assert json.loads(json.dumps(case.to_dict()))["scenario"] == "test"
+
+
+def test_empty_observed_mask_fails() -> None:
+    grid = ObservedGrid(2, 2, 0.0, 0.0, 10.0, -9999.0, "local")
+    with pytest.raises(ComparisonError, match="empty"):
+        compare_masks(np.zeros((2, 2), dtype=bool), np.zeros((2, 2), dtype=bool), grid)
+
+
+def test_bad_ring_fails() -> None:
+    grid = ObservedGrid(2, 2, 0.0, 0.0, 10.0, -9999.0, "local")
+    with pytest.raises(ComparisonError, match="three points"):
+        rasterize_rings((((0.0, 0.0), (1.0, 1.0)),), grid)
+
+
+def test_rasterize_rings_uses_north_first_grid_rows() -> None:
+    grid = ObservedGrid(4, 4, 0.0, 0.0, 10.0, -9999.0, "local")
+    top = ((0.0, 30.0), (10.0, 30.0), (10.0, 40.0), (0.0, 40.0))
+    bottom = ((0.0, 0.0), (10.0, 0.0), (10.0, 10.0), (0.0, 10.0))
+
+    top_mask = rasterize_rings((top,), grid)
+    bottom_mask = rasterize_rings((bottom,), grid)
+
+    assert bool(top_mask[0, 0])
+    assert not bool(top_mask[3, 0])
+    assert bool(bottom_mask[3, 0])
+    assert not bool(bottom_mask[0, 0])
+    assert centroid(top_mask, grid) == pytest.approx((5.0, 35.0))
+    assert centroid(bottom_mask, grid) == pytest.approx((5.0, 5.0))
+
+
+def test_dogrib_heterogeneous_case_uses_the_observed_grids() -> None:
+    fire = load_dogrib(FIXTURE)
+    case = run_dogrib_case(
+        fire, scenario="heterogeneous-test", heterogeneous=True, duration_min=1.0
+    )
+
+    assert case.fuel_mode == "observed grid"
+    assert case.growth.head_ros_grid is not None
+    assert case.growth.length_to_breadth_grid is not None
+    assert case.growth.spread_azimuth_deg_grid is not None
+    positive = case.growth.head_ros_grid[case.growth.head_ros_grid > 0.0]
+    assert len(np.unique(positive)) > 5
+
+
+def test_hourly_weather_steps_cover_the_dogrib_event() -> None:
+    fire = load_dogrib(FIXTURE)
+    steps = hourly_weather_steps(fire)
+
+    assert len(steps) == 23
+    assert steps[0].start_min == pytest.approx(0.0)
+    assert steps[0].wind_kmh == pytest.approx(21.0)
+    assert steps[-1].start_min == pytest.approx(1320.0)
+    first_ffmc = steps[0].ffmc
+    overnight_ffmc = steps[12].ffmc
+    assert first_ffmc is not None
+    assert overnight_ffmc is not None
+    assert first_ffmc == pytest.approx(92.7, abs=0.2)
+    assert overnight_ffmc < first_ffmc
+    assert steps[0].bui == pytest.approx(98.7, abs=0.5)
+
+
+def test_dogrib_hourly_case_uses_weather_steps() -> None:
+    fire = load_dogrib(FIXTURE)
+    case = run_dogrib_case(
+        fire,
+        scenario="hourly-test",
+        heterogeneous=True,
+        hourly_weather=True,
+        duration_min=1.0,
+    )
+
+    assert case.weather_mode == "hourly"
+    assert case.growth.config.weather_steps is not None
+    assert len(case.growth.config.weather_steps) == 23
+    assert case.growth.summary()["weather_mode"] == "time_dependent"
+
+
+def test_hourly_weather_offset_stops_at_the_patch_end() -> None:
+    fire = load_dogrib(FIXTURE)
+    steps = hourly_weather_steps(fire, direction_offset_deg=15.0, offset_until_min=330.0)
+
+    assert steps[0].wind_direction_deg == pytest.approx((225.0 + 15.0) % 360.0)
+    assert steps[6].wind_direction_deg == pytest.approx(225.0)
+
+
+def test_dogrib_scenario_2b_uses_point_ignition_and_fuel_break() -> None:
+    fire = load_dogrib(FIXTURE)
+    case = run_dogrib_case(
+        fire,
+        scenario="2b-test",
+        heterogeneous=True,
+        hourly_weather=True,
+        weather_patches=True,
+        point_ignition=True,
+        fuel_break_start=True,
+        duration_min=1.0,
+    )
+
+    assert case.weather_mode == "hourly+patches"
+    assert case.start_cells == 1
+    assert case.initial_burned_mask is not None
+    assert bool(case.initial_burned_mask.any())
+    assert case.growth.config.wind_patch_end_min == pytest.approx(420.0)
+    assert case.growth.grid.wind_direction_patch is not None

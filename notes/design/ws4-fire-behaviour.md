@@ -137,7 +137,31 @@ Unknown species, unknown land cover, and an unlabelled forest stand raise `VriEr
 than inventing a type. The mapping is a modelling decision, not a measurement, and the
 fixture is representative rather than a copy of a private VRI inventory.
 
-## 9. What follows
+## 9. Observed fire validation
+
+P157.1 adds `ws4/fire/observed.py` and the Dogrib (RWF085) fixture. The contract records the
+Prometheus source, archive, custom NAD83 Transverse Mercator, 100 m grid, local event window,
+ignition point, hourly weather, FBP fuel grid, elevation grid, and observed perimeters. The
+loader validates grid agreement, fuel lookup coverage, hourly weather continuity, event-window
+coverage, ignition containment, and perimeter overlap. The fixture has a 935 ha start perimeter
+and a 10,223 ha final perimeter across 25 polygons, including spot fires. P157.2 adds the
+comparison harness and metrics. P157.3 adds the SVG view. P157.5 corrects the north-first row
+mapping; the first P157.2 numbers were vertically flipped and are invalid. P157.6 adds
+per-cell fuel, blend, slope, aspect, and elevation to the Huygens growth engine. The observed-
+grid 402-minute case is 8,203 ha vs 10,219 ha (−19.7%), perimeter +11.6%, centroid 9.85 km,
+IoU 0.206, Sorensen 0.342, and 29.2° orientation error. It passes only the loose area,
+perimeter, and orientation screen; centroid and overlap fail. P157.7 adds time-dependent
+growth and a 1,372-minute time-matched run with hourly weather. That run is 29,509 ha
+(+188.8%), perimeter +222.8%, centroid 3.01 km, IoU 0.255, Sorensen 0.406, and 9.2°
+orientation error. It passes centroid and orientation but fails area, perimeter, and overlap.
+P157.8 reproduces the documented Scenario 2b inputs: point ignition, the 13:00 perimeter as a
+fuel break, the +15° landscape patch, and the 280° river-polygon patch. The 402-minute case is
+16,241 ha (+58.9%), perimeter +75.9%, centroid 1.77 km, IoU 0.385, Sorensen 0.556, and 6.5°
+orientation error. It passes centroid, orientation, IoU, and Sorensen; area and perimeter fail.
+Burning-condition thresholds, WindNinja scenarios, spotting, hourly BUI, and external
+Prometheus/FARSITE parity remain missing.
+
+## 10. What follows
 
 - **P156.5 Integration.** Done for the event log and accounts. `FireBehaviourConfig` selects
   the FBP kernel; every behaviour-driven fire event carries the fuel, weather, slope,
@@ -145,22 +169,23 @@ fixture is representative rather than a copy of a private VRI inventory.
   consumption, and smoke strength. Accounts summarize ROS, intensity, flame length, and the
   area-weighted crown fraction. The P155 viewer reads the same attributes when its event
   coupling lands; the scene package stays on the P155 branch, not here.
-- **P156.6 Benchmark.** A public growth-model comparison and an observed-fire case, with the
-  tolerances and limits named.
+- **P157.2 Observed comparison.** Compare the P156 growth engine with the Dogrib perimeters
+  using area, perimeter, centroid, IoU, Sorensen, and orientation, with named tolerances.
 - **P156.9 VRI mapping.** Done: the VRI stand contract, deterministic rules, explicit
   non-fuel and unknown paths, and provenance are in `ws4/fire/vri.py`.
 - **P155 3D scene.** Renumbered from the old P150 label and now on
   `feature/p155-fire-3d`. `main` carries P150 (GPU guard), P151 (web console), P152
   (sandboxed runner), P153 (assistant script review), and P154 (TSA 29 GPU stock).
 
-## 10. Limits and risks
+## 11. Limits and risks
 
 - A standard-case pass does not prove a landscape fire. The growth and benchmark tasks are
   separate.
 - The derived intensity and flame length depend on the heat yield and consumption fraction;
   those are scene parameters and must be visible in the event record.
-- The growth grid is homogeneous in fuel and weather; heterogeneous fuel is a later task. The
-  event log and accounts carry the kernel outputs; the P155 viewer coupling is separate.
+- The growth grid supports per-cell fuel and terrain. Weather is still one representative
+  state; hourly weather is the next task. The event log and accounts carry the kernel outputs;
+  the P155 viewer coupling is separate.
 - The growth perimeter is the raster cell-edge length, not a sub-cell contour. The circle
   perimeter is about 16 percent above the analytic circle on the test grid.
 - C6 slope adjustment is unsupported; the engine raises rather than silently substituting a
@@ -170,8 +195,13 @@ fixture is representative rather than a copy of a private VRI inventory.
   P155.
 - Unit conversion is the main silent-error risk; the tests pin the reference values in the
   metric contract.
+- The Dogrib source licence is not explicit in the archive. The fixture is used for
+  validation with attribution. Its weather and perimeter times are local time; no
+  daylight-saving conversion is applied.
+- The observed fire includes spot fires; the P156 growth engine does not model spotting. The
+  comparison must report that mismatch.
 
-## 11. References
+## 12. References
 
 - Rothermel, R. C. (1972). A mathematical model for predicting fire spread in wildland fuels.
 - Albini, F. A. (1976). Computer-based models of wildland fire behavior.

@@ -12,8 +12,10 @@ bridge follow in later P156 tasks.
 
 from __future__ import annotations
 
+import bisect
 import heapq
 import math
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Final
 
@@ -36,6 +38,38 @@ _DEFAULT_MAX_SNAPSHOTS: Final[int] = 10_000
 
 #: The provenance identifier for the growth model and its fragment bridge.
 GROWTH_MODEL_VERSION: Final[str] = "ws4.fire.growth.v1"
+
+
+def _float_site_grid(
+    value: np.ndarray | None,
+    name: str,
+    rows: int,
+    cols: int,
+    default: float,
+) -> np.ndarray:
+    """Return a validated float grid or a constant grid."""
+    if value is None:
+        return np.full((rows, cols), float(default), dtype=float)
+    array = np.asarray(value, dtype=float)
+    if array.shape != (rows, cols):
+        raise FireFuelError(f"{name} must have shape (rows, cols)")
+    if not bool(np.isfinite(array).all()):
+        raise FireFuelError(f"{name} must be finite")
+    return array.copy()
+
+
+def _probability_grid(
+    value: np.ndarray | None,
+    name: str,
+    rows: int,
+    cols: int,
+    default: float,
+) -> np.ndarray:
+    """Return a validated 0-100 percentage grid or a constant grid."""
+    array = _float_site_grid(value, name, rows, cols, default)
+    if bool((array < 0.0).any()) or bool((array > 100.0).any()):
+        raise FireFuelError(f"{name} must be between 0 and 100")
+    return array
 
 
 @dataclass(frozen=True)
@@ -86,6 +120,15 @@ class SiteGrid:
         FBP blend and grass parameters.
     burnable : numpy.ndarray or None, optional
         Boolean burnable mask; None makes every cell burnable.
+    fuel_type_grid : numpy.ndarray or None, optional
+        Per-cell canonical FBP fuel types. ``None`` cells are unburnable. When provided, the
+        scalar ``fuel_type`` is only a fallback label for summaries.
+    slope_percent_grid, aspect_deg_grid, elevation_m_grid : numpy.ndarray or None, optional
+        Per-cell terrain. None uses the corresponding scalar field.
+    conifer_percent_grid, dead_fir_percent_grid, crown_closure_percent_grid : optional
+        Per-cell FBP blend parameters. None uses the scalar values.
+    wind_direction_patch : numpy.ndarray or None, optional
+        Per-cell wind-direction override in degrees, or NaN outside the patch.
     """
 
     fuel_type: str
@@ -108,6 +151,14 @@ class SiteGrid:
     crown_closure_percent: float = 80.0
     grass_fuel_load_kg_m2: float = 0.35
     burnable: np.ndarray | None = None
+    fuel_type_grid: np.ndarray | None = None
+    slope_percent_grid: np.ndarray | None = None
+    aspect_deg_grid: np.ndarray | None = None
+    elevation_m_grid: np.ndarray | None = None
+    conifer_percent_grid: np.ndarray | None = None
+    dead_fir_percent_grid: np.ndarray | None = None
+    crown_closure_percent_grid: np.ndarray | None = None
+    wind_direction_patch: np.ndarray | None = None
 
     def __post_init__(self) -> None:
         """Validate the grid and canonicalize the burnable mask."""
@@ -127,13 +178,76 @@ class SiteGrid:
         wind_direction = _number(self.wind_direction_deg, "wind_direction_deg") % 360.0
         slope = _non_negative(self.slope_percent, "slope_percent")
         aspect = _number(self.aspect_deg, "aspect_deg") % 360.0
+        fuel_grid: np.ndarray | None = None
+        if self.fuel_type_grid is not None:
+            raw = np.asarray(self.fuel_type_grid, dtype=object)
+            if raw.shape != (self.rows, self.cols):
+                raise FireFuelError("fuel_type_grid must have shape (rows, cols)")
+            fuel_grid = np.empty((self.rows, self.cols), dtype=object)
+            for row in range(self.rows):
+                for col in range(self.cols):
+                    value = raw[row, col]
+                    fuel_grid[row, col] = None if value is None else canonical_fuel_type(str(value))
         if self.burnable is None:
-            mask = np.ones((self.rows, self.cols), dtype=bool)
+            mask = (
+                np.ones((self.rows, self.cols), dtype=bool)
+                if fuel_grid is None
+                else np.array(
+                    [[value is not None for value in row] for row in fuel_grid], dtype=bool
+                )
+            )
         else:
             mask = np.asarray(self.burnable, dtype=bool)
             if mask.shape != (self.rows, self.cols):
                 raise FireFuelError("burnable must have shape (rows, cols)")
             mask = mask.copy()
+            if fuel_grid is not None:
+                mask &= np.array(
+                    [[value is not None for value in row] for row in fuel_grid], dtype=bool
+                )
+        slope_grid = _float_site_grid(
+            self.slope_percent_grid, "slope_percent_grid", self.rows, self.cols, slope
+        )
+        if bool((slope_grid < 0.0).any()):
+            raise FireFuelError("slope_percent_grid must be non-negative")
+        aspect_grid = (
+            _float_site_grid(self.aspect_deg_grid, "aspect_deg_grid", self.rows, self.cols, aspect)
+            % 360.0
+        )
+        elevation_grid = _float_site_grid(
+            self.elevation_m_grid,
+            "elevation_m_grid",
+            self.rows,
+            self.cols,
+            self.elevation_m,
+        )
+        conifer_grid = _probability_grid(
+            self.conifer_percent_grid,
+            "conifer_percent_grid",
+            self.rows,
+            self.cols,
+            self.conifer_percent,
+        )
+        dead_fir_grid = _probability_grid(
+            self.dead_fir_percent_grid,
+            "dead_fir_percent_grid",
+            self.rows,
+            self.cols,
+            self.dead_fir_percent,
+        )
+        closure_grid = _probability_grid(
+            self.crown_closure_percent_grid,
+            "crown_closure_percent_grid",
+            self.rows,
+            self.cols,
+            self.crown_closure_percent,
+        )
+        wind_patch: np.ndarray | None = None
+        if self.wind_direction_patch is not None:
+            wind_patch = np.asarray(self.wind_direction_patch, dtype=float)
+            if wind_patch.shape != (self.rows, self.cols):
+                raise FireFuelError("wind_direction_patch must have shape (rows, cols)")
+            wind_patch = wind_patch.copy()
         object.__setattr__(self, "fuel_type", name)
         object.__setattr__(self, "cell_size_m", cell)
         object.__setattr__(self, "ffmc", code)
@@ -143,6 +257,14 @@ class SiteGrid:
         object.__setattr__(self, "slope_percent", slope)
         object.__setattr__(self, "aspect_deg", aspect)
         object.__setattr__(self, "burnable", mask)
+        object.__setattr__(self, "fuel_type_grid", fuel_grid)
+        object.__setattr__(self, "slope_percent_grid", slope_grid)
+        object.__setattr__(self, "aspect_deg_grid", aspect_grid)
+        object.__setattr__(self, "elevation_m_grid", elevation_grid)
+        object.__setattr__(self, "conifer_percent_grid", conifer_grid)
+        object.__setattr__(self, "dead_fir_percent_grid", dead_fir_grid)
+        object.__setattr__(self, "crown_closure_percent_grid", closure_grid)
+        object.__setattr__(self, "wind_direction_patch", wind_patch)
 
     @property
     def cell_area_ha(self) -> float:
@@ -154,6 +276,40 @@ class SiteGrid:
             ``cell_size_m² / 10000``.
         """
         return self.cell_size_m**2 / 10_000.0
+
+
+@dataclass(frozen=True)
+class WeatherStep:
+    """One piecewise-constant weather interval for time-dependent growth.
+
+    Parameters
+    ----------
+    start_min : float
+        Interval start in minutes from ignition.
+    wind_kmh : float
+        Ten-metre wind speed.
+    wind_direction_deg : float
+        Direction the wind comes from, clockwise from north.
+    ffmc, bui : float or None, optional
+        Moisture codes for this interval. None uses the site-grid values.
+    """
+
+    start_min: float
+    wind_kmh: float
+    wind_direction_deg: float
+    ffmc: float | None = None
+    bui: float | None = None
+
+    def __post_init__(self) -> None:
+        """Validate the weather step."""
+        if _non_negative(self.start_min, "start_min") < 0.0:
+            raise FireFuelError("start_min must be non-negative")
+        _non_negative(self.wind_kmh, "wind_kmh")
+        _number(self.wind_direction_deg, "wind_direction_deg")
+        if self.ffmc is not None and not 0.0 <= _number(self.ffmc, "ffmc") <= 101.0:
+            raise FireFuelError("ffmc must be between 0 and 101")
+        if self.bui is not None:
+            _non_negative(self.bui, "bui")
 
 
 @dataclass(frozen=True)
@@ -173,6 +329,10 @@ class GrowthConfig:
     neighbor_radius : int, optional
         Primitive-direction radius in [1, 3]. One is the eight-neighbourhood, two is the
         sixteen-direction ring, and three is the twenty-four-direction ring (default 2).
+    weather_steps : tuple of WeatherStep or None, optional
+        Piecewise-constant weather. None uses one constant state from the site grid.
+    wind_patch_end_min : float or None, optional
+        Stop applying the site-grid wind-direction patch after this time.
     """
 
     ignition_cells: tuple[tuple[int, int], ...]
@@ -180,6 +340,8 @@ class GrowthConfig:
     snapshot_interval_min: float = 30.0
     allow_diagonal: bool = True
     neighbor_radius: int = 2
+    weather_steps: tuple[WeatherStep, ...] | None = None
+    wind_patch_end_min: float | None = None
 
     def __post_init__(self) -> None:
         """Validate the growth configuration."""
@@ -196,6 +358,23 @@ class GrowthConfig:
             raise FireFuelError("neighbor_radius must be an integer")
         if self.neighbor_radius < 1 or self.neighbor_radius > 3:
             raise FireFuelError("neighbor_radius must be between 1 and 3")
+        if self.weather_steps is not None:
+            if not self.weather_steps:
+                raise FireFuelError("weather_steps must not be empty")
+            previous = -1.0
+            for step in self.weather_steps:
+                if not isinstance(step, WeatherStep):
+                    raise FireFuelError("weather_steps must contain WeatherStep values")
+                if step.start_min <= previous:
+                    raise FireFuelError("weather_steps must be ordered by start_min")
+                previous = step.start_min
+            if self.weather_steps[0].start_min != 0.0:
+                raise FireFuelError("the first weather step must start at 0")
+        if (
+            self.wind_patch_end_min is not None
+            and _non_negative(self.wind_patch_end_min, "wind_patch_end_min") <= 0.0
+        ):
+            raise FireFuelError("wind_patch_end_min must be positive")
 
 
 @dataclass(frozen=True)
@@ -293,9 +472,15 @@ class GrowthResult:
     effective_wind : EffectiveWind
         The slope-adjusted wind.
     head_ros_m_min : float
-        The head rate of spread used by the ellipse.
+        The representative head rate of spread used by the ellipse.
     length_to_breadth : float
-        The ellipse length-to-breadth ratio.
+        The representative ellipse length-to-breadth ratio.
+    head_ros_grid : numpy.ndarray or None, optional
+        Per-cell head rate of spread for a heterogeneous grid.
+    length_to_breadth_grid : numpy.ndarray or None, optional
+        Per-cell length-to-breadth ratio for a heterogeneous grid.
+    spread_azimuth_deg_grid : numpy.ndarray or None, optional
+        Per-cell spread azimuth for a heterogeneous grid.
     """
 
     grid: SiteGrid
@@ -307,6 +492,9 @@ class GrowthResult:
     effective_wind: EffectiveWind
     head_ros_m_min: float
     length_to_breadth: float
+    head_ros_grid: np.ndarray | None = None
+    length_to_breadth_grid: np.ndarray | None = None
+    spread_azimuth_deg_grid: np.ndarray | None = None
 
     def summary(self) -> dict[str, object]:
         """Return a stable summary of the growth run.
@@ -317,11 +505,17 @@ class GrowthResult:
             The fuel type, effective wind, ellipse, final area and perimeter, and snapshots.
         """
         return {
-            "fuel_type": self.grid.fuel_type,
+            "fuel_type": (
+                "heterogeneous" if self.grid.fuel_type_grid is not None else self.grid.fuel_type
+            ),
             "effective_wind_kmh": self.effective_wind.speed_kmh,
             "spread_azimuth_deg": self.effective_wind.azimuth_deg,
             "head_ros_m_min": self.head_ros_m_min,
             "length_to_breadth": self.length_to_breadth,
+            "weather_mode": (
+                "time_dependent" if self.config.weather_steps is not None else "constant"
+            ),
+            "weather_steps": len(self.config.weather_steps or ()),
             "burned_area_ha": self.burned_area_ha,
             "perimeter_m": self.perimeter_m,
             "snapshots": [snapshot.to_dict() for snapshot in self.snapshots],
@@ -572,6 +766,299 @@ def _neighbor_offsets(allow_diagonal: bool, radius: int) -> list[tuple[int, int]
     return offsets
 
 
+def slope_aspect_from_elevation(
+    elevation_m: np.ndarray,
+    cell_size_m: float,
+    *,
+    nodata: float | None = None,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Derive slope percent and downslope aspect from a north-first elevation grid.
+
+    Parameters
+    ----------
+    elevation_m : numpy.ndarray
+        Elevation in metres. Row zero is the north edge, following the ESRI ASCII grid
+        convention used by the observed-fire fixture.
+    cell_size_m : float
+        Cell side length in metres.
+    nodata : float or None, optional
+        No-data value. No-data cells are filled with the valid-cell mean before the gradient.
+
+    Returns
+    -------
+    tuple of numpy.ndarray
+        Slope percent in ``[0, 70]`` and downslope aspect in degrees clockwise from north.
+
+    Raises
+    ------
+    FireFuelError
+        If the grid is invalid or has no valid elevation cells.
+    """
+    elevation = np.asarray(elevation_m, dtype=float)
+    if elevation.ndim != 2:
+        raise FireFuelError("elevation_m must be two-dimensional")
+    cell = _number(cell_size_m, "cell_size_m")
+    if cell <= 0.0:
+        raise FireFuelError("cell_size_m must be positive")
+    valid = np.isfinite(elevation)
+    if nodata is not None:
+        valid &= elevation != float(nodata)
+    if not bool(valid.any()):
+        raise FireFuelError("elevation grid has no valid cells")
+    filled = elevation.copy()
+    filled[~valid] = float(np.mean(elevation[valid]))
+    row_gradient, col_gradient = np.gradient(filled, cell)
+    north_gradient = -row_gradient
+    slope = np.minimum(100.0 * np.hypot(col_gradient, north_gradient), 70.0)
+    aspect = np.degrees(np.arctan2(-col_gradient, -north_gradient)) % 360.0
+    aspect = np.where(slope > 1e-9, aspect, 0.0)
+    slope[~valid] = 0.0
+    aspect[~valid] = 0.0
+    return slope, aspect
+
+
+def _cell_behaviour(
+    grid: SiteGrid,
+    row: int,
+    col: int,
+    ffmc: float,
+    bui: float,
+    wind_kmh: float,
+    wind_direction_deg: float,
+) -> tuple[float, float, EffectiveWind] | None:
+    """Return local head ROS, length-to-breadth, and wind for one cell."""
+    fuel = grid.fuel_type if grid.fuel_type_grid is None else grid.fuel_type_grid[row, col]
+    if fuel is None:
+        return None
+    slope = float(np.asarray(grid.slope_percent_grid)[row, col])
+    aspect = float(np.asarray(grid.aspect_deg_grid)[row, col])
+    elevation = float(np.asarray(grid.elevation_m_grid)[row, col])
+    conifer = float(np.asarray(grid.conifer_percent_grid)[row, col])
+    dead_fir = float(np.asarray(grid.dead_fir_percent_grid)[row, col])
+    closure = float(np.asarray(grid.crown_closure_percent_grid)[row, col])
+    wind = effective_wind(
+        fuel,
+        ffmc,
+        bui,
+        wind_kmh,
+        wind_direction_deg,
+        slope,
+        aspect,
+        conifer_percent=conifer,
+        dead_fir_percent=dead_fir,
+        crown_closure_percent=closure,
+    )
+    crown = fbp_crown_fire(
+        fuel,
+        ffmc,
+        bui,
+        wind.speed_kmh,
+        foliar_moisture_percent=grid.foliar_moisture_percent,
+        latitude_deg=grid.latitude_deg,
+        longitude_deg=grid.longitude_deg,
+        elevation_m=elevation,
+        julian_day=grid.julian_day,
+        conifer_percent=conifer,
+        dead_fir_percent=dead_fir,
+        crown_closure_percent=closure,
+        grass_fuel_load_kg_m2=grid.grass_fuel_load_kg_m2,
+    )
+    return crown.rate_of_spread_m_min, length_to_breadth(fuel, wind.speed_kmh), wind
+
+
+def _local_behaviour(
+    grid: SiteGrid,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, EffectiveWind]:
+    """Return per-cell head ROS, length-to-breadth, and spread azimuth."""
+    rows, cols = grid.rows, grid.cols
+    burnable = np.asarray(grid.burnable, dtype=bool)
+    head_grid = np.zeros((rows, cols), dtype=float)
+    lb_grid = np.ones((rows, cols), dtype=float)
+    azimuth_grid = np.zeros((rows, cols), dtype=float)
+    representative: EffectiveWind | None = None
+    cache: dict[tuple[int, int], tuple[float, float, EffectiveWind]] = {}
+    for row, col in zip(*np.where(burnable), strict=True):
+        key = (row, col)
+        cached = cache.get(key)
+        if cached is None:
+            wind_direction = grid.wind_direction_deg
+            if grid.wind_direction_patch is not None:
+                patch = float(grid.wind_direction_patch[row, col])
+                if np.isfinite(patch):
+                    wind_direction = patch
+            value = _cell_behaviour(
+                grid,
+                int(row),
+                int(col),
+                grid.ffmc,
+                grid.bui,
+                grid.wind_kmh,
+                wind_direction,
+            )
+            if value is None:
+                continue
+            cached = value
+            cache[key] = cached
+        head_grid[row, col], lb_grid[row, col], wind_value = cached
+        azimuth_grid[row, col] = wind_value.azimuth_deg
+        if representative is None:
+            representative = wind_value
+    if representative is None:
+        raise FireFuelError("grid has no burnable fuel cells")
+    return head_grid, lb_grid, azimuth_grid, representative
+
+
+def _dynamic_arrival(
+    behaviour: Callable[[int, int, int], tuple[float, float, EffectiveWind] | None],
+    steps: tuple[WeatherStep, ...],
+    starts: list[float],
+    row: int,
+    col: int,
+    distance: float,
+    direction: float,
+    start_time: float,
+    step_index: int,
+) -> float:
+    """Return the first arrival time along an edge with piecewise-constant weather."""
+    time = start_time
+    remaining = distance
+    index = step_index
+    while index < len(steps):
+        value = behaviour(row, col, index)
+        if value is None:
+            return math.inf
+        head, ratio, wind = value
+        if head <= 0.0:
+            return math.inf
+        relative = math.radians(direction - wind.azimuth_deg)
+        ros = _direction_ros(head, ratio, relative)
+        if ros <= 0.0:
+            return math.inf
+        step_end = starts[index + 1] if index + 1 < len(starts) else math.inf
+        available = step_end - time
+        if available <= 1e-9:
+            index += 1
+            continue
+        needed = remaining / ros
+        if needed <= available:
+            return time + needed
+        remaining -= ros * available
+        time = step_end
+        index += 1
+    return math.inf
+
+
+def _grow_fire_time_dependent(grid: SiteGrid, config: GrowthConfig) -> GrowthResult:
+    """Grow a fire with piecewise-constant weather."""
+    steps = config.weather_steps
+    if steps is None:
+        raise FireFuelError("time-dependent growth needs weather_steps")
+    burnable = np.asarray(grid.burnable, dtype=bool)
+    summary_head, summary_lb, _summary_az, representative = _local_behaviour(grid)
+    active = burnable & (summary_head > 0.0)
+    if not bool(active.any()):
+        raise FireFuelError("grid has no burnable fuel cells with a positive rate of spread")
+    cache: dict[tuple[int, int, int], tuple[float, float, EffectiveWind] | None] = {}
+
+    def behaviour(row: int, col: int, index: int) -> tuple[float, float, EffectiveWind] | None:
+        key = (row, col, index)
+        if key in cache:
+            return cache[key]
+        step = steps[index]
+        wind_direction = step.wind_direction_deg
+        patch_active = (
+            config.wind_patch_end_min is None or step.start_min < config.wind_patch_end_min
+        )
+        if patch_active and grid.wind_direction_patch is not None:
+            patch = float(grid.wind_direction_patch[row, col])
+            if np.isfinite(patch):
+                wind_direction = patch
+        value = _cell_behaviour(
+            grid,
+            row,
+            col,
+            grid.ffmc if step.ffmc is None else step.ffmc,
+            grid.bui if step.bui is None else step.bui,
+            step.wind_kmh,
+            wind_direction,
+        )
+        cache[key] = value
+        return value
+
+    starts = [step.start_min for step in steps]
+    ignition = np.full((grid.rows, grid.cols), np.inf, dtype=float)
+    queue: list[tuple[float, int, int]] = []
+    for row, col in config.ignition_cells:
+        ignition[row, col] = 0.0
+        heapq.heappush(queue, (0.0, row, col))
+    offsets = _neighbor_offsets(config.allow_diagonal, config.neighbor_radius)
+    while queue:
+        time, row, col = heapq.heappop(queue)
+        if time > config.max_time_min:
+            break
+        if time > ignition[row, col] + 1e-12:
+            continue
+        step_index = max(0, bisect.bisect_right(starts, time) - 1)
+        for drow, dcol in offsets:
+            nrow = row + drow
+            ncol = col + dcol
+            if nrow < 0 or nrow >= grid.rows or ncol < 0 or ncol >= grid.cols:
+                continue
+            if not bool(burnable[nrow, ncol]):
+                continue
+            if not _line_is_burnable(burnable, row, col, drow, dcol):
+                continue
+            distance = grid.cell_size_m * math.hypot(drow, dcol)
+            direction = math.degrees(math.atan2(dcol, -drow)) % 360.0
+            arrival = _dynamic_arrival(
+                behaviour,
+                steps,
+                starts,
+                row,
+                col,
+                distance,
+                direction,
+                time,
+                step_index,
+            )
+            if (
+                math.isfinite(arrival)
+                and arrival <= config.max_time_min
+                and arrival < ignition[nrow, ncol] - 1e-12
+            ):
+                ignition[nrow, ncol] = arrival
+                heapq.heappush(queue, (arrival, nrow, ncol))
+    snapshots: list[GrowthSnapshot] = []
+    time_value = 0.0
+    while time_value <= config.max_time_min + 1e-9:
+        burned = ignition <= time_value + 1e-12
+        area, perimeter = _area_and_perimeter(burned, grid)
+        snapshots.append(
+            GrowthSnapshot(
+                time_min=time_value,
+                burned_cells=int(burned.sum()),
+                area_ha=area,
+                perimeter_m=perimeter,
+            )
+        )
+        time_value += config.snapshot_interval_min
+    final = snapshots[-1] if snapshots else GrowthSnapshot(0.0, 0, 0.0, 0.0)
+    return GrowthResult(
+        grid=grid,
+        config=config,
+        ignition_time_min=ignition,
+        snapshots=tuple(snapshots),
+        burned_area_ha=final.area_ha,
+        perimeter_m=final.perimeter_m,
+        effective_wind=representative,
+        head_ros_m_min=float(np.mean(summary_head[active])),
+        length_to_breadth=float(np.mean(summary_lb[active])),
+        head_ros_grid=summary_head,
+        length_to_breadth_grid=summary_lb,
+        spread_azimuth_deg_grid=_summary_az,
+    )
+
+
 def grow_fire(grid: SiteGrid, config: GrowthConfig) -> GrowthResult:
     """Grow a fire on a homogeneous site grid.
 
@@ -605,35 +1092,14 @@ def grow_fire(grid: SiteGrid, config: GrowthConfig) -> GrowthResult:
             raise FireFuelError(f"ignition cell ({row}, {col}) is outside the grid")
         if not bool(burnable[row, col]):
             raise FireFuelError(f"ignition cell ({row}, {col}) is unburnable")
-    wind = effective_wind(
-        grid.fuel_type,
-        grid.ffmc,
-        grid.bui,
-        grid.wind_kmh,
-        grid.wind_direction_deg,
-        grid.slope_percent,
-        grid.aspect_deg,
-        conifer_percent=grid.conifer_percent,
-        dead_fir_percent=grid.dead_fir_percent,
-        crown_closure_percent=grid.crown_closure_percent,
-    )
-    crown = fbp_crown_fire(
-        grid.fuel_type,
-        grid.ffmc,
-        grid.bui,
-        wind.speed_kmh,
-        foliar_moisture_percent=grid.foliar_moisture_percent,
-        latitude_deg=grid.latitude_deg,
-        longitude_deg=grid.longitude_deg,
-        elevation_m=grid.elevation_m,
-        julian_day=grid.julian_day,
-        conifer_percent=grid.conifer_percent,
-        dead_fir_percent=grid.dead_fir_percent,
-        crown_closure_percent=grid.crown_closure_percent,
-        grass_fuel_load_kg_m2=grid.grass_fuel_load_kg_m2,
-    )
-    head_ros = crown.rate_of_spread_m_min
-    lb = length_to_breadth(grid.fuel_type, wind.speed_kmh)
+    if config.weather_steps is not None:
+        return _grow_fire_time_dependent(grid, config)
+    head_grid, lb_grid, azimuth_grid, wind = _local_behaviour(grid)
+    active = burnable & (head_grid > 0.0)
+    if not bool(active.any()):
+        raise FireFuelError("grid has no burnable fuel cells with a positive rate of spread")
+    head_ros = float(np.mean(head_grid[active]))
+    lb = float(np.mean(lb_grid[active]))
     ignition = np.full((grid.rows, grid.cols), np.inf, dtype=float)
     queue: list[tuple[float, int, int]] = []
     for row, col in config.ignition_cells:
@@ -657,8 +1123,8 @@ def grow_fire(grid: SiteGrid, config: GrowthConfig) -> GrowthResult:
                 continue
             distance = grid.cell_size_m * math.hypot(drow, dcol)
             direction = math.degrees(math.atan2(dcol, -drow)) % 360.0
-            relative = math.radians(direction - wind.azimuth_deg)
-            ros = _direction_ros(head_ros, lb, relative)
+            relative = math.radians(direction - azimuth_grid[row, col])
+            ros = _direction_ros(head_grid[row, col], lb_grid[row, col], relative)
             if ros <= 0.0:
                 continue
             arrival = time + distance / ros
@@ -690,6 +1156,9 @@ def grow_fire(grid: SiteGrid, config: GrowthConfig) -> GrowthResult:
         effective_wind=wind,
         head_ros_m_min=head_ros,
         length_to_breadth=lb,
+        head_ros_grid=head_grid,
+        length_to_breadth_grid=lb_grid,
+        spread_azimuth_deg_grid=azimuth_grid,
     )
 
 

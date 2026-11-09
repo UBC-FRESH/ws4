@@ -145,13 +145,16 @@ version ``ws4.fire.scene.v1``. The read-only endpoints are:
 - ``GET /api/fire/runs/{run}``: one scene manifest and summary;
 - ``GET /api/fire/runs/{run}/payload``: the compact viewer payload from
   ``payload.json``;
-- ``GET /api/fire/runs/{run}/viewer``: the viewer with the vendored Three.js paths.
+- ``GET /api/fire/runs/{run}/viewer``: the viewer with the vendored Three.js paths;
+- ``GET /api/fire/observed/dogrib.svg``: the read-only Dogrib observed-versus-simulated
+  validation view.
 
 The **Fire** workspace shows the scene over the main canvas, with a shared timeline,
 play/pause, speed, camera controls, tree and fragment inspection, and side-by-side Scene A
 and Scene B comparison. The viewer accepts ``?embedded=1`` and a small ``postMessage`` API
-so the workspace timeline can drive both scenes. The standalone viewer keeps its CDN
-module import; the served web viewer uses the local vendored Three.js module.
+so the workspace timeline can drive both scenes. An **Observed comparison** button opens
+the Dogrib validation SVG in a new tab. The standalone viewer keeps its CDN module import;
+the served web viewer uses the local vendored Three.js module.
 
 The viewer provides:
 

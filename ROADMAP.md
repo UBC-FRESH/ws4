@@ -155,7 +155,9 @@ exists and the maintainer approves it.
 | P154 TSA 29 GPU stock | #912 | `feature/p154-tsa29-stock` | complete |
 | P155 3D fire scene and synthetic tree stands | #877 | `feature/p155-fire-3d` | complete |
 | P156 Credible fire behaviour and growth | #890 | `feature/p156-fire-behaviour` | complete |
+| P157 Observed fire and perimeter validation | #923 | `feature/p157-observed-fire` | pr-open |
 | P158 Plan scenario matrix | #928 | `feature/p158-plan-matrix` | complete |
+| P159 Fire surrogate feasibility | #946 | `feature/p159-fire-surrogate` | planned |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -4625,6 +4627,44 @@ Acceptance:
   consumption, not arbitrary particle settings.
 - `python scripts/dashboard.py` is green.
 
+## Phase 157: Observed fire and perimeter validation
+
+Parent issue: #923
+Branch: `feature/p157-observed-fire`
+Status: pr-open
+Design note: `notes/design/ws4-fire-behaviour.md`
+Report: `notes/reports/p157-closeout.md`
+Evidence: `notes/reports/p157-observed-validation.md`
+Comparison: `notes/reports/p157-firestarr-comparison.md`
+Wine: `notes/reports/p157-prometheus-wine.md`
+BurnP3 setup: `notes/reports/p157-burnp3-setup.md`
+BurnP3 result: `notes/reports/p157-burnp3-dogrib.md`
+Reuse review: `notes/design/ws4-open-fire-model-reuse.md`
+PR: #943
+
+Goal: validate the P156 kernel and growth engine against a public observed fire perimeter,
+with explicit provenance, metrics, tolerances, and limitations.
+
+- [x] P157.1 Observed-fire data contract and source fixture (#925)
+- [x] P157.2 Observed-perimeter comparison harness (#926)
+- [x] P157.3 Observed-vs-simulated perimeter view (#924)
+- [x] P157.5 Correct observed-grid row orientation (#939)
+- [x] P157.6 Heterogeneous spatial FBP growth (#940)
+- [x] P157.7 Hourly weather and time-matched Dogrib run (#941)
+- [x] P157.8 Reproduce Dogrib Scenario 2b inputs (#942)
+- [x] P157.9 FireSTARR side-by-side benchmark (#944)
+- [x] P157.10 BurnP3 reference comparison (#945)
+- [x] P157.4 Verify and close out observed-fire validation (#927)
+
+Acceptance:
+
+- The observed-fire source, licence, CRS, time zone, and assumptions are recorded.
+- The loader validates perimeter, ignition, weather, fuel, and terrain inputs.
+- The comparison harness reports area, perimeter, centroid, IoU, Sorensen, and orientation.
+- The report separates standard, model-to-model, and observed-fire evidence.
+- `python scripts/dashboard.py` is green.
+- No merge, tag, release, or settings change without approval.
+
 ## Phase 158: Plan scenario matrix
 
 Parent issue: #928
@@ -4652,3 +4692,30 @@ Acceptance:
 - The target table and matrix stay consistent after edits and live updates.
 - Browser and dashboard tests pass.
 
+## Phase 159: Fire surrogate feasibility
+
+Parent issue: #946
+Branch: `feature/p159-fire-surrogate`
+Status: planned
+Design note: `notes/design/ws4-open-fire-model-reuse.md`
+
+Goal: test whether a compact surrogate trained on the WS4 P156/P157 fire kernel can
+reproduce held-out burn footprints fast enough for interactive screening, without
+replacing the auditable kernel or claiming observed-fire validation.
+
+- [ ] P159.1 Build a deterministic synthetic burn corpus and provenance
+- [ ] P159.2 Train a compact surrogate and write the model card
+- [ ] P159.3 Evaluate held-out synthetic runs and Dogrib out-of-distribution
+- [ ] P159.4 Apply the integration gate and record the decision
+
+Acceptance:
+
+- Corpus regeneration is deterministic from a seed and records the kernel, fuel, weather,
+  and grid versions.
+- No observed fire used for training is also used for validation.
+- Dogrib is reported as out-of-distribution evidence, not training data.
+- The surrogate reports footprint and fire-state error against held-out kernel runs.
+- The web and UI paths do not depend on the surrogate unless the error gate passes.
+- The model card records data provenance, licence limits, and failure modes.
+- P159 may close with a no-go result; a rejected surrogate is a complete outcome.
+- `python scripts/dashboard.py` is green.

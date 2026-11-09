@@ -32,3 +32,4 @@ napoleon_use_rtype = False
 html_theme = "sphinx_rtd_theme"
 html_title = "WS4"
 html_extra_path = ["llms.txt", "fire-demo.html"]
+html_static_path = ["_static"]
