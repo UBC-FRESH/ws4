@@ -34,6 +34,8 @@ Working notes for WS4. Notes are living: update them in the same change set as t
   standard-case validation plan.
 - `design/ws4-fire-validation-ladder.md` — published validation statistics, decision-grade
   benchmarks, and the P163/P164 plan.
+- `reports/p163-closeout.md` — P163 behaviour classes, spotting, 3D outcomes, and accepted
+  proxy limits.
 - `design/ws4-open-fire-model-reuse.md` — Planscape/burn-emulator review, the observed-fire
   calibration gap, and the bounded P159 surrogate plan.
 - `design/ws4-second-fire-calibration.md` — P161 data gate, the selected Hay River/K'atl'odeeche

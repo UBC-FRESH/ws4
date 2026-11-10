@@ -161,7 +161,7 @@ exists and the maintainer approves it.
 | P160 Dogrib burning conditions and wind-grid fidelity | #947 | `feature/p160-dogrib-wind-thresholds` | complete |
 | P161 Second observed fire and calibration protocol | #954 | `feature/p161-second-fire-calibration` | complete |
 | P162 Calibration sensitivity diagnostic | #961 | `feature/p162-calibration-sensitivity` | complete |
-| P163 Fire behaviour completeness | #971 | `feature/p163-fire-behaviour-completeness` | active |
+| P163 Fire behaviour completeness | #971 | `feature/p163-fire-behaviour-completeness` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -4819,9 +4819,11 @@ Acceptance:
 
 Parent issue: #971
 Branch: `feature/p163-fire-behaviour-completeness`
-Status: active
+Status: pr-open
 Design note: `notes/design/ws4-fire-behaviour.md`
 Validation ladder: `notes/design/ws4-fire-validation-ladder.md`
+Report: `notes/reports/p163-closeout.md`
+PR: TBD
 
 Goal: add explicit ground/surface/crown classes and transitions, a bounded spotting model, and
 intensity-aware tree effects in the 3D scene, without claiming operational validation.
@@ -4829,7 +4831,7 @@ intensity-aware tree effects in the 3D scene, without claiming operational valid
 - [x] P163.1 Ground/surface/crown classes and transitions (#972)
 - [x] P163.2 Spotting model and integration (#973)
 - [x] P163.3 Intensity-aware tree effects and 3D states (#974)
-- [ ] P163.4 Verify and close out (#975)
+- [x] P163.4 Verify and close out (#975)
 
 Acceptance:
 

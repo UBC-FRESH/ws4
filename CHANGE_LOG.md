@@ -5103,3 +5103,9 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   length against crown base and tree height. The viewer now keeps scorched crowns, shrinks
   torched crowns, and collapses consumed crowns to a charred remnant; legend and docs updated.
   These are visual classes, not a validated mortality model. Dashboard: **GREEN**.
+
+- P163.4: closed P163 as a model-completeness phase. Explicit behaviour classes, seeded
+  screening spotting, and scorched/torched/consumed 3D outcomes are implemented and tested.
+  Ground fire, spotting, and tree outcomes are documented as proxies, not validated process
+  models. Validation ladder recorded; next phase is P164 decision-grade risk validation.
+  Report: `notes/reports/p163-closeout.md`. Dashboard: **GREEN**.
