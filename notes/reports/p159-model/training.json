@@ -1,0 +1,2380 @@
+{
+  "corpus": {
+    "cell_size_m": 100.0,
+    "cols": 32,
+    "duration_min": 60.0,
+    "fuel_order": [
+      "C1",
+      "C2",
+      "C3",
+      "C4",
+      "C5",
+      "C6",
+      "C7",
+      "D1",
+      "M1",
+      "M2",
+      "M3",
+      "M4",
+      "S1",
+      "S2",
+      "S3",
+      "O1A",
+      "O1B"
+    ],
+    "kernel_version": "ws4.fire.growth.v1",
+    "rows": 32,
+    "sample_count": 120,
+    "samples": [
+      {
+        "bui": 60.26610117646644,
+        "burnable_cells": 944,
+        "burned_cells": 69,
+        "duration_min": 60.0,
+        "ffmc": 90.82839405463318,
+        "ignition": [
+          6,
+          20
+        ],
+        "sample_id": "sample_0000",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "validation",
+        "wind_direction_deg": 318.07196589982567,
+        "wind_kmh": 27.416525153628854
+      },
+      {
+        "bui": 116.97366203481417,
+        "burnable_cells": 941,
+        "burned_cells": 22,
+        "duration_min": 60.0,
+        "ffmc": 88.27600247115649,
+        "ignition": [
+          4,
+          3
+        ],
+        "sample_id": "sample_0001",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 75.99907505315241,
+        "wind_kmh": 14.684047084440879
+      },
+      {
+        "bui": 55.85111158333336,
+        "burnable_cells": 934,
+        "burned_cells": 147,
+        "duration_min": 60.0,
+        "ffmc": 95.36486335938436,
+        "ignition": [
+          17,
+          6
+        ],
+        "sample_id": "sample_0002",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 148.7450356519185,
+        "wind_kmh": 13.2138983297397
+      },
+      {
+        "bui": 53.586995479620555,
+        "burnable_cells": 926,
+        "burned_cells": 1,
+        "duration_min": 60.0,
+        "ffmc": 80.37970588944297,
+        "ignition": [
+          6,
+          4
+        ],
+        "sample_id": "sample_0003",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 345.3958506308771,
+        "wind_kmh": 6.556206207115195
+      },
+      {
+        "bui": 106.17342700844239,
+        "burnable_cells": 941,
+        "burned_cells": 12,
+        "duration_min": 60.0,
+        "ffmc": 86.97404981007072,
+        "ignition": [
+          19,
+          31
+        ],
+        "sample_id": "sample_0004",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 95.09755328625931,
+        "wind_kmh": 23.64793963654281
+      },
+      {
+        "bui": 116.2931947803981,
+        "burnable_cells": 957,
+        "burned_cells": 39,
+        "duration_min": 60.0,
+        "ffmc": 92.58421894550455,
+        "ignition": [
+          29,
+          23
+        ],
+        "sample_id": "sample_0005",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "validation",
+        "wind_direction_deg": 295.1402388365263,
+        "wind_kmh": 26.274776514930238
+      },
+      {
+        "bui": 85.55857436526968,
+        "burnable_cells": 944,
+        "burned_cells": 28,
+        "duration_min": 60.0,
+        "ffmc": 88.77359132811583,
+        "ignition": [
+          29,
+          12
+        ],
+        "sample_id": "sample_0006",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 298.6362928917102,
+        "wind_kmh": 24.781388524757475
+      },
+      {
+        "bui": 81.4453083990849,
+        "burnable_cells": 929,
+        "burned_cells": 3,
+        "duration_min": 60.0,
+        "ffmc": 88.09287643855274,
+        "ignition": [
+          7,
+          10
+        ],
+        "sample_id": "sample_0007",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 20.22560975180621,
+        "wind_kmh": 7.48363043044181
+      },
+      {
+        "bui": 114.44993593343597,
+        "burnable_cells": 950,
+        "burned_cells": 15,
+        "duration_min": 60.0,
+        "ffmc": 91.59030090112637,
+        "ignition": [
+          30,
+          13
+        ],
+        "sample_id": "sample_0008",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 356.5614932281377,
+        "wind_kmh": 31.011159533923593
+      },
+      {
+        "bui": 33.32836105361732,
+        "burnable_cells": 948,
+        "burned_cells": 33,
+        "duration_min": 60.0,
+        "ffmc": 91.52816194974932,
+        "ignition": [
+          4,
+          24
+        ],
+        "sample_id": "sample_0009",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 169.96015027804407,
+        "wind_kmh": 9.3166028383115
+      },
+      {
+        "bui": 29.71983657244011,
+        "burnable_cells": 946,
+        "burned_cells": 5,
+        "duration_min": 60.0,
+        "ffmc": 88.28874272878645,
+        "ignition": [
+          4,
+          29
+        ],
+        "sample_id": "sample_0010",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "validation",
+        "wind_direction_deg": 247.39087287878866,
+        "wind_kmh": 14.948604546922862
+      },
+      {
+        "bui": 55.626321477310896,
+        "burnable_cells": 940,
+        "burned_cells": 1,
+        "duration_min": 60.0,
+        "ffmc": 87.20176042888977,
+        "ignition": [
+          5,
+          4
+        ],
+        "sample_id": "sample_0011",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 7.754875467477111,
+        "wind_kmh": 11.418359330981183
+      },
+      {
+        "bui": 45.91261767902533,
+        "burnable_cells": 954,
+        "burned_cells": 7,
+        "duration_min": 60.0,
+        "ffmc": 91.19156813825144,
+        "ignition": [
+          5,
+          2
+        ],
+        "sample_id": "sample_0012",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 273.4566928540919,
+        "wind_kmh": 17.24335077328406
+      },
+      {
+        "bui": 116.18554394525381,
+        "burnable_cells": 954,
+        "burned_cells": 11,
+        "duration_min": 60.0,
+        "ffmc": 90.5394716321879,
+        "ignition": [
+          1,
+          12
+        ],
+        "sample_id": "sample_0013",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 206.00668006743015,
+        "wind_kmh": 7.662038882869134
+      },
+      {
+        "bui": 36.79624248057043,
+        "burnable_cells": 931,
+        "burned_cells": 3,
+        "duration_min": 60.0,
+        "ffmc": 86.50200646083054,
+        "ignition": [
+          25,
+          31
+        ],
+        "sample_id": "sample_0014",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 25.905840140448216,
+        "wind_kmh": 10.60011241052222
+      },
+      {
+        "bui": 88.20435769318013,
+        "burnable_cells": 945,
+        "burned_cells": 1,
+        "duration_min": 60.0,
+        "ffmc": 82.60534539517066,
+        "ignition": [
+          2,
+          16
+        ],
+        "sample_id": "sample_0015",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "validation",
+        "wind_direction_deg": 33.58191891778,
+        "wind_kmh": 13.433677177256444
+      },
+      {
+        "bui": 108.74816291481793,
+        "burnable_cells": 948,
+        "burned_cells": 1,
+        "duration_min": 60.0,
+        "ffmc": 87.17970042953156,
+        "ignition": [
+          0,
+          15
+        ],
+        "sample_id": "sample_0016",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 312.62554482445427,
+        "wind_kmh": 7.924892186025706
+      },
+      {
+        "bui": 85.91215116923716,
+        "burnable_cells": 944,
+        "burned_cells": 468,
+        "duration_min": 60.0,
+        "ffmc": 97.52212133282097,
+        "ignition": [
+          24,
+          27
+        ],
+        "sample_id": "sample_0017",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 150.67113266251172,
+        "wind_kmh": 27.02506718739257
+      },
+      {
+        "bui": 97.17960961020331,
+        "burnable_cells": 939,
+        "burned_cells": 54,
+        "duration_min": 60.0,
+        "ffmc": 91.61262666452687,
+        "ignition": [
+          19,
+          21
+        ],
+        "sample_id": "sample_0018",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 307.86463196876053,
+        "wind_kmh": 13.71175056236771
+      },
+      {
+        "bui": 119.72646244802372,
+        "burnable_cells": 947,
+        "burned_cells": 229,
+        "duration_min": 60.0,
+        "ffmc": 95.46956323979428,
+        "ignition": [
+          26,
+          16
+        ],
+        "sample_id": "sample_0019",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 125.61689317662686,
+        "wind_kmh": 16.05278397504102
+      },
+      {
+        "bui": 100.44808057343633,
+        "burnable_cells": 949,
+        "burned_cells": 19,
+        "duration_min": 60.0,
+        "ffmc": 87.06977042793208,
+        "ignition": [
+          3,
+          7
+        ],
+        "sample_id": "sample_0020",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "validation",
+        "wind_direction_deg": 223.81839835542553,
+        "wind_kmh": 9.519422677723684
+      },
+      {
+        "bui": 111.43240026034853,
+        "burnable_cells": 945,
+        "burned_cells": 3,
+        "duration_min": 60.0,
+        "ffmc": 82.8095719026185,
+        "ignition": [
+          19,
+          9
+        ],
+        "sample_id": "sample_0021",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 14.273067358148479,
+        "wind_kmh": 32.23825158401929
+      },
+      {
+        "bui": 61.76848987774644,
+        "burnable_cells": 953,
+        "burned_cells": 42,
+        "duration_min": 60.0,
+        "ffmc": 94.19554908112089,
+        "ignition": [
+          8,
+          0
+        ],
+        "sample_id": "sample_0022",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 160.47918316372738,
+        "wind_kmh": 27.201875741740253
+      },
+      {
+        "bui": 103.34892059188975,
+        "burnable_cells": 957,
+        "burned_cells": 2,
+        "duration_min": 60.0,
+        "ffmc": 83.42743051288541,
+        "ignition": [
+          24,
+          25
+        ],
+        "sample_id": "sample_0023",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 353.3582117771909,
+        "wind_kmh": 21.884788753796165
+      },
+      {
+        "bui": 99.38941982049231,
+        "burnable_cells": 953,
+        "burned_cells": 122,
+        "duration_min": 60.0,
+        "ffmc": 92.89152569917408,
+        "ignition": [
+          10,
+          26
+        ],
+        "sample_id": "sample_0024",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 110.13815446697797,
+        "wind_kmh": 19.307577219845186
+      },
+      {
+        "bui": 57.04749322097047,
+        "burnable_cells": 952,
+        "burned_cells": 101,
+        "duration_min": 60.0,
+        "ffmc": 93.60911559244911,
+        "ignition": [
+          23,
+          19
+        ],
+        "sample_id": "sample_0025",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "validation",
+        "wind_direction_deg": 106.177713387469,
+        "wind_kmh": 19.534413597615426
+      },
+      {
+        "bui": 55.90339395905458,
+        "burnable_cells": 942,
+        "burned_cells": 85,
+        "duration_min": 60.0,
+        "ffmc": 93.84723865257328,
+        "ignition": [
+          23,
+          30
+        ],
+        "sample_id": "sample_0026",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 87.69546102430118,
+        "wind_kmh": 13.6523796065971
+      },
+      {
+        "bui": 99.64213092128108,
+        "burnable_cells": 946,
+        "burned_cells": 1,
+        "duration_min": 60.0,
+        "ffmc": 82.30742815238322,
+        "ignition": [
+          26,
+          17
+        ],
+        "sample_id": "sample_0027",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 167.7266139162165,
+        "wind_kmh": 19.18932416488461
+      },
+      {
+        "bui": 51.94138605053023,
+        "burnable_cells": 953,
+        "burned_cells": 1,
+        "duration_min": 60.0,
+        "ffmc": 82.78948720588093,
+        "ignition": [
+          26,
+          9
+        ],
+        "sample_id": "sample_0028",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 8.194774147430284,
+        "wind_kmh": 5.622770374843119
+      },
+      {
+        "bui": 45.05982073082221,
+        "burnable_cells": 953,
+        "burned_cells": 2,
+        "duration_min": 60.0,
+        "ffmc": 85.85626992366048,
+        "ignition": [
+          12,
+          14
+        ],
+        "sample_id": "sample_0029",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 64.28530725639169,
+        "wind_kmh": 24.74222040689888
+      },
+      {
+        "bui": 103.49755831083989,
+        "burnable_cells": 933,
+        "burned_cells": 232,
+        "duration_min": 60.0,
+        "ffmc": 94.79268665840964,
+        "ignition": [
+          11,
+          13
+        ],
+        "sample_id": "sample_0030",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "validation",
+        "wind_direction_deg": 260.02451884954166,
+        "wind_kmh": 19.933111142110793
+      },
+      {
+        "bui": 24.011209780511937,
+        "burnable_cells": 919,
+        "burned_cells": 11,
+        "duration_min": 60.0,
+        "ffmc": 86.87443899182244,
+        "ignition": [
+          9,
+          1
+        ],
+        "sample_id": "sample_0031",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 314.0761948248658,
+        "wind_kmh": 34.4799289753179
+      },
+      {
+        "bui": 98.73872530450925,
+        "burnable_cells": 939,
+        "burned_cells": 231,
+        "duration_min": 60.0,
+        "ffmc": 96.27134089608052,
+        "ignition": [
+          19,
+          12
+        ],
+        "sample_id": "sample_0032",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 165.2512278218716,
+        "wind_kmh": 8.813230491349959
+      },
+      {
+        "bui": 107.51964760115733,
+        "burnable_cells": 927,
+        "burned_cells": 10,
+        "duration_min": 60.0,
+        "ffmc": 90.25439583737122,
+        "ignition": [
+          21,
+          1
+        ],
+        "sample_id": "sample_0033",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 83.10670793409211,
+        "wind_kmh": 6.095220553411377
+      },
+      {
+        "bui": 74.82584660712507,
+        "burnable_cells": 951,
+        "burned_cells": 108,
+        "duration_min": 60.0,
+        "ffmc": 94.28004357422165,
+        "ignition": [
+          15,
+          20
+        ],
+        "sample_id": "sample_0034",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 13.305771917906748,
+        "wind_kmh": 12.40292548993164
+      },
+      {
+        "bui": 103.80019468606457,
+        "burnable_cells": 937,
+        "burned_cells": 7,
+        "duration_min": 60.0,
+        "ffmc": 86.4245907398305,
+        "ignition": [
+          28,
+          29
+        ],
+        "sample_id": "sample_0035",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "validation",
+        "wind_direction_deg": 229.26457254789224,
+        "wind_kmh": 31.947835283253028
+      },
+      {
+        "bui": 99.05266480851762,
+        "burnable_cells": 940,
+        "burned_cells": 5,
+        "duration_min": 60.0,
+        "ffmc": 85.53217548737547,
+        "ignition": [
+          4,
+          4
+        ],
+        "sample_id": "sample_0036",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 220.84827270752373,
+        "wind_kmh": 21.380646470560507
+      },
+      {
+        "bui": 31.009624913979586,
+        "burnable_cells": 951,
+        "burned_cells": 1,
+        "duration_min": 60.0,
+        "ffmc": 85.98798834931706,
+        "ignition": [
+          24,
+          29
+        ],
+        "sample_id": "sample_0037",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 265.08433331148325,
+        "wind_kmh": 13.166683013409271
+      },
+      {
+        "bui": 32.325525152368385,
+        "burnable_cells": 943,
+        "burned_cells": 91,
+        "duration_min": 60.0,
+        "ffmc": 93.17383419860958,
+        "ignition": [
+          15,
+          5
+        ],
+        "sample_id": "sample_0038",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 349.31457157352406,
+        "wind_kmh": 17.307305403892222
+      },
+      {
+        "bui": 110.26110353947979,
+        "burnable_cells": 933,
+        "burned_cells": 1,
+        "duration_min": 60.0,
+        "ffmc": 82.87328682720585,
+        "ignition": [
+          28,
+          22
+        ],
+        "sample_id": "sample_0039",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 306.75633634901806,
+        "wind_kmh": 11.119903527793
+      },
+      {
+        "bui": 68.51338643205389,
+        "burnable_cells": 939,
+        "burned_cells": 17,
+        "duration_min": 60.0,
+        "ffmc": 87.25154967383175,
+        "ignition": [
+          29,
+          20
+        ],
+        "sample_id": "sample_0040",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "validation",
+        "wind_direction_deg": 161.60622034445788,
+        "wind_kmh": 33.026275179062594
+      },
+      {
+        "bui": 65.0608024644819,
+        "burnable_cells": 950,
+        "burned_cells": 13,
+        "duration_min": 60.0,
+        "ffmc": 87.03382812341842,
+        "ignition": [
+          3,
+          29
+        ],
+        "sample_id": "sample_0041",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 269.0961016990306,
+        "wind_kmh": 7.5982568334830445
+      },
+      {
+        "bui": 46.31357163166699,
+        "burnable_cells": 938,
+        "burned_cells": 1,
+        "duration_min": 60.0,
+        "ffmc": 85.6313876148388,
+        "ignition": [
+          5,
+          24
+        ],
+        "sample_id": "sample_0042",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 315.6747114163833,
+        "wind_kmh": 12.991282409887438
+      },
+      {
+        "bui": 23.17911210860323,
+        "burnable_cells": 924,
+        "burned_cells": 7,
+        "duration_min": 60.0,
+        "ffmc": 87.38900935972978,
+        "ignition": [
+          31,
+          9
+        ],
+        "sample_id": "sample_0043",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 275.3585732640078,
+        "wind_kmh": 28.76774464331892
+      },
+      {
+        "bui": 85.7926296301213,
+        "burnable_cells": 934,
+        "burned_cells": 1,
+        "duration_min": 60.0,
+        "ffmc": 85.4515906634147,
+        "ignition": [
+          5,
+          21
+        ],
+        "sample_id": "sample_0044",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 304.19950569831104,
+        "wind_kmh": 8.629423369457529
+      },
+      {
+        "bui": 36.69105797035164,
+        "burnable_cells": 938,
+        "burned_cells": 62,
+        "duration_min": 60.0,
+        "ffmc": 95.75859518349932,
+        "ignition": [
+          9,
+          31
+        ],
+        "sample_id": "sample_0045",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "validation",
+        "wind_direction_deg": 174.6483450201003,
+        "wind_kmh": 5.994084314080601
+      },
+      {
+        "bui": 95.09058801464451,
+        "burnable_cells": 954,
+        "burned_cells": 5,
+        "duration_min": 60.0,
+        "ffmc": 89.15668942080761,
+        "ignition": [
+          18,
+          23
+        ],
+        "sample_id": "sample_0046",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 151.7422684567425,
+        "wind_kmh": 21.24141068413285
+      },
+      {
+        "bui": 111.96192449778546,
+        "burnable_cells": 936,
+        "burned_cells": 42,
+        "duration_min": 60.0,
+        "ffmc": 89.79143793338103,
+        "ignition": [
+          6,
+          25
+        ],
+        "sample_id": "sample_0047",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 194.26765368028012,
+        "wind_kmh": 12.426135249831912
+      },
+      {
+        "bui": 77.0264294223237,
+        "burnable_cells": 949,
+        "burned_cells": 1,
+        "duration_min": 60.0,
+        "ffmc": 81.86849823217321,
+        "ignition": [
+          0,
+          4
+        ],
+        "sample_id": "sample_0048",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 136.8985340344882,
+        "wind_kmh": 31.993969556935077
+      },
+      {
+        "bui": 105.20160348705907,
+        "burnable_cells": 938,
+        "burned_cells": 1,
+        "duration_min": 60.0,
+        "ffmc": 82.6095735480631,
+        "ignition": [
+          13,
+          0
+        ],
+        "sample_id": "sample_0049",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 293.8175278189358,
+        "wind_kmh": 9.623511846634386
+      },
+      {
+        "bui": 108.11642619137055,
+        "burnable_cells": 948,
+        "burned_cells": 54,
+        "duration_min": 60.0,
+        "ffmc": 94.09408041862231,
+        "ignition": [
+          26,
+          20
+        ],
+        "sample_id": "sample_0050",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "validation",
+        "wind_direction_deg": 194.00327390378447,
+        "wind_kmh": 11.342328471502714
+      },
+      {
+        "bui": 62.93736834250325,
+        "burnable_cells": 949,
+        "burned_cells": 2,
+        "duration_min": 60.0,
+        "ffmc": 81.27576861347706,
+        "ignition": [
+          18,
+          12
+        ],
+        "sample_id": "sample_0051",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 194.77489267822813,
+        "wind_kmh": 9.498667018119463
+      },
+      {
+        "bui": 38.33326854731637,
+        "burnable_cells": 949,
+        "burned_cells": 1,
+        "duration_min": 60.0,
+        "ffmc": 84.660697004845,
+        "ignition": [
+          5,
+          13
+        ],
+        "sample_id": "sample_0052",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 263.5288685425653,
+        "wind_kmh": 6.2768887230993755
+      },
+      {
+        "bui": 74.26956350234687,
+        "burnable_cells": 940,
+        "burned_cells": 21,
+        "duration_min": 60.0,
+        "ffmc": 95.43769160543998,
+        "ignition": [
+          2,
+          29
+        ],
+        "sample_id": "sample_0053",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 167.62966439516646,
+        "wind_kmh": 34.509738128041874
+      },
+      {
+        "bui": 30.717458541545167,
+        "burnable_cells": 938,
+        "burned_cells": 4,
+        "duration_min": 60.0,
+        "ffmc": 86.00080038558457,
+        "ignition": [
+          14,
+          18
+        ],
+        "sample_id": "sample_0054",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 44.83886318190485,
+        "wind_kmh": 9.954485039342487
+      },
+      {
+        "bui": 47.44584447943777,
+        "burnable_cells": 961,
+        "burned_cells": 137,
+        "duration_min": 60.0,
+        "ffmc": 94.99579570434054,
+        "ignition": [
+          10,
+          2
+        ],
+        "sample_id": "sample_0055",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "validation",
+        "wind_direction_deg": 201.3538385510617,
+        "wind_kmh": 18.461532642616522
+      },
+      {
+        "bui": 106.69567784595134,
+        "burnable_cells": 939,
+        "burned_cells": 1,
+        "duration_min": 60.0,
+        "ffmc": 83.70255099330458,
+        "ignition": [
+          18,
+          29
+        ],
+        "sample_id": "sample_0056",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 37.711970827693406,
+        "wind_kmh": 6.2062385883359985
+      },
+      {
+        "bui": 114.57213589995298,
+        "burnable_cells": 933,
+        "burned_cells": 1,
+        "duration_min": 60.0,
+        "ffmc": 82.43175922038255,
+        "ignition": [
+          2,
+          10
+        ],
+        "sample_id": "sample_0057",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 177.2357887464641,
+        "wind_kmh": 18.628829288221198
+      },
+      {
+        "bui": 31.65114528358283,
+        "burnable_cells": 933,
+        "burned_cells": 12,
+        "duration_min": 60.0,
+        "ffmc": 89.58859711970376,
+        "ignition": [
+          1,
+          23
+        ],
+        "sample_id": "sample_0058",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 108.65920513412219,
+        "wind_kmh": 15.40119291981561
+      },
+      {
+        "bui": 86.27673639847818,
+        "burnable_cells": 957,
+        "burned_cells": 2,
+        "duration_min": 60.0,
+        "ffmc": 83.33807831810535,
+        "ignition": [
+          10,
+          0
+        ],
+        "sample_id": "sample_0059",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 159.6725045482658,
+        "wind_kmh": 20.71474651052425
+      },
+      {
+        "bui": 35.9479729711166,
+        "burnable_cells": 938,
+        "burned_cells": 29,
+        "duration_min": 60.0,
+        "ffmc": 92.02707575872357,
+        "ignition": [
+          19,
+          14
+        ],
+        "sample_id": "sample_0060",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "validation",
+        "wind_direction_deg": 67.30340288292993,
+        "wind_kmh": 15.113764915633505
+      },
+      {
+        "bui": 74.76414089074777,
+        "burnable_cells": 935,
+        "burned_cells": 168,
+        "duration_min": 60.0,
+        "ffmc": 94.29554554808755,
+        "ignition": [
+          24,
+          21
+        ],
+        "sample_id": "sample_0061",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 231.1570353417498,
+        "wind_kmh": 33.871655446593316
+      },
+      {
+        "bui": 79.30778710201554,
+        "burnable_cells": 941,
+        "burned_cells": 12,
+        "duration_min": 60.0,
+        "ffmc": 85.66170326426248,
+        "ignition": [
+          6,
+          30
+        ],
+        "sample_id": "sample_0062",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 47.724532228985545,
+        "wind_kmh": 20.925752044587572
+      },
+      {
+        "bui": 84.2842906673788,
+        "burnable_cells": 936,
+        "burned_cells": 1,
+        "duration_min": 60.0,
+        "ffmc": 84.99394132511534,
+        "ignition": [
+          15,
+          26
+        ],
+        "sample_id": "sample_0063",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 199.5613566673462,
+        "wind_kmh": 7.523263507040056
+      },
+      {
+        "bui": 114.68041740918954,
+        "burnable_cells": 948,
+        "burned_cells": 354,
+        "duration_min": 60.0,
+        "ffmc": 96.84682423529128,
+        "ignition": [
+          7,
+          18
+        ],
+        "sample_id": "sample_0064",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 86.49961193031959,
+        "wind_kmh": 10.004390890231441
+      },
+      {
+        "bui": 39.43400409062045,
+        "burnable_cells": 943,
+        "burned_cells": 98,
+        "duration_min": 60.0,
+        "ffmc": 95.12825516814124,
+        "ignition": [
+          19,
+          5
+        ],
+        "sample_id": "sample_0065",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "validation",
+        "wind_direction_deg": 75.17670680056656,
+        "wind_kmh": 13.127660937274708
+      },
+      {
+        "bui": 92.69375126901552,
+        "burnable_cells": 924,
+        "burned_cells": 146,
+        "duration_min": 60.0,
+        "ffmc": 94.34128140370112,
+        "ignition": [
+          1,
+          15
+        ],
+        "sample_id": "sample_0066",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 79.82810941141804,
+        "wind_kmh": 22.661528980033594
+      },
+      {
+        "bui": 29.831848431725366,
+        "burnable_cells": 936,
+        "burned_cells": 72,
+        "duration_min": 60.0,
+        "ffmc": 96.07969467653308,
+        "ignition": [
+          27,
+          22
+        ],
+        "sample_id": "sample_0067",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 26.490542141943298,
+        "wind_kmh": 17.225267097919218
+      },
+      {
+        "bui": 46.288823793537745,
+        "burnable_cells": 942,
+        "burned_cells": 41,
+        "duration_min": 60.0,
+        "ffmc": 94.3247746542978,
+        "ignition": [
+          28,
+          19
+        ],
+        "sample_id": "sample_0068",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 184.48106303698458,
+        "wind_kmh": 10.033636777903162
+      },
+      {
+        "bui": 112.32591539042315,
+        "burnable_cells": 942,
+        "burned_cells": 32,
+        "duration_min": 60.0,
+        "ffmc": 90.51603940545398,
+        "ignition": [
+          18,
+          21
+        ],
+        "sample_id": "sample_0069",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 184.04160423339306,
+        "wind_kmh": 27.140897997078316
+      },
+      {
+        "bui": 103.4834336194315,
+        "burnable_cells": 925,
+        "burned_cells": 3,
+        "duration_min": 60.0,
+        "ffmc": 85.90941123922323,
+        "ignition": [
+          29,
+          5
+        ],
+        "sample_id": "sample_0070",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "validation",
+        "wind_direction_deg": 43.360122579377894,
+        "wind_kmh": 29.143544179703067
+      },
+      {
+        "bui": 48.147853743120606,
+        "burnable_cells": 954,
+        "burned_cells": 1,
+        "duration_min": 60.0,
+        "ffmc": 83.11469889714455,
+        "ignition": [
+          25,
+          1
+        ],
+        "sample_id": "sample_0071",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 273.7606010531668,
+        "wind_kmh": 13.53541450217868
+      },
+      {
+        "bui": 75.95996398866065,
+        "burnable_cells": 953,
+        "burned_cells": 21,
+        "duration_min": 60.0,
+        "ffmc": 91.16123828003259,
+        "ignition": [
+          2,
+          5
+        ],
+        "sample_id": "sample_0072",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 303.6283747458821,
+        "wind_kmh": 7.258279993751392
+      },
+      {
+        "bui": 47.28977504533627,
+        "burnable_cells": 936,
+        "burned_cells": 1,
+        "duration_min": 60.0,
+        "ffmc": 82.70042990122883,
+        "ignition": [
+          1,
+          7
+        ],
+        "sample_id": "sample_0073",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 121.83262710772226,
+        "wind_kmh": 13.979254359513632
+      },
+      {
+        "bui": 39.67116529264719,
+        "burnable_cells": 949,
+        "burned_cells": 8,
+        "duration_min": 60.0,
+        "ffmc": 91.75073507287087,
+        "ignition": [
+          7,
+          18
+        ],
+        "sample_id": "sample_0074",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 223.05854539635772,
+        "wind_kmh": 13.89039065760751
+      },
+      {
+        "bui": 79.11181537823762,
+        "burnable_cells": 936,
+        "burned_cells": 385,
+        "duration_min": 60.0,
+        "ffmc": 97.46415935385767,
+        "ignition": [
+          11,
+          9
+        ],
+        "sample_id": "sample_0075",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "validation",
+        "wind_direction_deg": 277.97700037038635,
+        "wind_kmh": 20.6488868182302
+      },
+      {
+        "bui": 68.56067366807744,
+        "burnable_cells": 962,
+        "burned_cells": 1,
+        "duration_min": 60.0,
+        "ffmc": 82.63733912125514,
+        "ignition": [
+          21,
+          6
+        ],
+        "sample_id": "sample_0076",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 199.37680181142613,
+        "wind_kmh": 28.5473349908931
+      },
+      {
+        "bui": 32.356666091192935,
+        "burnable_cells": 934,
+        "burned_cells": 13,
+        "duration_min": 60.0,
+        "ffmc": 86.9946050690477,
+        "ignition": [
+          9,
+          4
+        ],
+        "sample_id": "sample_0077",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 124.11111744462659,
+        "wind_kmh": 28.846174432326773
+      },
+      {
+        "bui": 50.027477282763215,
+        "burnable_cells": 952,
+        "burned_cells": 101,
+        "duration_min": 60.0,
+        "ffmc": 94.01268586305923,
+        "ignition": [
+          4,
+          8
+        ],
+        "sample_id": "sample_0078",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 63.38512578342729,
+        "wind_kmh": 30.490408815834993
+      },
+      {
+        "bui": 93.68933653017193,
+        "burnable_cells": 947,
+        "burned_cells": 101,
+        "duration_min": 60.0,
+        "ffmc": 94.43874909162221,
+        "ignition": [
+          3,
+          20
+        ],
+        "sample_id": "sample_0079",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 117.80008772473842,
+        "wind_kmh": 19.86455719349047
+      },
+      {
+        "bui": 57.760692651838745,
+        "burnable_cells": 928,
+        "burned_cells": 24,
+        "duration_min": 60.0,
+        "ffmc": 88.28747728782122,
+        "ignition": [
+          14,
+          24
+        ],
+        "sample_id": "sample_0080",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "validation",
+        "wind_direction_deg": 338.062196027485,
+        "wind_kmh": 26.2638843134448
+      },
+      {
+        "bui": 115.47313497338475,
+        "burnable_cells": 942,
+        "burned_cells": 24,
+        "duration_min": 60.0,
+        "ffmc": 91.88641264987376,
+        "ignition": [
+          31,
+          27
+        ],
+        "sample_id": "sample_0081",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 159.4636987403533,
+        "wind_kmh": 15.607401717805887
+      },
+      {
+        "bui": 53.82832236452777,
+        "burnable_cells": 941,
+        "burned_cells": 142,
+        "duration_min": 60.0,
+        "ffmc": 97.02278190773046,
+        "ignition": [
+          13,
+          27
+        ],
+        "sample_id": "sample_0082",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 324.68269395479444,
+        "wind_kmh": 23.57482690388878
+      },
+      {
+        "bui": 80.11326250944393,
+        "burnable_cells": 945,
+        "burned_cells": 88,
+        "duration_min": 60.0,
+        "ffmc": 91.26274716745078,
+        "ignition": [
+          16,
+          19
+        ],
+        "sample_id": "sample_0083",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 339.61300364417315,
+        "wind_kmh": 25.61031427511461
+      },
+      {
+        "bui": 92.08177372795089,
+        "burnable_cells": 952,
+        "burned_cells": 1,
+        "duration_min": 60.0,
+        "ffmc": 80.90215797578557,
+        "ignition": [
+          0,
+          28
+        ],
+        "sample_id": "sample_0084",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 215.76921328133642,
+        "wind_kmh": 32.821659074437456
+      },
+      {
+        "bui": 115.09177274669379,
+        "burnable_cells": 951,
+        "burned_cells": 189,
+        "duration_min": 60.0,
+        "ffmc": 94.48110423346711,
+        "ignition": [
+          13,
+          13
+        ],
+        "sample_id": "sample_0085",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "validation",
+        "wind_direction_deg": 214.51924337447053,
+        "wind_kmh": 11.281512178933509
+      },
+      {
+        "bui": 76.05763684670033,
+        "burnable_cells": 940,
+        "burned_cells": 274,
+        "duration_min": 60.0,
+        "ffmc": 95.71086324085321,
+        "ignition": [
+          19,
+          28
+        ],
+        "sample_id": "sample_0086",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 84.44219646828033,
+        "wind_kmh": 14.22106794596598
+      },
+      {
+        "bui": 28.882337151571985,
+        "burnable_cells": 946,
+        "burned_cells": 1,
+        "duration_min": 60.0,
+        "ffmc": 81.43543730912802,
+        "ignition": [
+          2,
+          14
+        ],
+        "sample_id": "sample_0087",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 29.51739652463917,
+        "wind_kmh": 28.092331451289226
+      },
+      {
+        "bui": 108.74144050091209,
+        "burnable_cells": 960,
+        "burned_cells": 81,
+        "duration_min": 60.0,
+        "ffmc": 93.86365543750046,
+        "ignition": [
+          2,
+          23
+        ],
+        "sample_id": "sample_0088",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 293.6920303089908,
+        "wind_kmh": 19.203531743283257
+      },
+      {
+        "bui": 40.227443623050576,
+        "burnable_cells": 937,
+        "burned_cells": 34,
+        "duration_min": 60.0,
+        "ffmc": 96.9289881298136,
+        "ignition": [
+          30,
+          18
+        ],
+        "sample_id": "sample_0089",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 31.50814288124266,
+        "wind_kmh": 30.091686763536828
+      },
+      {
+        "bui": 47.448076534970326,
+        "burnable_cells": 952,
+        "burned_cells": 6,
+        "duration_min": 60.0,
+        "ffmc": 89.20673567121088,
+        "ignition": [
+          1,
+          22
+        ],
+        "sample_id": "sample_0090",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "validation",
+        "wind_direction_deg": 83.92349942359911,
+        "wind_kmh": 19.68292299114173
+      },
+      {
+        "bui": 117.1061396216478,
+        "burnable_cells": 935,
+        "burned_cells": 233,
+        "duration_min": 60.0,
+        "ffmc": 95.5253864380163,
+        "ignition": [
+          18,
+          26
+        ],
+        "sample_id": "sample_0091",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 86.51819432071768,
+        "wind_kmh": 14.348093630769487
+      },
+      {
+        "bui": 52.934897040465174,
+        "burnable_cells": 945,
+        "burned_cells": 121,
+        "duration_min": 60.0,
+        "ffmc": 95.3620850415774,
+        "ignition": [
+          11,
+          23
+        ],
+        "sample_id": "sample_0092",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 237.90706689041238,
+        "wind_kmh": 28.697842446873533
+      },
+      {
+        "bui": 54.97948293439689,
+        "burnable_cells": 942,
+        "burned_cells": 1,
+        "duration_min": 60.0,
+        "ffmc": 85.45834670240771,
+        "ignition": [
+          5,
+          11
+        ],
+        "sample_id": "sample_0093",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 167.93265028423832,
+        "wind_kmh": 14.687996146247972
+      },
+      {
+        "bui": 69.4775640694615,
+        "burnable_cells": 927,
+        "burned_cells": 9,
+        "duration_min": 60.0,
+        "ffmc": 87.04522822587421,
+        "ignition": [
+          1,
+          18
+        ],
+        "sample_id": "sample_0094",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 271.7031773405835,
+        "wind_kmh": 17.205411807038473
+      },
+      {
+        "bui": 109.10870978542454,
+        "burnable_cells": 946,
+        "burned_cells": 16,
+        "duration_min": 60.0,
+        "ffmc": 97.36518077533826,
+        "ignition": [
+          0,
+          17
+        ],
+        "sample_id": "sample_0095",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "validation",
+        "wind_direction_deg": 176.04994390692195,
+        "wind_kmh": 33.00885908430833
+      },
+      {
+        "bui": 69.81008682749624,
+        "burnable_cells": 937,
+        "burned_cells": 19,
+        "duration_min": 60.0,
+        "ffmc": 89.56896131893727,
+        "ignition": [
+          24,
+          0
+        ],
+        "sample_id": "sample_0096",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 244.1925093231423,
+        "wind_kmh": 17.00594172710633
+      },
+      {
+        "bui": 75.64278048109053,
+        "burnable_cells": 935,
+        "burned_cells": 59,
+        "duration_min": 60.0,
+        "ffmc": 91.07205574090688,
+        "ignition": [
+          28,
+          8
+        ],
+        "sample_id": "sample_0097",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 263.3192515287713,
+        "wind_kmh": 24.19730515308526
+      },
+      {
+        "bui": 81.8963292543498,
+        "burnable_cells": 948,
+        "burned_cells": 5,
+        "duration_min": 60.0,
+        "ffmc": 86.87126565319682,
+        "ignition": [
+          27,
+          12
+        ],
+        "sample_id": "sample_0098",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 229.95960957026398,
+        "wind_kmh": 8.359058160838815
+      },
+      {
+        "bui": 97.55247221562126,
+        "burnable_cells": 939,
+        "burned_cells": 293,
+        "duration_min": 60.0,
+        "ffmc": 96.79489427401519,
+        "ignition": [
+          18,
+          19
+        ],
+        "sample_id": "sample_0099",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 76.36306569727569,
+        "wind_kmh": 32.58992644161397
+      },
+      {
+        "bui": 39.95616275069213,
+        "burnable_cells": 970,
+        "burned_cells": 123,
+        "duration_min": 60.0,
+        "ffmc": 97.84228310449195,
+        "ignition": [
+          26,
+          23
+        ],
+        "sample_id": "sample_0100",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "validation",
+        "wind_direction_deg": 304.29366785820343,
+        "wind_kmh": 21.162238253093204
+      },
+      {
+        "bui": 25.198731665892907,
+        "burnable_cells": 948,
+        "burned_cells": 25,
+        "duration_min": 60.0,
+        "ffmc": 89.98715731304179,
+        "ignition": [
+          22,
+          10
+        ],
+        "sample_id": "sample_0101",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 106.94139894044503,
+        "wind_kmh": 19.3897431873867
+      },
+      {
+        "bui": 21.56887009863028,
+        "burnable_cells": 939,
+        "burned_cells": 1,
+        "duration_min": 60.0,
+        "ffmc": 81.66811107202237,
+        "ignition": [
+          5,
+          0
+        ],
+        "sample_id": "sample_0102",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 41.41832173126706,
+        "wind_kmh": 15.131693886574505
+      },
+      {
+        "bui": 88.59229170195816,
+        "burnable_cells": 937,
+        "burned_cells": 10,
+        "duration_min": 60.0,
+        "ffmc": 85.33689274595291,
+        "ignition": [
+          7,
+          4
+        ],
+        "sample_id": "sample_0103",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 74.4797367898435,
+        "wind_kmh": 32.66773450286543
+      },
+      {
+        "bui": 107.09612118908306,
+        "burnable_cells": 942,
+        "burned_cells": 82,
+        "duration_min": 60.0,
+        "ffmc": 95.60636819447252,
+        "ignition": [
+          19,
+          8
+        ],
+        "sample_id": "sample_0104",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 260.3390797869437,
+        "wind_kmh": 11.959951606809042
+      },
+      {
+        "bui": 114.90461801657496,
+        "burnable_cells": 937,
+        "burned_cells": 6,
+        "duration_min": 60.0,
+        "ffmc": 87.08953343524082,
+        "ignition": [
+          8,
+          18
+        ],
+        "sample_id": "sample_0105",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "validation",
+        "wind_direction_deg": 160.71451864986085,
+        "wind_kmh": 16.026517105250413
+      },
+      {
+        "bui": 91.9721632372493,
+        "burnable_cells": 934,
+        "burned_cells": 154,
+        "duration_min": 60.0,
+        "ffmc": 94.31473409516906,
+        "ignition": [
+          12,
+          23
+        ],
+        "sample_id": "sample_0106",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 318.81715555132087,
+        "wind_kmh": 24.908929842367467
+      },
+      {
+        "bui": 66.2504070547308,
+        "burnable_cells": 944,
+        "burned_cells": 1,
+        "duration_min": 60.0,
+        "ffmc": 83.18801870705848,
+        "ignition": [
+          29,
+          23
+        ],
+        "sample_id": "sample_0107",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 347.82122643131595,
+        "wind_kmh": 6.064133840225615
+      },
+      {
+        "bui": 28.187319063166,
+        "burnable_cells": 931,
+        "burned_cells": 206,
+        "duration_min": 60.0,
+        "ffmc": 96.93578447085197,
+        "ignition": [
+          12,
+          12
+        ],
+        "sample_id": "sample_0108",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 150.4258123129439,
+        "wind_kmh": 10.793211644436164
+      },
+      {
+        "bui": 83.68226435555428,
+        "burnable_cells": 953,
+        "burned_cells": 2,
+        "duration_min": 60.0,
+        "ffmc": 82.711459026841,
+        "ignition": [
+          31,
+          26
+        ],
+        "sample_id": "sample_0109",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 27.392373339272492,
+        "wind_kmh": 33.26744993939898
+      },
+      {
+        "bui": 103.66082573563828,
+        "burnable_cells": 947,
+        "burned_cells": 58,
+        "duration_min": 60.0,
+        "ffmc": 89.53923453973621,
+        "ignition": [
+          3,
+          24
+        ],
+        "sample_id": "sample_0110",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "validation",
+        "wind_direction_deg": 280.5884111520046,
+        "wind_kmh": 33.121685553190545
+      },
+      {
+        "bui": 74.06480730368403,
+        "burnable_cells": 927,
+        "burned_cells": 133,
+        "duration_min": 60.0,
+        "ffmc": 93.64233800999769,
+        "ignition": [
+          14,
+          10
+        ],
+        "sample_id": "sample_0111",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 167.26762109674888,
+        "wind_kmh": 29.16863285009048
+      },
+      {
+        "bui": 94.45201912832468,
+        "burnable_cells": 948,
+        "burned_cells": 230,
+        "duration_min": 60.0,
+        "ffmc": 93.64265658718463,
+        "ignition": [
+          25,
+          22
+        ],
+        "sample_id": "sample_0112",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 79.03559127105602,
+        "wind_kmh": 33.491764375196325
+      },
+      {
+        "bui": 21.83952950111197,
+        "burnable_cells": 945,
+        "burned_cells": 106,
+        "duration_min": 60.0,
+        "ffmc": 96.70174576860093,
+        "ignition": [
+          8,
+          18
+        ],
+        "sample_id": "sample_0113",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 67.35607023730287,
+        "wind_kmh": 7.743431863412465
+      },
+      {
+        "bui": 119.70300728547406,
+        "burnable_cells": 933,
+        "burned_cells": 6,
+        "duration_min": 60.0,
+        "ffmc": 93.91374601420185,
+        "ignition": [
+          25,
+          14
+        ],
+        "sample_id": "sample_0114",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 227.17802874570214,
+        "wind_kmh": 6.610541178260821
+      },
+      {
+        "bui": 73.39126917131625,
+        "burnable_cells": 940,
+        "burned_cells": 1,
+        "duration_min": 60.0,
+        "ffmc": 88.79479670760043,
+        "ignition": [
+          4,
+          11
+        ],
+        "sample_id": "sample_0115",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "validation",
+        "wind_direction_deg": 274.19399062371195,
+        "wind_kmh": 16.05454414213893
+      },
+      {
+        "bui": 33.32108226018018,
+        "burnable_cells": 946,
+        "burned_cells": 26,
+        "duration_min": 60.0,
+        "ffmc": 90.90568561954373,
+        "ignition": [
+          26,
+          26
+        ],
+        "sample_id": "sample_0116",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 59.24789209242578,
+        "wind_kmh": 15.693603140613096
+      },
+      {
+        "bui": 63.1891889943477,
+        "burnable_cells": 951,
+        "burned_cells": 12,
+        "duration_min": 60.0,
+        "ffmc": 89.03443104454037,
+        "ignition": [
+          4,
+          11
+        ],
+        "sample_id": "sample_0117",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 90.69349321806425,
+        "wind_kmh": 10.549679974386892
+      },
+      {
+        "bui": 36.748789287537015,
+        "burnable_cells": 933,
+        "burned_cells": 1,
+        "duration_min": 60.0,
+        "ffmc": 82.22336468557883,
+        "ignition": [
+          13,
+          25
+        ],
+        "sample_id": "sample_0118",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 212.65109774137315,
+        "wind_kmh": 18.19462667313053
+      },
+      {
+        "bui": 46.852692173862025,
+        "burnable_cells": 952,
+        "burned_cells": 152,
+        "duration_min": 60.0,
+        "ffmc": 95.76852129033861,
+        "ignition": [
+          19,
+          11
+        ],
+        "sample_id": "sample_0119",
+        "shape": [
+          32,
+          32
+        ],
+        "split": "train",
+        "wind_direction_deg": 59.43389571234452,
+        "wind_kmh": 34.362976659254386
+      }
+    ],
+    "schema_version": "ws4.fire-surrogate-corpus.v1",
+    "seed": 159,
+    "train_count": 96,
+    "validation_count": 24
+  },
+  "corpus_manifest": "/tmp/p159-corpus-train/manifest.json",
+  "model": {
+    "epochs": 200,
+    "feature_names": [
+      "fuel_C1",
+      "fuel_C2",
+      "fuel_C3",
+      "fuel_C4",
+      "fuel_C5",
+      "fuel_C6",
+      "fuel_C7",
+      "fuel_D1",
+      "fuel_M1",
+      "fuel_M2",
+      "fuel_M3",
+      "fuel_M4",
+      "fuel_S1",
+      "fuel_S2",
+      "fuel_S3",
+      "fuel_O1A",
+      "fuel_O1B",
+      "nonfuel",
+      "slope",
+      "aspect_sin",
+      "aspect_cos",
+      "wind_speed",
+      "wind_direction_sin",
+      "wind_direction_cos",
+      "ffmc",
+      "bui",
+      "ignition_distance",
+      "bearing_sin",
+      "bearing_cos"
+    ],
+    "fuel_order": [
+      "C1",
+      "C2",
+      "C3",
+      "C4",
+      "C5",
+      "C6",
+      "C7",
+      "D1",
+      "M1",
+      "M2",
+      "M3",
+      "M4",
+      "S1",
+      "S2",
+      "S3",
+      "O1A",
+      "O1B"
+    ],
+    "hidden_units": 32,
+    "learning_rate": 0.01,
+    "parameters": 993,
+    "seed": 159,
+    "train_loss": 0.20629553779746057,
+    "validation_loss": 0.6150626567123728,
+    "version": "ws4.fire-surrogate.mlp.v1"
+  },
+  "model_path": "notes/reports/p159-model/model.json",
+  "validation_mask_iou_max": 0.8591549295774648,
+  "validation_mask_iou_mean": 0.37395129484434947,
+  "validation_mask_iou_min": 0.0
+}

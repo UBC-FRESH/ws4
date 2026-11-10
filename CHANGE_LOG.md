@@ -5092,3 +5092,10 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   fuel order, and a deterministic train/validation split. Added save/load, a corpus builder
   script, a 10-sample manifest example, and determinism/round-trip tests. Dogrib is not used.
   Dashboard: **GREEN**.
+
+- P159.2: added the compact NumPy MLP surrogate (`ws4.fire.surrogate_model`) and training
+  script. Trained on 120 synthetic 32×32/60-minute samples (96 train, 24 validation, seed 159),
+  with 29 per-cell features, 32 tanh units, and 993 parameters. Training loss 0.2063,
+  validation loss 0.6151, validation mask IoU mean 0.374 (range 0.000–0.859). The validation
+  loss shows overfitting; P159.3 must evaluate held-out synthetic and Dogrib OOD. Model card:
+  `notes/reports/p159-model-card.md`. Dashboard: **GREEN**.

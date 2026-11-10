@@ -4708,7 +4708,7 @@ reproduce held-out burn footprints fast enough for interactive screening, withou
 replacing the auditable kernel or claiming observed-fire validation.
 
 - [x] P159.1 Build a deterministic synthetic burn corpus and provenance (#966)
-- [ ] P159.2 Train a compact surrogate and write the model card (#967)
+- [x] P159.2 Train a compact surrogate and write the model card (#967)
 - [ ] P159.3 Evaluate held-out synthetic runs and Dogrib out-of-distribution (#968)
 - [ ] P159.4 Apply the integration gate and record the decision (#969)
 

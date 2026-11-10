@@ -36,6 +36,8 @@ Working notes for WS4. Notes are living: update them in the same change set as t
   calibration gap, and the bounded P159 surrogate plan.
 - `reports/p159-corpus-manifest.json` — P159.1 deterministic synthetic corpus metadata and
   train/validation split.
+- `reports/p159-model-card.md` — P159.2 surrogate architecture, training data, losses, and
+  limitations.
 - `design/ws4-second-fire-calibration.md` — P161 data gate, the selected Hay River/K'atl'odeeche
   2023 fire, and the calibration/holdout constraints.
 - `design/ws4-fire-calibration-protocol.md` — P161.3 pre-registered parameters, objective,
