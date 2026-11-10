@@ -4823,7 +4823,7 @@ Status: pr-open
 Design note: `notes/design/ws4-fire-behaviour.md`
 Validation ladder: `notes/design/ws4-fire-validation-ladder.md`
 Report: `notes/reports/p163-closeout.md`
-PR: TBD
+PR: #976
 
 Goal: add explicit ground/surface/crown classes and transitions, a bounded spotting model, and
 intensity-aware tree effects in the 3D scene, without claiming operational validation.
