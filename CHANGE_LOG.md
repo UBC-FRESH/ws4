@@ -5085,3 +5085,9 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P162.3: closed P162 as a no-go for calibration. No fit or new protocol was started; the
   diagnostic harness and daily comparison are retained. Report:
   `notes/reports/p162-closeout.md`. Dashboard: **GREEN**.
+
+- P163.1: added `ws4.fire.behavior` with explicit ground/surface/passive-crown/active-crown
+  classes and transition records. Ground is a documented low-intensity proxy, not a duff model.
+  The class is now recorded as `fire_behaviour` on the P156 event attributes. Added threshold,
+  transition, and event-integration tests. Added the validation-ladder note with published
+  event and probabilistic benchmarks. Dashboard: **GREEN**.
