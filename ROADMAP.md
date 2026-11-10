@@ -4795,6 +4795,7 @@ Status: pr-open
 Design note: `notes/design/ws4-fire-calibration-protocol.md`
 Report: `notes/reports/p162-closeout.md`
 Sensitivity: `notes/reports/p162-sensitivity.md`
+PR: #965
 
 Goal: determine whether the two P161 calibration multipliers change the Hay River result when
 the comparison window is short enough, before any new calibration fit is attempted.
