@@ -1,0 +1,223 @@
+{
+  "cell_size_m": 100.0,
+  "cols": 24,
+  "duration_min": 60.0,
+  "fuel_order": [
+    "C1",
+    "C2",
+    "C3",
+    "C4",
+    "C5",
+    "C6",
+    "C7",
+    "D1",
+    "M1",
+    "M2",
+    "M3",
+    "M4",
+    "S1",
+    "S2",
+    "S3",
+    "O1A",
+    "O1B"
+  ],
+  "kernel_version": "ws4.fire.growth.v1",
+  "rows": 24,
+  "sample_count": 10,
+  "samples": [
+    {
+      "bui": 106.15830511573046,
+      "burnable_cells": 539,
+      "burned_cells": 15,
+      "duration_min": 60.0,
+      "ffmc": 83.4205460619098,
+      "ignition": [
+        2,
+        7
+      ],
+      "sample_id": "sample_0000",
+      "shape": [
+        24,
+        24
+      ],
+      "split": "validation",
+      "wind_direction_deg": 48.79599820166904,
+      "wind_kmh": 34.80279369232409
+    },
+    {
+      "bui": 45.518894362695846,
+      "burnable_cells": 518,
+      "burned_cells": 1,
+      "duration_min": 60.0,
+      "ffmc": 82.13068446821767,
+      "ignition": [
+        1,
+        1
+      ],
+      "sample_id": "sample_0001",
+      "shape": [
+        24,
+        24
+      ],
+      "split": "train",
+      "wind_direction_deg": 255.84072353897113,
+      "wind_kmh": 34.335406065402495
+    },
+    {
+      "bui": 26.154512076973884,
+      "burnable_cells": 532,
+      "burned_cells": 139,
+      "duration_min": 60.0,
+      "ffmc": 96.60676171544506,
+      "ignition": [
+        16,
+        5
+      ],
+      "sample_id": "sample_0002",
+      "shape": [
+        24,
+        24
+      ],
+      "split": "train",
+      "wind_direction_deg": 156.3862200924327,
+      "wind_kmh": 23.90167736995194
+    },
+    {
+      "bui": 115.48147763247346,
+      "burnable_cells": 532,
+      "burned_cells": 11,
+      "duration_min": 60.0,
+      "ffmc": 89.08977900593754,
+      "ignition": [
+        8,
+        1
+      ],
+      "sample_id": "sample_0003",
+      "shape": [
+        24,
+        24
+      ],
+      "split": "train",
+      "wind_direction_deg": 126.69156578043183,
+      "wind_kmh": 34.43099263185237
+    },
+    {
+      "bui": 32.865942595828784,
+      "burnable_cells": 519,
+      "burned_cells": 2,
+      "duration_min": 60.0,
+      "ffmc": 84.55679870614169,
+      "ignition": [
+        20,
+        15
+      ],
+      "sample_id": "sample_0004",
+      "shape": [
+        24,
+        24
+      ],
+      "split": "train",
+      "wind_direction_deg": 268.5599807880173,
+      "wind_kmh": 20.44574481322754
+    },
+    {
+      "bui": 20.736429420916572,
+      "burnable_cells": 525,
+      "burned_cells": 16,
+      "duration_min": 60.0,
+      "ffmc": 89.76406465075084,
+      "ignition": [
+        0,
+        6
+      ],
+      "sample_id": "sample_0005",
+      "shape": [
+        24,
+        24
+      ],
+      "split": "validation",
+      "wind_direction_deg": 5.202300125578456,
+      "wind_kmh": 20.619763804814262
+    },
+    {
+      "bui": 80.53282893883264,
+      "burnable_cells": 524,
+      "burned_cells": 12,
+      "duration_min": 60.0,
+      "ffmc": 88.34523623772137,
+      "ignition": [
+        12,
+        8
+      ],
+      "sample_id": "sample_0006",
+      "shape": [
+        24,
+        24
+      ],
+      "split": "train",
+      "wind_direction_deg": 10.953574272289135,
+      "wind_kmh": 14.90111014071943
+    },
+    {
+      "bui": 86.79624122673314,
+      "burnable_cells": 524,
+      "burned_cells": 12,
+      "duration_min": 60.0,
+      "ffmc": 85.59726804442852,
+      "ignition": [
+        16,
+        3
+      ],
+      "sample_id": "sample_0007",
+      "shape": [
+        24,
+        24
+      ],
+      "split": "train",
+      "wind_direction_deg": 265.6657063945998,
+      "wind_kmh": 28.464111160651786
+    },
+    {
+      "bui": 90.11057565678954,
+      "burnable_cells": 530,
+      "burned_cells": 2,
+      "duration_min": 60.0,
+      "ffmc": 85.05753153256914,
+      "ignition": [
+        22,
+        1
+      ],
+      "sample_id": "sample_0008",
+      "shape": [
+        24,
+        24
+      ],
+      "split": "train",
+      "wind_direction_deg": 149.160553952244,
+      "wind_kmh": 14.725121132779664
+    },
+    {
+      "bui": 78.72918707099642,
+      "burnable_cells": 538,
+      "burned_cells": 1,
+      "duration_min": 60.0,
+      "ffmc": 90.07242420025071,
+      "ignition": [
+        0,
+        0
+      ],
+      "sample_id": "sample_0009",
+      "shape": [
+        24,
+        24
+      ],
+      "split": "train",
+      "wind_direction_deg": 105.1196868918608,
+      "wind_kmh": 8.78830243239534
+    }
+  ],
+  "schema_version": "ws4.fire-surrogate-corpus.v1",
+  "seed": 159,
+  "train_count": 8,
+  "validation_count": 2
+}

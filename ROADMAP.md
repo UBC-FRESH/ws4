@@ -157,10 +157,10 @@ exists and the maintainer approves it.
 | P156 Credible fire behaviour and growth | #890 | `feature/p156-fire-behaviour` | complete |
 | P157 Observed fire and perimeter validation | #923 | `feature/p157-observed-fire` | pr-open |
 | P158 Plan scenario matrix | #928 | `feature/p158-plan-matrix` | complete |
-| P159 Fire surrogate feasibility | #946 | `feature/p159-fire-surrogate` | planned |
 | P160 Dogrib burning conditions and wind-grid fidelity | #947 | `feature/p160-dogrib-wind-thresholds` | complete |
 | P161 Second observed fire and calibration protocol | #954 | `feature/p161-second-fire-calibration` | complete |
-| P162 Calibration sensitivity diagnostic | #961 | `feature/p162-calibration-sensitivity` | pr-open |
+| P162 Calibration sensitivity diagnostic | #961 | `feature/p162-calibration-sensitivity` | complete |
+| P159 Fire surrogate feasibility | #946 | `feature/p159-fire-surrogate` | active |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -4699,17 +4699,18 @@ Acceptance:
 
 Parent issue: #946
 Branch: `feature/p159-fire-surrogate`
-Status: planned
+Status: active
 Design note: `notes/design/ws4-open-fire-model-reuse.md`
+Corpus manifest: `notes/reports/p159-corpus-manifest.json`
 
 Goal: test whether a compact surrogate trained on the WS4 P156/P157 fire kernel can
 reproduce held-out burn footprints fast enough for interactive screening, without
 replacing the auditable kernel or claiming observed-fire validation.
 
-- [ ] P159.1 Build a deterministic synthetic burn corpus and provenance
-- [ ] P159.2 Train a compact surrogate and write the model card
-- [ ] P159.3 Evaluate held-out synthetic runs and Dogrib out-of-distribution
-- [ ] P159.4 Apply the integration gate and record the decision
+- [x] P159.1 Build a deterministic synthetic burn corpus and provenance (#966)
+- [ ] P159.2 Train a compact surrogate and write the model card (#967)
+- [ ] P159.3 Evaluate held-out synthetic runs and Dogrib out-of-distribution (#968)
+- [ ] P159.4 Apply the integration gate and record the decision (#969)
 
 Acceptance:
 
@@ -4791,7 +4792,8 @@ Acceptance:
 
 Parent issue: #961
 Branch: `feature/p162-calibration-sensitivity`
-Status: pr-open
+Status: complete
+Merge commit: `b472ddd`
 Design note: `notes/design/ws4-fire-calibration-protocol.md`
 Report: `notes/reports/p162-closeout.md`
 Sensitivity: `notes/reports/p162-sensitivity.md`

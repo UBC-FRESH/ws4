@@ -5085,3 +5085,10 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P162.3: closed P162 as a no-go for calibration. No fit or new protocol was started; the
   diagnostic harness and daily comparison are retained. Report:
   `notes/reports/p162-closeout.md`. Dashboard: **GREEN**.
+
+- P159.1: added `ws4.fire.surrogate`, a deterministic synthetic burn corpus generator over the
+  WS4 FBP growth kernel. Each sample stores fuel index, terrain, weather, ignition, duration,
+  arrival times, and burned mask; the manifest records schema, kernel version, seed, grid,
+  fuel order, and a deterministic train/validation split. Added save/load, a corpus builder
+  script, a 10-sample manifest example, and determinism/round-trip tests. Dogrib is not used.
+  Dashboard: **GREEN**.
