@@ -19,6 +19,7 @@ import pandas as pd
 from ..ecosystem.events import Event
 from ..ecosystem.fire import FireResult
 from ..ecosystem.log import EventLog
+from .ignition import classify_tree_fire_outcome
 from .trees import TREE_SCHEMA_VERSION, TreeInventory
 
 SCENE_SCHEMA_VERSION: Final[str] = "ws4.fire.scene.v1"
@@ -616,7 +617,12 @@ def compile_fire_scene(
                     if flame_length > 0.0
                     else min(1.0, 0.4 + tree.surface_fuel_t_ha / 20.0)
                 ),
-                "post_fire_state": "unburned" if tree_burn_time is None else "burned",
+                "post_fire_state": classify_tree_fire_outcome(
+                    flame_length_m=flame_length,
+                    height_m=tree.height_m,
+                    crown_ratio=tree.crown_ratio,
+                    burned=tree_burn_time is not None,
+                ),
             }
         )
     animation = pd.DataFrame(animation_rows)

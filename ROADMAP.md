@@ -4828,7 +4828,7 @@ intensity-aware tree effects in the 3D scene, without claiming operational valid
 
 - [x] P163.1 Ground/surface/crown classes and transitions (#972)
 - [x] P163.2 Spotting model and integration (#973)
-- [ ] P163.3 Intensity-aware tree effects and 3D states (#974)
+- [x] P163.3 Intensity-aware tree effects and 3D states (#974)
 - [ ] P163.4 Verify and close out (#975)
 
 Acceptance:

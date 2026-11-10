@@ -9,6 +9,7 @@ the event log remains the fragment-level audit record.
 from __future__ import annotations
 
 import math
+from typing import Literal
 
 import numpy as np
 import pandas as pd
@@ -20,6 +21,60 @@ from .trees import TreeInventory
 
 class IgnitionSamplingError(ValueError):
     """Raised when a growth field cannot be sampled at the tree positions."""
+
+
+TreeFireOutcome = Literal["unburned", "scorched", "torched", "consumed"]
+
+
+def classify_tree_fire_outcome(
+    *,
+    flame_length_m: float,
+    height_m: float,
+    crown_ratio: float,
+    burned: bool,
+) -> TreeFireOutcome:
+    """Classify a tree's visual post-fire outcome.
+
+    Parameters
+    ----------
+    flame_length_m : float
+        Local flame length in metres.
+    height_m : float
+        Tree height in metres.
+    crown_ratio : float
+        Live crown length divided by height, in [0, 1].
+    burned : bool
+        Whether the tree was reached by the fire.
+
+    Returns
+    -------
+    str
+        ``unburned``, ``scorched``, ``torched``, or ``consumed``.
+
+    Raises
+    ------
+    IgnitionSamplingError
+        If an input is invalid.
+
+    Notes
+    -----
+    This is a visual class, not a validated tree-mortality model. Scorching is assigned when
+    the flame stays below the crown base; torching when it reaches the crown but not the top;
+    consumption when it reaches the tree top.
+    """
+    if not isinstance(burned, bool):
+        raise IgnitionSamplingError("burned must be a boolean")
+    flame = _non_negative(flame_length_m, "flame_length_m")
+    height = _positive(height_m, "height_m")
+    crown = _fraction(crown_ratio, "crown_ratio")
+    if not burned:
+        return "unburned"
+    crown_base = height * (1.0 - crown)
+    if flame >= height:
+        return "consumed"
+    if flame >= crown_base:
+        return "torched"
+    return "scorched"
 
 
 def sample_tree_ignition(
@@ -117,8 +172,13 @@ def sample_tree_ignition(
             angle - growth.effective_wind.azimuth_deg,
         )
         ratio = local_ros / head_ros if head_ros > 0.0 else 0.0
-        local_flame = (
-            min(1.0, flame_length * max(0.05, ratio) / 10.0) if flame_length > 0.0 else 0.0
+        local_flame_length = flame_length * max(0.05, ratio)
+        local_flame = min(1.0, local_flame_length / 10.0) if flame_length > 0.0 else 0.0
+        outcome = classify_tree_fire_outcome(
+            flame_length_m=local_flame_length,
+            height_m=tree.height_m,
+            crown_ratio=tree.crown_ratio,
+            burned=True,
         )
         output.append(
             {
@@ -128,7 +188,7 @@ def sample_tree_ignition(
                 "burn_duration": duration,
                 "flame_intensity": local_flame,
                 "smoke_strength": min(1.0, smoke * max(0.05, ratio)),
-                "post_fire_state": "burned",
+                "post_fire_state": outcome,
             }
         )
     if not output:

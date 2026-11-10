@@ -5097,3 +5097,9 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   for every spot. The model is explicitly a screening assumption, not an operational forecast.
   Added seed-replay, boundary, zero-probability, and validation tests, plus docs. Dashboard:
   pending.
+
+- P163.3: added `classify_tree_fire_outcome` and expanded the tree payload/viewer from
+  unburned/burned to unburned, scorched, torched, and consumed. The outcome uses local flame
+  length against crown base and tree height. The viewer now keeps scorched crowns, shrinks
+  torched crowns, and collapses consumed crowns to a charred remnant; legend and docs updated.
+  These are visual classes, not a validated mortality model. Dashboard: **GREEN**.

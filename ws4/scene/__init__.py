@@ -7,7 +7,12 @@ viewer HTML. The tree layer is synthetic and the fire event log remains the auth
 
 from __future__ import annotations
 
-from .ignition import IgnitionSamplingError, sample_tree_ignition
+from .ignition import (
+    IgnitionSamplingError,
+    TreeFireOutcome,
+    classify_tree_fire_outcome,
+    sample_tree_ignition,
+)
 from .nemora import (
     NEMORA_ADAPTER_VERSION,
     NemoraAdapterError,
@@ -47,8 +52,10 @@ __all__ = [
     "ScenePaths",
     "Tree",
     "TreeError",
+    "TreeFireOutcome",
     "TreeInventory",
     "VriFragment",
+    "classify_tree_fire_outcome",
     "compile_fire_scene",
     "load_nemora_scene",
     "load_nemora_tree_table",
