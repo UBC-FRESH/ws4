@@ -5086,6 +5086,29 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   diagnostic harness and daily comparison are retained. Report:
   `notes/reports/p162-closeout.md`. Dashboard: **GREEN**.
 
+- P159.1: added `ws4.fire.surrogate`, a deterministic synthetic burn corpus generator over the
+  WS4 FBP growth kernel. Each sample stores fuel index, terrain, weather, ignition, duration,
+  arrival times, and burned mask; the manifest records schema, kernel version, seed, grid,
+  fuel order, and a deterministic train/validation split. Added save/load, a corpus builder
+  script, a 10-sample manifest example, and determinism/round-trip tests. Dogrib is not used.
+  Dashboard: **GREEN**.
+
+- P159.2: added the compact NumPy MLP surrogate (`ws4.fire.surrogate_model`) and training
+  script. Trained on 120 synthetic 32×32/60-minute samples (96 train, 24 validation, seed 159),
+  with 29 per-cell features, 32 tanh units, and 993 parameters. Training loss 0.2063,
+  validation loss 0.6151, validation mask IoU mean 0.374 (range 0.000–0.859). The validation
+  loss shows overfitting; P159.3 must evaluate held-out synthetic and Dogrib OOD. Model card:
+  `notes/reports/p159-model-card.md`. Dashboard: **GREEN**.
+
+- P159.3: evaluated the frozen surrogate. Held-out synthetic: 24 samples, mean mask IoU 0.374
+  (range 0.000–0.859), Sorensen 0.494, centroid 0.223 km, 0.90 ms/sample. Dogrib OOD:
+  11,315 ha (+10.7% area), perimeter +148.2%, centroid 5.23 km, IoU 0.203, Sorensen 0.337,
+  orientation 24.6°, 67.5 ms. Dogrib fails perimeter, centroid, IoU, and Sorensen.
+- P159.4: closed P159 as **no-go for integration**. The model is overfit, has no duration
+  input, and fails Dogrib OOD. No web/UI dependency, no kernel replacement, no validation
+  claim. The corpus, model card, and evaluation harness are retained. Report:
+  `notes/reports/p159-closeout.md`. Dashboard: **GREEN**.
+
 - P163.1: added `ws4.fire.behavior` with explicit ground/surface/passive-crown/active-crown
   classes and transition records. Ground is a documented low-intensity proxy, not a duff model.
   The class is now recorded as `fire_behaviour` on the P156 event attributes. Added threshold,
