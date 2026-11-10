@@ -81,6 +81,20 @@ but the event weather is 18--40 percent and a greater-than condition would stop 
 sensitivity: ``relative_humidity="lt"`` uses the physically plausible maximum and ``"gt"``
 preserves the literal wording. The interpretation used is recorded in the run summary.
 
+Spotting
+--------
+
+P163.2 adds an optional screening spotting model. It is **off by default** and is not a
+validated operational spotting forecast.
+
+A burning cell emits a spot with a per-hour probability. The spot lands downwind at a bounded
+distance, with angular jitter, and starts a new ignition one minute later. Every event carries
+its source cell, target cell, ignition time, and transport distance.
+
+The model is seeded and deterministic. The current basis is a declared screening assumption,
+not an empirical spotting calibration. It does not represent firebrand size, live fuel
+moisture, canopy structure, or suppression.
+
 Fragment bridge
 ---------------
 

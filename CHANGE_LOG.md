@@ -5091,3 +5091,9 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   The class is now recorded as `fire_behaviour` on the P156 event attributes. Added threshold,
   transition, and event-integration tests. Added the validation-ladder note with published
   event and probabilistic benchmarks. Dashboard: **GREEN**.
+
+- P163.2: added `SpottingConfig` and `SpotIgnition` to the growth engine. Spotting is off by
+  default, seeded, bounded by a landing-distance range, and records source/target/time/distance
+  for every spot. The model is explicitly a screening assumption, not an operational forecast.
+  Added seed-replay, boundary, zero-probability, and validation tests, plus docs. Dashboard:
+  pending.
