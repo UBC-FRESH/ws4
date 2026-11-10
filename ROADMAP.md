@@ -160,7 +160,7 @@ exists and the maintainer approves it.
 | P160 Dogrib burning conditions and wind-grid fidelity | #947 | `feature/p160-dogrib-wind-thresholds` | complete |
 | P161 Second observed fire and calibration protocol | #954 | `feature/p161-second-fire-calibration` | complete |
 | P162 Calibration sensitivity diagnostic | #961 | `feature/p162-calibration-sensitivity` | complete |
-| P159 Fire surrogate feasibility | #946 | `feature/p159-fire-surrogate` | active |
+| P159 Fire surrogate feasibility | #946 | `feature/p159-fire-surrogate` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -4699,9 +4699,13 @@ Acceptance:
 
 Parent issue: #946
 Branch: `feature/p159-fire-surrogate`
-Status: active
+Status: pr-open
 Design note: `notes/design/ws4-open-fire-model-reuse.md`
 Corpus manifest: `notes/reports/p159-corpus-manifest.json`
+Model card: `notes/reports/p159-model-card.md`
+Evaluation: `notes/reports/p159-evaluation.md`
+Report: `notes/reports/p159-closeout.md`
+PR: TBD
 
 Goal: test whether a compact surrogate trained on the WS4 P156/P157 fire kernel can
 reproduce held-out burn footprints fast enough for interactive screening, without
@@ -4709,8 +4713,8 @@ replacing the auditable kernel or claiming observed-fire validation.
 
 - [x] P159.1 Build a deterministic synthetic burn corpus and provenance (#966)
 - [x] P159.2 Train a compact surrogate and write the model card (#967)
-- [ ] P159.3 Evaluate held-out synthetic runs and Dogrib out-of-distribution (#968)
-- [ ] P159.4 Apply the integration gate and record the decision (#969)
+- [x] P159.3 Evaluate held-out synthetic runs and Dogrib out-of-distribution (#968)
+- [x] P159.4 Apply the integration gate and record the decision (#969)
 
 Acceptance:
 

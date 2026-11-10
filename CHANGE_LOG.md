@@ -5099,3 +5099,12 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   validation loss 0.6151, validation mask IoU mean 0.374 (range 0.000–0.859). The validation
   loss shows overfitting; P159.3 must evaluate held-out synthetic and Dogrib OOD. Model card:
   `notes/reports/p159-model-card.md`. Dashboard: **GREEN**.
+
+- P159.3: evaluated the frozen surrogate. Held-out synthetic: 24 samples, mean mask IoU 0.374
+  (range 0.000–0.859), Sorensen 0.494, centroid 0.223 km, 0.90 ms/sample. Dogrib OOD:
+  11,315 ha (+10.7% area), perimeter +148.2%, centroid 5.23 km, IoU 0.203, Sorensen 0.337,
+  orientation 24.6°, 67.5 ms. Dogrib fails perimeter, centroid, IoU, and Sorensen.
+- P159.4: closed P159 as **no-go for integration**. The model is overfit, has no duration
+  input, and fails Dogrib OOD. No web/UI dependency, no kernel replacement, no validation
+  claim. The corpus, model card, and evaluation harness are retained. Report:
+  `notes/reports/p159-closeout.md`. Dashboard: **GREEN**.

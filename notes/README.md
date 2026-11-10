@@ -38,6 +38,8 @@ Working notes for WS4. Notes are living: update them in the same change set as t
   train/validation split.
 - `reports/p159-model-card.md` — P159.2 surrogate architecture, training data, losses, and
   limitations.
+- `reports/p159-evaluation.md` — P159.3 held-out synthetic and Dogrib OOD evaluation.
+- `reports/p159-closeout.md` — P159 no-go integration decision and retained artifacts.
 - `design/ws4-second-fire-calibration.md` — P161 data gate, the selected Hay River/K'atl'odeeche
   2023 fire, and the calibration/holdout constraints.
 - `design/ws4-fire-calibration-protocol.md` — P161.3 pre-registered parameters, objective,
