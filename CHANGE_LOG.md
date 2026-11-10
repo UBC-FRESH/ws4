@@ -5132,3 +5132,8 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   Ground fire, spotting, and tree outcomes are documented as proxies, not validated process
   models. Validation ladder recorded; next phase is P164 decision-grade risk validation.
   Report: `notes/reports/p163-closeout.md`. Dashboard: **GREEN**.
+
+- P164.1: added `ws4.fire.validation` with the six-tier validation ladder and a sourced
+  registry of published event, burn-probability, and tree-mortality envelopes. Added
+  tier-specific benchmark lookup and single-fire context policy, plus docs and tests. No new
+  model run or calibration. Dashboard: **GREEN**.

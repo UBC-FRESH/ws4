@@ -160,8 +160,9 @@ exists and the maintainer approves it.
 | P160 Dogrib burning conditions and wind-grid fidelity | #947 | `feature/p160-dogrib-wind-thresholds` | complete |
 | P161 Second observed fire and calibration protocol | #954 | `feature/p161-second-fire-calibration` | complete |
 | P162 Calibration sensitivity diagnostic | #961 | `feature/p162-calibration-sensitivity` | complete |
-| P159 Fire surrogate feasibility | #946 | `feature/p159-fire-surrogate` | pr-open |
-| P163 Fire behaviour completeness | #971 | `feature/p163-fire-behaviour-completeness` | pr-open |
+| P159 Fire surrogate feasibility | #946 | `feature/p159-fire-surrogate` | complete |
+| P163 Fire behaviour completeness | #971 | `feature/p163-fire-behaviour-completeness` | complete |
+| P164 Decision-grade wildfire risk validation | #977 | `feature/p164-risk-validation` | active |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -4700,7 +4701,8 @@ Acceptance:
 
 Parent issue: #946
 Branch: `feature/p159-fire-surrogate`
-Status: pr-open
+Status: complete
+Merge commit: `b28826b`
 Design note: `notes/design/ws4-open-fire-model-reuse.md`
 Corpus manifest: `notes/reports/p159-corpus-manifest.json`
 Model card: `notes/reports/p159-model-card.md`
@@ -4824,7 +4826,8 @@ Acceptance:
 
 Parent issue: #971
 Branch: `feature/p163-fire-behaviour-completeness`
-Status: pr-open
+Status: complete
+Merge commit: `39fca0d`
 Design note: `notes/design/ws4-fire-behaviour.md`
 Validation ladder: `notes/design/ws4-fire-validation-ladder.md`
 Report: `notes/reports/p163-closeout.md`
@@ -4845,4 +4848,33 @@ Acceptance:
 - Spotting is bounded, seeded, and labelled as a model assumption.
 - The 3D scene distinguishes surface scorch, torching, and consumption.
 - A no-go for any component is recorded rather than hidden.
+- `python scripts/dashboard.py` is green.
+
+## Phase 164: Decision-grade wildfire risk validation
+
+Parent issue: #977
+Branch: `feature/p164-risk-validation`
+Status: active
+Design note: `notes/design/ws4-fire-validation-ladder.md`
+Benchmarks: `ws4/fire/validation.py`
+Docs: `docs/reference/fire-validation.rst`
+
+Goal: replace single-fire perimeter pass/fail with tier-specific published-envelope validation
+for event reconstruction, burn probability, treatment response, tree effects, and planning
+decisions.
+
+- [x] P164.1 Published benchmark registry and decision gates (#978)
+- [ ] P164.2 Multi-fire event benchmark (#979)
+- [ ] P164.3 Burn-probability calibration and skill scores (#980)
+- [ ] P164.4 Treatment-effect validation (#981)
+- [ ] P164.5 Uncertainty propagation and decision quality (#982)
+- [ ] P164.6 Tree-mortality evidence (#983)
+- [ ] P164.7 Close out (#984)
+
+Acceptance:
+
+- Every benchmark has a source and a stated comparison basis.
+- Gates are tier-specific, not one universal perimeter threshold.
+- Single-fire results are reported as anecdotes, not the phase verdict.
+- A no-go tier is recorded rather than hidden.
 - `python scripts/dashboard.py` is green.
