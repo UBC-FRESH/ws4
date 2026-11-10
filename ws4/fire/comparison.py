@@ -638,6 +638,8 @@ def run_dogrib_case(
     duration_min: float = 402.0,
     burning_conditions: BurningConditions | None = None,
     wind_grids: dict[int, WindNinjaGrid] | None = None,
+    wind_multiplier: float = 1.0,
+    head_ros_multiplier: float = 1.0,
 ) -> DogribCase:
     """Run one Dogrib base or sensitivity case and compare it with the final perimeter.
 
@@ -673,6 +675,8 @@ def run_dogrib_case(
         Hourly growth gate; None applies no threshold. The hourly weather path is required.
     wind_grids : dict of int to WindNinjaGrid or None, optional
         Spatial wind inputs keyed by direction. The hourly weather path is required.
+    wind_multiplier, head_ros_multiplier : float, optional
+        Global calibration multipliers (default 1.0).
 
     Returns
     -------
@@ -800,6 +804,8 @@ def run_dogrib_case(
             wind_patch_end_min=420.0 if weather_patches else None,
             burning_conditions=burning_conditions,
             wind_grids=wind_grids,
+            wind_multiplier=wind_multiplier,
+            head_ros_multiplier=head_ros_multiplier,
         ),
     )
     simulated = np.isfinite(growth.ignition_time_min)
@@ -823,6 +829,122 @@ def run_dogrib_case(
         metrics=metrics,
         start_cells=len(start_cells),
         initial_burned_mask=initial_burned,
+    )
+
+
+def run_observed_case(
+    fire: ObservedFire,
+    *,
+    scenario: str,
+    ffmc: float,
+    bui: float,
+    duration_min: float,
+    point_ignition: bool = True,
+    burning_conditions: BurningConditions | None = None,
+    wind_multiplier: float = 1.0,
+    head_ros_multiplier: float = 1.0,
+) -> DogribCase:
+    """Run one generic point-ignition observed-fire case.
+
+    Parameters
+    ----------
+    fire : ObservedFire
+        Observed fire with per-cell fuel, terrain, and hourly weather.
+    scenario : str
+        Scenario label.
+    ffmc, bui : float
+        Starting moisture codes for the hourly stream.
+    duration_min : float
+        Simulation duration in minutes.
+    point_ignition : bool, optional
+        Use the observed ignition point (default True).
+    burning_conditions : BurningConditions or None, optional
+        Hourly growth gate.
+    wind_multiplier, head_ros_multiplier : float, optional
+        Global calibration multipliers.
+
+    Returns
+    -------
+    DogribCase
+        The simulated growth and comparison metrics.
+
+    Raises
+    ------
+    ComparisonError
+        If the ignition is unburnable and no nearby burnable cell exists.
+    """
+    if not point_ignition:
+        raise ComparisonError("generic observed runner currently supports point ignition only")
+    steps = hourly_weather_steps(fire, ffmc=ffmc, bui=bui)
+    rows, cols = fire.grid.nrows, fire.grid.ncols
+    fuel_grid = fire.fbp_fuel_grid()
+    conifer_grid, dead_grid, closure_grid = fire.fbp_blend_grids()
+    slope_grid, aspect_grid = slope_aspect_from_elevation(
+        fire.elevation_m, fire.grid.cell_size_m, nodata=fire.grid.nodata
+    )
+    burnable = np.array([[value is not None for value in row] for row in fuel_grid], dtype=bool)
+    x, y = fire.ignition_xy
+    ign_col = int((x - fire.grid.xll) // fire.grid.cell_size_m)
+    ign_row = fire.grid.nrows - 1 - int((y - fire.grid.yll) // fire.grid.cell_size_m)
+    if not (0 <= ign_row < rows and 0 <= ign_col < cols and burnable[ign_row, ign_col]):
+        candidates = np.argwhere(burnable)
+        if len(candidates) == 0:
+            raise ComparisonError("grid has no burnable cells near the ignition point")
+        distances = (candidates[:, 0] - ign_row) ** 2 + (candidates[:, 1] - ign_col) ** 2
+        nearest = candidates[int(np.argmin(distances))]
+        ign_row, ign_col = int(nearest[0]), int(nearest[1])
+    grid = SiteGrid(
+        fuel_type="C2",
+        rows=rows,
+        cols=cols,
+        cell_size_m=fire.grid.cell_size_m,
+        ffmc=ffmc,
+        bui=bui,
+        wind_kmh=steps[0].wind_kmh,
+        wind_direction_deg=steps[0].wind_direction_deg,
+        slope_percent=32.0,
+        aspect_deg=180.0,
+        burnable=burnable,
+        fuel_type_grid=fuel_grid,
+        slope_percent_grid=slope_grid,
+        aspect_deg_grid=aspect_grid,
+        elevation_m_grid=fire.elevation_m,
+        conifer_percent_grid=conifer_grid,
+        dead_fir_percent_grid=dead_grid,
+        crown_closure_percent_grid=closure_grid,
+    )
+    growth = grow_fire(
+        grid,
+        GrowthConfig(
+            ignition_cells=((ign_row, ign_col),),
+            max_time_min=duration_min,
+            snapshot_interval_min=duration_min,
+            neighbor_radius=2,
+            weather_steps=steps,
+            burning_conditions=burning_conditions,
+            wind_multiplier=wind_multiplier,
+            head_ros_multiplier=head_ros_multiplier,
+        ),
+    )
+    simulated = np.isfinite(growth.ignition_time_min)
+    observed = observed_mask(fire, -1)
+    metrics = compare_masks(simulated, observed, fire.grid)
+    return DogribCase(
+        scenario=scenario,
+        fuel_type="C2",
+        fuel_mode="observed grid",
+        weather_mode="hourly",
+        ffmc=ffmc,
+        bui=bui,
+        wind_kmh=steps[0].wind_kmh,
+        wind_direction_deg=steps[0].wind_direction_deg,
+        slope_percent=32.0,
+        aspect_deg=180.0,
+        duration_min=duration_min,
+        growth=growth,
+        metrics=metrics,
+        start_cells=1,
+        initial_burned_mask=None,
     )
 
 

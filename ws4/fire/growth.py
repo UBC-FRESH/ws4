@@ -465,6 +465,10 @@ class GrowthConfig:
     wind_grids : dict of int to WindNinjaGrid or None, optional
         Spatial wind inputs keyed by domain-average direction. They require
         ``weather_steps`` and select the nearest direction grid for each step.
+    wind_multiplier : float, optional
+        Multiplier on the ten-metre wind before the FBP surface/crown layer (default 1).
+    head_ros_multiplier : float, optional
+        Multiplier on the final head rate of spread before growth (default 1).
     """
 
     ignition_cells: tuple[tuple[int, int], ...]
@@ -476,6 +480,8 @@ class GrowthConfig:
     wind_patch_end_min: float | None = None
     burning_conditions: BurningConditions | None = None
     wind_grids: dict[int, WindNinjaGrid] | None = None
+    wind_multiplier: float = 1.0
+    head_ros_multiplier: float = 1.0
 
     def __post_init__(self) -> None:
         """Validate the growth configuration."""
@@ -513,6 +519,10 @@ class GrowthConfig:
                 raise FireFuelError(
                     "burning_conditions require relative_humidity_percent on every weather step"
                 )
+        if _non_negative(self.wind_multiplier, "wind_multiplier") <= 0.0:
+            raise FireFuelError("wind_multiplier must be positive")
+        if _non_negative(self.head_ros_multiplier, "head_ros_multiplier") <= 0.0:
+            raise FireFuelError("head_ros_multiplier must be positive")
         if self.wind_grids is not None:
             if not self.wind_grids:
                 raise FireFuelError("wind_grids must not be empty")
@@ -668,6 +678,8 @@ class GrowthResult:
                 "time_dependent" if self.config.weather_steps is not None else "constant"
             ),
             "weather_steps": len(self.config.weather_steps or ()),
+            "wind_multiplier": self.config.wind_multiplier,
+            "head_ros_multiplier": self.config.head_ros_multiplier,
             "burning_conditions": (
                 None
                 if self.config.burning_conditions is None
@@ -991,6 +1003,9 @@ def _cell_behaviour(
     bui: float,
     wind_kmh: float,
     wind_direction_deg: float,
+    *,
+    wind_multiplier: float = 1.0,
+    head_ros_multiplier: float = 1.0,
 ) -> tuple[float, float, EffectiveWind] | None:
     """Return local head ROS, length-to-breadth, and wind for one cell."""
     fuel = grid.fuel_type if grid.fuel_type_grid is None else grid.fuel_type_grid[row, col]
@@ -1006,7 +1021,7 @@ def _cell_behaviour(
         fuel,
         ffmc,
         bui,
-        wind_kmh,
+        wind_kmh * wind_multiplier,
         wind_direction_deg,
         slope,
         aspect,
@@ -1029,11 +1044,18 @@ def _cell_behaviour(
         crown_closure_percent=closure,
         grass_fuel_load_kg_m2=grid.grass_fuel_load_kg_m2,
     )
-    return crown.rate_of_spread_m_min, length_to_breadth(fuel, wind.speed_kmh), wind
+    return (
+        crown.rate_of_spread_m_min * head_ros_multiplier,
+        length_to_breadth(fuel, wind.speed_kmh),
+        wind,
+    )
 
 
 def _local_behaviour(
     grid: SiteGrid,
+    *,
+    wind_multiplier: float = 1.0,
+    head_ros_multiplier: float = 1.0,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, EffectiveWind]:
     """Return per-cell head ROS, length-to-breadth, and spread azimuth."""
     rows, cols = grid.rows, grid.cols
@@ -1060,6 +1082,8 @@ def _local_behaviour(
                 grid.bui,
                 grid.wind_kmh,
                 wind_direction,
+                wind_multiplier=wind_multiplier,
+                head_ros_multiplier=head_ros_multiplier,
             )
             if value is None:
                 continue
@@ -1124,7 +1148,11 @@ def _grow_fire_time_dependent(grid: SiteGrid, config: GrowthConfig) -> GrowthRes
     if steps is None:
         raise FireFuelError("time-dependent growth needs weather_steps")
     burnable = np.asarray(grid.burnable, dtype=bool)
-    summary_head, summary_lb, _summary_az, representative = _local_behaviour(grid)
+    summary_head, summary_lb, _summary_az, representative = _local_behaviour(
+        grid,
+        wind_multiplier=config.wind_multiplier,
+        head_ros_multiplier=config.head_ros_multiplier,
+    )
     active = burnable & (summary_head > 0.0)
     if not bool(active.any()):
         raise FireFuelError("grid has no burnable fuel cells with a positive rate of spread")
@@ -1182,6 +1210,8 @@ def _grow_fire_time_dependent(grid: SiteGrid, config: GrowthConfig) -> GrowthRes
             grid.bui if step.bui is None else step.bui,
             wind_kmh,
             wind_direction,
+            wind_multiplier=config.wind_multiplier,
+            head_ros_multiplier=config.head_ros_multiplier,
         )
         cache[key] = value
         return value
@@ -1295,7 +1325,11 @@ def grow_fire(grid: SiteGrid, config: GrowthConfig) -> GrowthResult:
             raise FireFuelError(f"ignition cell ({row}, {col}) is unburnable")
     if config.weather_steps is not None:
         return _grow_fire_time_dependent(grid, config)
-    head_grid, lb_grid, azimuth_grid, wind = _local_behaviour(grid)
+    head_grid, lb_grid, azimuth_grid, wind = _local_behaviour(
+        grid,
+        wind_multiplier=config.wind_multiplier,
+        head_ros_multiplier=config.head_ros_multiplier,
+    )
     active = burnable & (head_grid > 0.0)
     if not bool(active.any()):
         raise FireFuelError("grid has no burnable fuel cells with a positive rate of spread")

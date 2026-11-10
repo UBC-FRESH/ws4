@@ -158,7 +158,8 @@ exists and the maintainer approves it.
 | P157 Observed fire and perimeter validation | #923 | `feature/p157-observed-fire` | pr-open |
 | P158 Plan scenario matrix | #928 | `feature/p158-plan-matrix` | complete |
 | P159 Fire surrogate feasibility | #946 | `feature/p159-fire-surrogate` | planned |
-| P160 Dogrib burning conditions and wind-grid fidelity | #947 | `feature/p160-dogrib-wind-thresholds` | pr-open |
+| P160 Dogrib burning conditions and wind-grid fidelity | #947 | `feature/p160-dogrib-wind-thresholds` | complete |
+| P161 Second observed fire and calibration protocol | #954 | `feature/p161-second-fire-calibration` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -4725,7 +4726,8 @@ Acceptance:
 
 Parent issue: #947
 Branch: `feature/p160-dogrib-wind-thresholds`
-Status: pr-open
+Status: complete
+Merge commit: `e4e9b94`
 Design note: `notes/design/ws4-fire-behaviour.md`
 Evidence: `notes/reports/p157-observed-validation.md`
 Matrix: `notes/reports/p160-dogrib-matrix.md`
@@ -4751,4 +4753,34 @@ Acceptance:
   stream except for the documented wind input.
 - The report states whether the change improves the P157 screens or fails.
 - No observed-fire calibration is claimed.
+- `python scripts/dashboard.py` is green.
+
+## Phase 161: Second observed fire and calibration protocol
+
+Parent issue: #954
+Branch: `feature/p161-second-fire-calibration`
+Status: pr-open
+Design note: `notes/design/ws4-second-fire-calibration.md`
+Protocol: `notes/design/ws4-fire-calibration-protocol.md`
+Report: `notes/reports/p161-closeout.md`
+PR: #960
+
+Goal: add an independent second observed fire, pre-register a calibration and holdout protocol,
+and test whether calibrated WS4 parameters improve the new fire while Dogrib remains an
+untouched holdout.
+
+- [x] P161.1 Candidate-fire inventory and data gate (#955)
+- [x] P161.2 Second-fire fixture and observed-fire contract (#956)
+- [x] P161.3 Calibration and holdout protocol (#957)
+- [x] P161.4 Baseline and calibrated runs (#958)
+- [x] P161.5 Close with go/no-go evidence (#959)
+
+Acceptance:
+
+- The second fire is independent of Dogrib and has a recorded source/licence/CRS/time zone.
+- The data gate passes before fixture work starts.
+- Parameter names and bounds are fixed before fitting.
+- Dogrib is not used for fitting.
+- The report separates baseline, calibrated, and holdout evidence.
+- A no-go or no-improvement result is acceptable and closes the phase.
 - `python scripts/dashboard.py` is green.

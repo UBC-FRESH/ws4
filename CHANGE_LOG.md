@@ -5041,3 +5041,36 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   the spatial screens. Recorded the third-party data licence limit, the nearest-direction
   selection limit, and the recommendation to acquire a second independent fire before fitting.
   No calibration was performed. Dashboard: **GREEN**.
+
+- P161.1: completed the second-fire data gate. Selected Hay River / K'atl'odeeche SS005-23
+  (14–20 May 2023): CFSDS 2023_320 final progression/perimeter, ECCC Hay River A hourly
+  weather, FireSTARR Fuel 2023 FBP 100 m (2.83 GB, SHA-256 recorded), ASTER terrain, and a
+  satellite-inferred ignition. Conditional pass: the fuel/terrain subsets must be acquired
+  before P161.2. Rejected Horse River 2016 (analytic FBP fuel raster token-gated), WildfireAV
+  (US FBFM), the June Nomad run (no matching perimeter), and CFSDS-only alternatives (no
+  hourly/FBP fuel). Dashboard: **GREEN**.
+
+- P161.2: built the Hay River / K'atl'odeeche second-fire fixture from CFSDS `2023_320`
+  (seven cumulative daily perimeters), ECCC Hay River Climate 2202402 hourly weather, and
+  the FireSTARR Fuel 2023 `fuel_11_0` / `dem_11_0` subset. Added `load_hay_river`, fixture
+  validation tests, and the observed-fire docs. The fixture is 131 × 117 at 100 m, UTM zone
+  11N; final rasterized area is 2,987 ha. The raw CFSDS/FireSTARR data remain untracked.
+  Dashboard: **GREEN**.
+
+- P161.3: pre-registered the calibration protocol before fitting. Two global parameters only:
+  `wind_multiplier` 0.70–1.30 and `head_ros_multiplier` 0.50–1.50, with 1.0/1.0 as baseline.
+  Fixed 5×5 search (25 runs), weighted score over the P157 metrics, and Dogrib Scenario 2b as
+  holdout-only. Decision rules separate calibration-only from supported transfer and allow a
+  no-go. No calibration numbers exist at registration. Dashboard: **GREEN**.
+
+- P161.4: implemented the two registered multipliers and ran the fixed 25-point Hay River
+  grid. The baseline is 10,846 ha against 2,987 ha observed (+263.1% area, +223.1% perimeter,
+  IoU 0.275, Sorensen 0.431, centroid 1.43 km, orientation 27.6°). Every grid point burned all
+  10,846 burnable cells and produced the same score 1.3436; there is no parameter sensitivity.
+  The arbitrary boundary point `0.70, 0.50` was applied once to Dogrib and degraded the
+  holdout (2,203 ha, −78.4% area, IoU 0.160, Sorensen 0.275). Calibration fails; P161 closes
+  no-go. Do not tune around the saturated case. Dashboard: **GREEN**.
+- P161.5: closed P161 as a calibration no-go. The second-fire fixture and calibration harness
+  are retained, but the saturated Hay River grid cannot identify the two multipliers. No
+  parameter set is selected and no transferable calibration claim is made. Report:
+  `notes/reports/p161-closeout.md`. Dashboard: **GREEN**.
