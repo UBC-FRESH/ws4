@@ -56,4 +56,4 @@ P159 closes as a no-go. A future surrogate phase must be a new pre-registration.
 
 ## Pull request
 
-PR: to be opened.
+PR: #970.

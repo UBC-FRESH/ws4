@@ -4705,7 +4705,7 @@ Corpus manifest: `notes/reports/p159-corpus-manifest.json`
 Model card: `notes/reports/p159-model-card.md`
 Evaluation: `notes/reports/p159-evaluation.md`
 Report: `notes/reports/p159-closeout.md`
-PR: TBD
+PR: #970
 
 Goal: test whether a compact surrogate trained on the WS4 P156/P157 fire kernel can
 reproduce held-out burn footprints fast enough for interactive screening, without
