@@ -160,7 +160,8 @@ exists and the maintainer approves it.
 | P159 Fire surrogate feasibility | #946 | `feature/p159-fire-surrogate` | planned |
 | P160 Dogrib burning conditions and wind-grid fidelity | #947 | `feature/p160-dogrib-wind-thresholds` | complete |
 | P161 Second observed fire and calibration protocol | #954 | `feature/p161-second-fire-calibration` | complete |
-| P162 Calibration sensitivity diagnostic | #961 | `feature/p162-calibration-sensitivity` | pr-open |
+| P162 Calibration sensitivity diagnostic | #961 | `feature/p162-calibration-sensitivity` | complete |
+| P163 Fire behaviour completeness | #971 | `feature/p163-fire-behaviour-completeness` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -4791,7 +4792,8 @@ Acceptance:
 
 Parent issue: #961
 Branch: `feature/p162-calibration-sensitivity`
-Status: pr-open
+Status: complete
+Merge commit: `b472ddd`
 Design note: `notes/design/ws4-fire-calibration-protocol.md`
 Report: `notes/reports/p162-closeout.md`
 Sensitivity: `notes/reports/p162-sensitivity.md`
@@ -4811,4 +4813,31 @@ Acceptance:
 - The report shows whether the result changes with the multipliers.
 - A saturated/no-sensitivity result closes the phase.
 - No calibration fit is run in P162.
+- `python scripts/dashboard.py` is green.
+
+## Phase 163: Fire behaviour completeness
+
+Parent issue: #971
+Branch: `feature/p163-fire-behaviour-completeness`
+Status: pr-open
+Design note: `notes/design/ws4-fire-behaviour.md`
+Validation ladder: `notes/design/ws4-fire-validation-ladder.md`
+Report: `notes/reports/p163-closeout.md`
+PR: #976
+
+Goal: add explicit ground/surface/crown classes and transitions, a bounded spotting model, and
+intensity-aware tree effects in the 3D scene, without claiming operational validation.
+
+- [x] P163.1 Ground/surface/crown classes and transitions (#972)
+- [x] P163.2 Spotting model and integration (#973)
+- [x] P163.3 Intensity-aware tree effects and 3D states (#974)
+- [x] P163.4 Verify and close out (#975)
+
+Acceptance:
+
+- Behaviour classes are explicit and tested at the transition boundaries.
+- The event record carries the class and the kernel inputs.
+- Spotting is bounded, seeded, and labelled as a model assumption.
+- The 3D scene distinguishes surface scorch, torching, and consumption.
+- A no-go for any component is recorded rather than hidden.
 - `python scripts/dashboard.py` is green.

@@ -91,6 +91,8 @@ def test_scene_payload_has_bounds_timeline_and_counts() -> None:
     assert float(bounds["max_x"]) > float(bounds["min_x"])
     assert len(stands) == 9
     assert len(trees) == 1800
+    states = {str(tree["post_fire_state"]) for tree in trees}
+    assert states <= {"unburned", "scorched", "torched", "consumed"}
 
 
 def test_scene_is_deterministic() -> None:
@@ -168,6 +170,7 @@ def test_viewer_template_contains_the_expected_hooks() -> None:
     assert "three" in text
     assert "UnrealBloomPass" in text
     assert "spawnEmber" in text
+    assert "scorchedCrown" in text
     assert "heatHaze" in text
     assert "__ws4FireStats" in text
     assert "ShapeGeometry" in text

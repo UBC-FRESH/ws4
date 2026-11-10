@@ -72,7 +72,9 @@
   <div class="legend">
     <span style="--swatch:#3f7a4a">live</span>
     <span style="--swatch:#ff8a3d">burning</span>
-    <span style="--swatch:#3a2a22">burnt</span>
+    <span style="--swatch:#9a6a35">scorched</span>
+    <span style="--swatch:#4b3324">torched</span>
+    <span style="--swatch:#17110d">consumed</span>
     <span style="--swatch:#8b9aa3">smoke</span>
   </div>
   <div id="status">Drag to orbit · scroll to zoom · space to play/pause</div>
@@ -242,7 +244,9 @@ scene.add(trunks, crowns);
 const matrix = new THREE.Matrix4();
 const color = new THREE.Color();
 const liveCrown = new THREE.Color(0x4f8f55);
-const burntCrown = new THREE.Color(0x2f231b);
+const scorchedCrown = new THREE.Color(0x9a6a35);
+const torchedCrown = new THREE.Color(0x4b3324);
+const consumedCrown = new THREE.Color(0x17110d);
 const deadCrown = new THREE.Color(0x6d6657);
 const liveTrunk = new THREE.Color(0x5b3e28);
 const burntTrunk = new THREE.Color(0x2a1d16);
@@ -556,23 +560,36 @@ function updateBurnState(t) {
     }
     if (nextState !== tr.state) {
       tr.state = nextState;
-      const crown = nextState === 2 ? burntCrown : (tr.live ? liveCrown : deadCrown);
-      const trunk = nextState === 2 ? burntTrunk : (tr.live ? liveTrunk : burntTrunk);
+      let crown = tr.live ? liveCrown : deadCrown;
+      let trunk = tr.live ? liveTrunk : burntTrunk;
+      let crownRadius = Math.max(0.5, tr.crown_radius_m);
+      let crownHeight = tr.crownHeight;
+      let crownZ = tr.z + tr.trunkHeight;
+      if (nextState === 2) {
+        const outcome = tr.post_fire_state || "torched";
+        if (outcome === "scorched") {
+          crown = scorchedCrown;
+        } else if (outcome === "consumed") {
+          crown = consumedCrown;
+          trunk = burntTrunk;
+          crownRadius = Math.max(0.25, tr.crown_radius_m * 0.22);
+          crownHeight = tr.crownHeight * 0.30;
+        } else {
+          crown = torchedCrown;
+          trunk = burntTrunk;
+          crownRadius = Math.max(0.25, tr.crown_radius_m * 0.55);
+          crownHeight = tr.crownHeight * 0.55;
+        }
+      }
       crowns.setColorAt(i, crown);
       trunks.setColorAt(i, trunk);
-      if (nextState === 2) {
-        matrix.compose(
-          new THREE.Vector3(tr.x, tr.z + tr.trunkHeight, tr.y),
-          new THREE.Quaternion(),
-          new THREE.Vector3(
-            Math.max(0.25, tr.crown_radius_m * 0.35),
-            tr.crownHeight * 0.42,
-            Math.max(0.25, tr.crown_radius_m * 0.35)
-          )
-        );
-        crowns.setMatrixAt(i, matrix);
-        crowns.instanceMatrix.needsUpdate = true;
-      }
+      matrix.compose(
+        new THREE.Vector3(tr.x, crownZ, tr.y),
+        new THREE.Quaternion(),
+        new THREE.Vector3(crownRadius, crownHeight, crownRadius)
+      );
+      crowns.setMatrixAt(i, matrix);
+      crowns.instanceMatrix.needsUpdate = true;
     }
     if (nextState === 1) {
       if (rand() < 0.35 + tr.flame_intensity * 0.5) spawnFlame(tr);

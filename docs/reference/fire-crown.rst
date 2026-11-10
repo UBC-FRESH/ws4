@@ -61,6 +61,21 @@ The fire description is:
 When a canopy bulk density is supplied, the Van Wagner active-crown threshold is also
 reported: the head fire ROS reaches ``3 / CBD`` m/min.
 
+Behaviour classes
+-----------------
+
+P163.1 turns the FBP outputs into four explicit classes:
+
+- ``ground`` — low-intensity/smoldering proxy when flame length is below 0.5 m and CFB is
+  below 0.1;
+- ``surface`` — flaming surface fire with CFB below 0.1 and flame length at least 0.5 m;
+- ``passive_crown`` — CFB from 0.1 to below 0.9;
+- ``active_crown`` — CFB at or above 0.9.
+
+The class is recorded as ``fire_behaviour`` on the fire event. ``surface->passive_crown`` and
+``passive_crown->active_crown`` are explicit transitions. The ground class is a proxy for a
+low-intensity surface state; WS4 does not yet model duff/peat combustion or smoldering spread.
+
 Validation
 ----------
 

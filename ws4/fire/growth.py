@@ -280,6 +280,119 @@ class SiteGrid:
 
 
 @dataclass(frozen=True)
+class SpottingConfig:
+    """Optional seeded spotting model for time-dependent growth.
+
+    This is a screening model, not a validated operational spotting forecast. A burning cell
+    emits a spot with a per-hour probability; the spot lands downwind at a bounded distance and
+    starts a new ignition one minute later. Every spot is recorded with its source, target, time,
+    and distance.
+
+    Parameters
+    ----------
+    probability_per_cell_per_hour : float, optional
+        Emission probability per active cell per hour (default 0.0005).
+    min_distance_m, max_distance_m : float, optional
+        Landing-distance bounds (default 50 and 500 m).
+    interval_min : float, optional
+        Sampling interval in minutes (default 60).
+    downwind_spread_deg : float, optional
+        Uniform angular jitter around the downwind direction (default 30 degrees).
+    seed : int, optional
+        Deterministic sampling seed (default 0).
+    basis : str, optional
+        Stable model-assumption label.
+    """
+
+    probability_per_cell_per_hour: float = 0.0005
+    min_distance_m: float = 50.0
+    max_distance_m: float = 500.0
+    interval_min: float = 60.0
+    downwind_spread_deg: float = 30.0
+    seed: int = 0
+    basis: str = "screening-ballistic-v1"
+
+    def __post_init__(self) -> None:
+        """Validate the spotting configuration."""
+        probability = _probability(
+            self.probability_per_cell_per_hour, "probability_per_cell_per_hour"
+        )
+        if probability < 0.0:
+            raise FireFuelError("probability_per_cell_per_hour must be non-negative")
+        low = _non_negative(self.min_distance_m, "min_distance_m")
+        high = _non_negative(self.max_distance_m, "max_distance_m")
+        if high < low:
+            raise FireFuelError("max_distance_m must be at least min_distance_m")
+        if _non_negative(self.interval_min, "interval_min") <= 0.0:
+            raise FireFuelError("interval_min must be positive")
+        if _non_negative(self.downwind_spread_deg, "downwind_spread_deg") > 180.0:
+            raise FireFuelError("downwind_spread_deg must be at most 180")
+        if isinstance(self.seed, bool) or not isinstance(self.seed, int):
+            raise FireFuelError("seed must be an integer")
+        if not self.basis:
+            raise FireFuelError("basis must be non-empty")
+
+    def to_dict(self) -> dict[str, object]:
+        """Return the spotting configuration as a JSON-serializable mapping.
+
+        Returns
+        -------
+        dict
+            Parameters and assumption label.
+        """
+        return {
+            "probability_per_cell_per_hour": self.probability_per_cell_per_hour,
+            "min_distance_m": self.min_distance_m,
+            "max_distance_m": self.max_distance_m,
+            "interval_min": self.interval_min,
+            "downwind_spread_deg": self.downwind_spread_deg,
+            "seed": self.seed,
+            "basis": self.basis,
+        }
+
+
+@dataclass(frozen=True)
+class SpotIgnition:
+    """One spot-fire ignition.
+
+    Parameters
+    ----------
+    source_row, source_col : int
+        Burning source cell.
+    target_row, target_col : int
+        Landing cell.
+    time_min : float
+        Spot ignition time in minutes.
+    distance_m : float
+        Transport distance in metres.
+    """
+
+    source_row: int
+    source_col: int
+    target_row: int
+    target_col: int
+    time_min: float
+    distance_m: float
+
+    def to_dict(self) -> dict[str, int | float]:
+        """Return the spot ignition as a JSON-serializable mapping.
+
+        Returns
+        -------
+        dict
+            Source, target, time, and distance.
+        """
+        return {
+            "source_row": self.source_row,
+            "source_col": self.source_col,
+            "target_row": self.target_row,
+            "target_col": self.target_col,
+            "time_min": self.time_min,
+            "distance_m": self.distance_m,
+        }
+
+
+@dataclass(frozen=True)
 class BurningConditions:
     """Restrict growth to weather steps that meet the documented burning conditions.
 
@@ -469,6 +582,8 @@ class GrowthConfig:
         Multiplier on the ten-metre wind before the FBP surface/crown layer (default 1).
     head_ros_multiplier : float, optional
         Multiplier on the final head rate of spread before growth (default 1).
+    spotting : SpottingConfig or None, optional
+        Optional seeded spotting model. It requires ``weather_steps``.
     """
 
     ignition_cells: tuple[tuple[int, int], ...]
@@ -482,6 +597,7 @@ class GrowthConfig:
     wind_grids: dict[int, WindNinjaGrid] | None = None
     wind_multiplier: float = 1.0
     head_ros_multiplier: float = 1.0
+    spotting: SpottingConfig | None = None
 
     def __post_init__(self) -> None:
         """Validate the growth configuration."""
@@ -523,6 +639,11 @@ class GrowthConfig:
             raise FireFuelError("wind_multiplier must be positive")
         if _non_negative(self.head_ros_multiplier, "head_ros_multiplier") <= 0.0:
             raise FireFuelError("head_ros_multiplier must be positive")
+        if self.spotting is not None:
+            if not isinstance(self.spotting, SpottingConfig):
+                raise FireFuelError("spotting must be a SpottingConfig value")
+            if self.weather_steps is None:
+                raise FireFuelError("spotting requires weather_steps")
         if self.wind_grids is not None:
             if not self.wind_grids:
                 raise FireFuelError("wind_grids must not be empty")
@@ -643,6 +764,8 @@ class GrowthResult:
         Per-cell length-to-breadth ratio for a heterogeneous grid.
     spread_azimuth_deg_grid : numpy.ndarray or None, optional
         Per-cell spread azimuth for a heterogeneous grid.
+    spot_ignitions : tuple of SpotIgnition, optional
+        Spot ignitions, when spotting is enabled.
     """
 
     grid: SiteGrid
@@ -657,6 +780,7 @@ class GrowthResult:
     head_ros_grid: np.ndarray | None = None
     length_to_breadth_grid: np.ndarray | None = None
     spread_azimuth_deg_grid: np.ndarray | None = None
+    spot_ignitions: tuple[SpotIgnition, ...] = ()
 
     def summary(self) -> dict[str, object]:
         """Return a stable summary of the growth run.
@@ -694,6 +818,8 @@ class GrowthResult:
                     "source": next(iter(self.config.wind_grids.values())).source,
                 }
             ),
+            "spotting": (None if self.config.spotting is None else self.config.spotting.to_dict()),
+            "spot_ignitions": [item.to_dict() for item in self.spot_ignitions],
             "burned_area_ha": self.burned_area_ha,
             "perimeter_m": self.perimeter_m,
             "snapshots": [snapshot.to_dict() for snapshot in self.snapshots],
@@ -1217,6 +1343,10 @@ def _grow_fire_time_dependent(grid: SiteGrid, config: GrowthConfig) -> GrowthRes
         return value
 
     starts = [step.start_min for step in steps]
+    spotting = config.spotting
+    rng = np.random.default_rng(spotting.seed) if spotting is not None else None
+    spot_ignitions: list[SpotIgnition] = []
+    next_spot_min = spotting.interval_min if spotting is not None else math.inf
     ignition = np.full((grid.rows, grid.cols), np.inf, dtype=float)
     queue: list[tuple[float, int, int]] = []
     for row, col in config.ignition_cells:
@@ -1229,6 +1359,64 @@ def _grow_fire_time_dependent(grid: SiteGrid, config: GrowthConfig) -> GrowthRes
             break
         if time > ignition[row, col] + 1e-12:
             continue
+        if spotting is not None and rng is not None:
+            while time + 1e-9 >= next_spot_min:
+                active = (
+                    burnable
+                    & (ignition <= time + 1e-12)
+                    & (ignition > time - spotting.interval_min - 1e-12)
+                )
+                sources = np.argwhere(active)
+                if len(sources):
+                    probability = (
+                        spotting.probability_per_cell_per_hour * spotting.interval_min / 60.0
+                    )
+                    chosen = rng.random(len(sources)) < probability
+                    for source in sources[chosen]:
+                        distance = float(
+                            rng.uniform(spotting.min_distance_m, spotting.max_distance_m)
+                        )
+                        angle = math.radians(
+                            (
+                                grid.wind_direction_deg
+                                + 180.0
+                                + rng.uniform(
+                                    -spotting.downwind_spread_deg,
+                                    spotting.downwind_spread_deg,
+                                )
+                            )
+                            % 360.0
+                        )
+                        target_row = round(
+                            float(source[0]) - math.cos(angle) * distance / grid.cell_size_m
+                        )
+                        target_col = round(
+                            float(source[1]) + math.sin(angle) * distance / grid.cell_size_m
+                        )
+                        if not (0 <= target_row < grid.rows and 0 <= target_col < grid.cols):
+                            continue
+                        if not bool(burnable[target_row, target_col]):
+                            continue
+                        if target_row == int(source[0]) and target_col == int(source[1]):
+                            continue
+                        arrival = time + 1.0
+                        if arrival > config.max_time_min:
+                            continue
+                        if arrival >= ignition[target_row, target_col] - 1e-12:
+                            continue
+                        ignition[target_row, target_col] = arrival
+                        heapq.heappush(queue, (arrival, target_row, target_col))
+                        spot_ignitions.append(
+                            SpotIgnition(
+                                source_row=int(source[0]),
+                                source_col=int(source[1]),
+                                target_row=target_row,
+                                target_col=target_col,
+                                time_min=arrival,
+                                distance_m=distance,
+                            )
+                        )
+                next_spot_min += spotting.interval_min
         step_index = max(0, bisect.bisect_right(starts, time) - 1)
         for drow, dcol in offsets:
             nrow = row + drow
@@ -1287,6 +1475,7 @@ def _grow_fire_time_dependent(grid: SiteGrid, config: GrowthConfig) -> GrowthRes
         head_ros_grid=summary_head,
         length_to_breadth_grid=summary_lb,
         spread_azimuth_deg_grid=_summary_az,
+        spot_ignitions=tuple(spot_ignitions),
     )
 
 

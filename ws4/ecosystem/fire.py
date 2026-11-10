@@ -22,6 +22,7 @@ from typing import Final
 import pandas as pd
 
 from ws4.fire import FireFuelError, fbp_crown_fire
+from ws4.fire.behavior import classify_fire_behaviour
 from ws4.fire.growth import directional_ros, effective_wind, length_to_breadth
 
 from .events import Event
@@ -604,6 +605,13 @@ class FireProcess:
             ("surface_fuel_consumption_kg_m2", crown.surface_fuel_consumption_kg_m2),
             ("smoke_strength", smoke),
             ("fire_description", crown.fire_description),
+            (
+                "fire_behaviour",
+                classify_fire_behaviour(
+                    crown_fraction_burned=crown.crown_fraction_burned,
+                    flame_length_m=crown.flame_length_m,
+                ).value,
+            ),
             ("kernel_version", "fbp-cffdrs-v1"),
         )
         return attributes, probability

@@ -159,20 +159,23 @@ the served web viewer uses the local vendored Three.js module.
 The viewer provides:
 
 - an orbit camera over the landscape;
-- instanced trees with species colours and a live/burnt state;
+- instanced trees with species colours and live, burning, scorched, torched, and consumed states;
 - a Play/Pause timeline with speed control and a scrubber;
 - procedural flame particles with a noise/temperature shader and additive blending;
 - smoke particles with curl-like wander and buoyancy;
 - short-lived embers near the active front;
 - a screen-space heat-haze pass and an optional bloom pass (``?bloom=0`` disables bloom);
 - a fire light and a gradual burnt-scar tint on the stands;
-- burnt crowns that shrink and darken;
+- outcome-aware crowns: scorched trees keep their crown, torched trees shrink and darken, and
+  consumed trees collapse to a charred remnant;
 - a Focus fire button that frames the active front;
 - tree/fragment counts, a burning/burnt readout, active particle count, and fps.
 
-The viewer is a visual prototype, not a calibrated fire-behaviour model. The flames and
-smoke are procedural; flame intensity and smoke scale with the local P156 directional ROS
-when a growth field is supplied. The burn duration is a scene parameter.
+The viewer is a visual prototype, not a calibrated fire-behaviour or tree-mortality model.
+The flames and smoke are procedural; flame intensity and smoke scale with the local P156
+directional ROS when a growth field is supplied. Scorched/torched/consumed are visual classes
+derived from local flame length against crown base and tree height; they are not a validated
+mortality prediction. The burn duration is a scene parameter.
 
 Example
 -------
