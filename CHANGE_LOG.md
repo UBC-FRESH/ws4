@@ -5074,3 +5074,14 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   are retained, but the saturated Hay River grid cannot identify the two multipliers. No
   parameter set is selected and no transferable calibration claim is made. Report:
   `notes/reports/p161-closeout.md`. Dashboard: **GREEN**.
+
+- P162.1: added an `observed_index` to the generic observed runner so a simulation can be
+  compared with a matching daily perimeter, with an out-of-range error. Added the fixed
+  sensitivity script and tests.
+- P162.2: ran the fixed day-1/day-3/full × baseline/low/high diagnostic. Day-1 and day-3 are
+  parameter-sensitive, but the lowest point still overpredicts area by 9,183% and 1,173%; the
+  full-event case is saturated (one unique result). Sensitivity is present but calibration is
+  not viable.
+- P162.3: closed P162 as a no-go for calibration. No fit or new protocol was started; the
+  diagnostic harness and daily comparison are retained. Report:
+  `notes/reports/p162-closeout.md`. Dashboard: **GREEN**.

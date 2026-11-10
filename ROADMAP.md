@@ -159,7 +159,8 @@ exists and the maintainer approves it.
 | P158 Plan scenario matrix | #928 | `feature/p158-plan-matrix` | complete |
 | P159 Fire surrogate feasibility | #946 | `feature/p159-fire-surrogate` | planned |
 | P160 Dogrib burning conditions and wind-grid fidelity | #947 | `feature/p160-dogrib-wind-thresholds` | complete |
-| P161 Second observed fire and calibration protocol | #954 | `feature/p161-second-fire-calibration` | pr-open |
+| P161 Second observed fire and calibration protocol | #954 | `feature/p161-second-fire-calibration` | complete |
+| P162 Calibration sensitivity diagnostic | #961 | `feature/p162-calibration-sensitivity` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -4759,7 +4760,8 @@ Acceptance:
 
 Parent issue: #954
 Branch: `feature/p161-second-fire-calibration`
-Status: pr-open
+Status: complete
+Merge commit: `b132944`
 Design note: `notes/design/ws4-second-fire-calibration.md`
 Protocol: `notes/design/ws4-fire-calibration-protocol.md`
 Report: `notes/reports/p161-closeout.md`
@@ -4783,4 +4785,30 @@ Acceptance:
 - Dogrib is not used for fitting.
 - The report separates baseline, calibrated, and holdout evidence.
 - A no-go or no-improvement result is acceptable and closes the phase.
+- `python scripts/dashboard.py` is green.
+
+## Phase 162: Calibration sensitivity diagnostic
+
+Parent issue: #961
+Branch: `feature/p162-calibration-sensitivity`
+Status: pr-open
+Design note: `notes/design/ws4-fire-calibration-protocol.md`
+Report: `notes/reports/p162-closeout.md`
+Sensitivity: `notes/reports/p162-sensitivity.md`
+PR: #965
+
+Goal: determine whether the two P161 calibration multipliers change the Hay River result when
+the comparison window is short enough, before any new calibration fit is attempted.
+
+- [x] P162.1 Sensitivity harness and daily comparison (#962)
+- [x] P162.2 Run and report the diagnostic matrix (#963)
+- [x] P162.3 Close with go/no-go (#964)
+
+Acceptance:
+
+- The diagnostic uses fixed windows and parameter points declared before running.
+- A run can be compared with the daily Hay River perimeter at the matching time.
+- The report shows whether the result changes with the multipliers.
+- A saturated/no-sensitivity result closes the phase.
+- No calibration fit is run in P162.
 - `python scripts/dashboard.py` is green.

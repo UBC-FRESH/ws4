@@ -843,6 +843,7 @@ def run_observed_case(
     burning_conditions: BurningConditions | None = None,
     wind_multiplier: float = 1.0,
     head_ros_multiplier: float = 1.0,
+    observed_index: int = -1,
 ) -> DogribCase:
     """Run one generic point-ignition observed-fire case.
 
@@ -862,6 +863,8 @@ def run_observed_case(
         Hourly growth gate.
     wind_multiplier, head_ros_multiplier : float, optional
         Global calibration multipliers.
+    observed_index : int, optional
+        Observed-perimeter index to compare (default -1, the final perimeter).
 
     Returns
     -------
@@ -875,6 +878,12 @@ def run_observed_case(
     """
     if not point_ignition:
         raise ComparisonError("generic observed runner currently supports point ignition only")
+    if isinstance(observed_index, bool) or not isinstance(observed_index, int):
+        raise ComparisonError("observed_index must be an integer")
+    if observed_index < -len(fire.perimeters) or observed_index >= len(fire.perimeters):
+        raise ComparisonError(
+            f"observed_index {observed_index} is outside the {len(fire.perimeters)} perimeters"
+        )
     steps = hourly_weather_steps(fire, ffmc=ffmc, bui=bui)
     rows, cols = fire.grid.nrows, fire.grid.ncols
     fuel_grid = fire.fbp_fuel_grid()
@@ -927,7 +936,7 @@ def run_observed_case(
         ),
     )
     simulated = np.isfinite(growth.ignition_time_min)
-    observed = observed_mask(fire, -1)
+    observed = observed_mask(fire, observed_index)
     metrics = compare_masks(simulated, observed, fire.grid)
     return DogribCase(
         scenario=scenario,
