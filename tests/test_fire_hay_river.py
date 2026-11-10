@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pandas as pd
 import pytest
-from ws4.fire.comparison import observed_mask, run_observed_case
+from ws4.fire.comparison import ComparisonError, observed_mask, run_observed_case
 from ws4.fire.observed import load_hay_river
 
 FIXTURE = Path(__file__).parent / "fixtures" / "fire" / "hay_river_2023"
@@ -81,3 +81,27 @@ def test_hay_river_case_uses_calibration_multipliers() -> None:
     assert case.growth.config.wind_multiplier == pytest.approx(0.85)
     assert case.growth.config.head_ros_multiplier == pytest.approx(0.75)
     assert 0.0 <= case.metrics.iou <= 1.0
+
+
+def test_hay_river_case_can_target_a_daily_perimeter() -> None:
+    """The generic runner compares with the requested observed day."""
+    fire = load_hay_river(FIXTURE)
+    case = run_observed_case(
+        fire,
+        scenario="day-one",
+        ffmc=92.92,
+        bui=73.28,
+        duration_min=660.0,
+        observed_index=0,
+    )
+
+    assert case.metrics.area_obs_ha == pytest.approx(29.0)
+    with pytest.raises(ComparisonError, match="observed_index"):
+        run_observed_case(
+            fire,
+            scenario="bad-index",
+            ffmc=92.92,
+            bui=73.28,
+            duration_min=660.0,
+            observed_index=99,
+        )

@@ -40,6 +40,10 @@ Working notes for WS4. Notes are living: update them in the same change set as t
   search grid, decision rule, and Dogrib holdout.
 - `reports/p161-closeout.md` — P161 no-go: the Hay River grid saturated the domain and the
   multipliers had no effect.
+- `reports/p162-sensitivity.md` — day-window sensitivity evidence for the Hay River
+  calibration.
+- `reports/p162-closeout.md` — P162 no-go: the model is sensitive but still far above observed
+  growth at every registered point.
 - `design/ws4-optimization-stack.md` — the optimization stack and the execution substrate.
 - `design/weighted-goal-programming-aspirations.md` — targets are weighted aspirations, not hard bounds; maximum even-flow harvest and priority-tier caveats.
 - `design/gpu-effect-cache-interactivity.md` — target-independent GPU cache basis, lazy column extension, and live target editing.
