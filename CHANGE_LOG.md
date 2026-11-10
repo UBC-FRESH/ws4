@@ -5108,3 +5108,27 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   input, and fails Dogrib OOD. No web/UI dependency, no kernel replacement, no validation
   claim. The corpus, model card, and evaluation harness are retained. Report:
   `notes/reports/p159-closeout.md`. Dashboard: **GREEN**.
+
+- P163.1: added `ws4.fire.behavior` with explicit ground/surface/passive-crown/active-crown
+  classes and transition records. Ground is a documented low-intensity proxy, not a duff model.
+  The class is now recorded as `fire_behaviour` on the P156 event attributes. Added threshold,
+  transition, and event-integration tests. Added the validation-ladder note with published
+  event and probabilistic benchmarks. Dashboard: **GREEN**.
+
+- P163.2: added `SpottingConfig` and `SpotIgnition` to the growth engine. Spotting is off by
+  default, seeded, bounded by a landing-distance range, and records source/target/time/distance
+  for every spot. The model is explicitly a screening assumption, not an operational forecast.
+  Added seed-replay, boundary, zero-probability, and validation tests, plus docs. Dashboard:
+  pending.
+
+- P163.3: added `classify_tree_fire_outcome` and expanded the tree payload/viewer from
+  unburned/burned to unburned, scorched, torched, and consumed. The outcome uses local flame
+  length against crown base and tree height. The viewer now keeps scorched crowns, shrinks
+  torched crowns, and collapses consumed crowns to a charred remnant; legend and docs updated.
+  These are visual classes, not a validated mortality model. Dashboard: **GREEN**.
+
+- P163.4: closed P163 as a model-completeness phase. Explicit behaviour classes, seeded
+  screening spotting, and scorched/torched/consumed 3D outcomes are implemented and tested.
+  Ground fire, spotting, and tree outcomes are documented as proxies, not validated process
+  models. Validation ladder recorded; next phase is P164 decision-grade risk validation.
+  Report: `notes/reports/p163-closeout.md`. Dashboard: **GREEN**.

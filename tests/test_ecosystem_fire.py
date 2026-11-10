@@ -357,6 +357,12 @@ def test_fbp_behaviour_path_records_kernel_attributes() -> None:
     assert float(str(attributes["head_fire_intensity_kw_m"])) > 0.0
     assert float(str(attributes["flame_length_m"])) > 0.0
     assert 0.0 <= float(str(attributes["crown_fraction_burned"])) <= 1.0
+    assert attributes["fire_behaviour"] in {
+        "ground",
+        "surface",
+        "passive_crown",
+        "active_crown",
+    }
     assert attributes["kernel_version"] == "fbp-cffdrs-v1"
     assert events[1].time >= events[0].time
 

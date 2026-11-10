@@ -9,6 +9,7 @@ from ws4.fire.growth import GrowthConfig, GrowthResult, SiteGrid, grow_fire
 from ws4.scene import (
     IgnitionSamplingError,
     TreeInventory,
+    classify_tree_fire_outcome,
     sample_tree_ignition,
     synthetic_tree_inventory,
 )
@@ -71,7 +72,13 @@ def test_sampling_gives_per_tree_ignition_times() -> None:
         "smoke_strength",
         "post_fire_state",
     ]
-    burned = animation[animation["post_fire_state"] == "burned"]
+    assert set(animation["post_fire_state"]) <= {
+        "unburned",
+        "scorched",
+        "torched",
+        "consumed",
+    }
+    burned = animation[animation["post_fire_state"] != "unburned"]
     assert not burned.empty
     assert burned["ignition_time"].nunique() > 1
     assert burned["ignition_time"].min() >= 0.0
@@ -90,3 +97,43 @@ def test_sampling_rejects_bad_inputs() -> None:
         sample_tree_ignition(trees, growth, cell_size_m=0.0)
     with pytest.raises(IgnitionSamplingError, match="burn_duration"):
         sample_tree_ignition(trees, growth, cell_size_m=cell, burn_duration=0.0)
+
+
+def test_tree_outcome_classes_follow_flame_height() -> None:
+    """Surface flame scorches, crown flame torches, tree-top flame consumes."""
+    assert (
+        classify_tree_fire_outcome(
+            flame_length_m=1.0,
+            height_m=20.0,
+            crown_ratio=0.5,
+            burned=False,
+        )
+        == "unburned"
+    )
+    assert (
+        classify_tree_fire_outcome(
+            flame_length_m=1.0,
+            height_m=20.0,
+            crown_ratio=0.5,
+            burned=True,
+        )
+        == "scorched"
+    )
+    assert (
+        classify_tree_fire_outcome(
+            flame_length_m=12.0,
+            height_m=20.0,
+            crown_ratio=0.5,
+            burned=True,
+        )
+        == "torched"
+    )
+    assert (
+        classify_tree_fire_outcome(
+            flame_length_m=20.0,
+            height_m=20.0,
+            crown_ratio=0.5,
+            burned=True,
+        )
+        == "consumed"
+    )

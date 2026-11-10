@@ -7,6 +7,13 @@ explicit growth follow in later P156 tasks.
 
 from __future__ import annotations
 
+from .behavior import (
+    FireBehaviourClass,
+    FireBehaviourTransition,
+    classify_crown_fire,
+    classify_fire_behaviour,
+    transition,
+)
 from .crown import (
     CROWN_BASE_HEIGHT_M,
     CROWN_FUEL_LOAD_KG_M2,
@@ -64,6 +71,8 @@ from .growth import (
     GrowthResult,
     GrowthSnapshot,
     SiteGrid,
+    SpotIgnition,
+    SpottingConfig,
     directional_ros,
     effective_wind,
     fragment_ignition_events,
@@ -122,6 +131,8 @@ __all__ = [
     "FWIEngine",
     "FWIState",
     "FbpFuelAssignment",
+    "FireBehaviourClass",
+    "FireBehaviourTransition",
     "FireEnvironment",
     "FireFuelError",
     "FragmentIgnition",
@@ -133,6 +144,8 @@ __all__ = [
     "GrowthSnapshot",
     "RothermelResult",
     "SiteGrid",
+    "SpotIgnition",
+    "SpottingConfig",
     "VriError",
     "VriStand",
     "WindNinjaGrid",
@@ -140,6 +153,8 @@ __all__ = [
     "buildup_effect",
     "buildup_index",
     "canonical_fuel_type",
+    "classify_crown_fire",
+    "classify_fire_behaviour",
     "critical_surface_intensity",
     "critical_surface_ros",
     "crown_fraction_burned",
@@ -169,6 +184,7 @@ __all__ = [
     "same_geometry",
     "surface_fire",
     "surface_fuel_consumption",
+    "transition",
     "van_wagner_active_crown",
     "wind_grid_at",
 ]
