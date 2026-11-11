@@ -3,7 +3,7 @@
 Date: 2026-11-11
 Phase: P174 (#1031)
 Branch: `feature/p174-resolution-sensitivity`
-Pull request: queued for maintainer approval
+Pull request: #1035
 
 ## Outcome
 

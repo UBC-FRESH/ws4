@@ -5128,6 +5128,7 @@ Status: pr-open
 Report: `notes/reports/p174-resolution-sensitivity.md`
 Close-out: `notes/reports/p174-closeout.md`
 Manifest: `notes/reports/p174-resolution-sensitivity.json`
+PR: #1035
 
 Goal: test whether the residual large-fire bias is a coarse-grid artifact.
 
