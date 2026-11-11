@@ -5042,6 +5042,7 @@ Status: pr-open
 Report: `notes/reports/p171-terrain-sensitivity.md`
 Close-out: `notes/reports/p171-closeout.md`
 Manifest: `notes/reports/p171-terrain-sensitivity.json`
+PR: #1020
 
 Goal: test whether terrain explains the early 8-150x growth ratios.
 

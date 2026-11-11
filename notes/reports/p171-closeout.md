@@ -3,7 +3,7 @@
 Date: 2026-11-11
 Phase: P171 (#1016)
 Branch: `feature/p171-terrain-sensitivity`
-Pull request: queued for maintainer approval
+Pull request: #1020
 
 ## Outcome
 
