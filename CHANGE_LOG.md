@@ -5261,3 +5261,11 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P176.3: closed P176. Implement containment/stopping or a defensible burnable-area constraint.
   No global multiplier. Reports: `notes/reports/p176-burnable-basin.md` and
   `notes/reports/p176-closeout.md`. Dashboard: **GREEN**.
+
+- P177.1: added an optional containment mask to `run_observed_case`, with shape, empty-burnable,
+  and block tests. Default free-burn behavior is unchanged.
+- P177.2: defined the free-burn versus suppressed validation protocol. Small fires are
+  suppression-dominated (P176 basin evidence) and are not ROS-skill evidence; large/free-burn
+  cases remain the ROS set. Containment is a management scenario input, not calibration.
+- P177.3: closed P177. Reports: `notes/reports/p177-containment-protocol.md` and
+  `notes/reports/p177-closeout.md`. Dashboard: **GREEN**.
