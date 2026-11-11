@@ -3,7 +3,7 @@
 Date: 2026-11-11
 Phase: P172 (#1021)
 Branch: `feature/p172-fuel-sensitivity`
-Pull request: queued for maintainer approval
+Pull request: #1025
 
 ## Outcome
 

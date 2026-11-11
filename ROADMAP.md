@@ -5071,6 +5071,7 @@ Status: pr-open
 Report: `notes/reports/p172-fuel-sensitivity.md`
 Close-out: `notes/reports/p172-closeout.md`
 Manifest: `notes/reports/p172-fuel-sensitivity.json`
+PR: #1025
 
 Goal: test whether fuel heterogeneity drives the overprediction.
 
