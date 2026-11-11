@@ -17,6 +17,7 @@ from dataclasses import dataclass
 import numpy as np
 import pandas as pd
 
+from .fbp import canonical_fuel_type
 from .fwi import (
     DailyWeather,
     FWIState,
@@ -848,6 +849,7 @@ def run_observed_case(
     snapshot_interval_min: float | None = None,
     neighbor_radius: int = 2,
     flat_terrain: bool = False,
+    fuel_override: str | None = None,
 ) -> DogribCase:
     """Run one generic point-ignition observed-fire case.
 
@@ -877,6 +879,8 @@ def run_observed_case(
         Cell-neighbor radius for growth (default 2).
     flat_terrain : bool, optional
         Set slope to zero and aspect to flat for diagnosis.
+    fuel_override : str or None, optional
+        Replace burnable-cell fuel with one FBP type for diagnosis.
 
     Returns
     -------
@@ -914,6 +918,12 @@ def run_observed_case(
         slope_grid = np.zeros_like(slope_grid)
         aspect_grid = np.full_like(aspect_grid, 180.0)
     burnable = np.array([[value is not None for value in row] for row in fuel_grid], dtype=bool)
+    if fuel_override is not None:
+        override = canonical_fuel_type(fuel_override)
+        fuel_grid = np.where(burnable, override, None).astype(object)
+        conifer_grid = np.full(burnable.shape, 50.0)
+        dead_grid = np.full(burnable.shape, 35.0)
+        closure_grid = np.full(burnable.shape, 80.0)
     ignition_cells: tuple[tuple[int, int], ...]
     if initial_mask is None:
         x, y = fire.ignition_xy

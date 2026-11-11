@@ -141,3 +141,16 @@ P171 reran the six cases with flat terrain.
 
 Terrain is not the cause of the overprediction in this path. The remaining candidates are fuel
 mapping, ROS scale, or containment/stopping.
+
+Fuel-map sensitivity
+--------------------
+
+P172 compared per-cell fuel with the dominant homogeneous fuel.
+
+- median per-cell area ratio: 10.35x;
+- median homogeneous-dominant area ratio: 10.25x;
+- homogeneous fuel reduced the ratio in 2 of 6 cases, only slightly;
+- IoU changed little.
+
+Fuel heterogeneity is not the cause. The remaining explanations are suppression/containment or
+a genuine ROS-scale issue. The six cases are small fires and may be suppression-dominated.
