@@ -5132,3 +5132,31 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   Ground fire, spotting, and tree outcomes are documented as proxies, not validated process
   models. Validation ladder recorded; next phase is P164 decision-grade risk validation.
   Report: `notes/reports/p163-closeout.md`. Dashboard: **GREEN**.
+
+- P165.1: added the tiered public fire corpus contract and candidate registry. The inventory
+  records 7 cases (3 depth, 2 breadth, 2 model-only), rejects the duplicate Hay River daily
+  event, and keeps FireSTARR/BurnP3 as model-only evidence. The observed-corpus gate is
+  **blocked**: 0 fully ready depth cases of 3 and 0 fully ready breadth cases of 20; Dogrib and
+  Hay River are depth cases with documented limits. Manifest:
+  `notes/reports/p165-corpus-manifest.json`. Report: `notes/reports/p165-corpus-inventory.md`.
+  Dashboard: **GREEN**.
+
+- P165.2: reviewed CFSDS `2023_321` as the strongest untried depth candidate and recorded a
+  **no-go** for the hourly/FBP tier. The event spans 53 days, 433,036 ha, and about 104 x 106
+  km; CFSDS supplies daily weather only, and one regional station cannot represent hourly
+  weather across the footprint. It remains a breadth candidate. No other public case meets the
+  depth contract. Report: `notes/reports/p165-depth-review.md`. Dashboard: **GREEN**.
+
+- P165.3: built a 20-case daily CFSDS breadth corpus from 2003, 2009, and 2023. The sample
+  covers 3 years and 4 ecozones, with final areas from 510 to 49,766 ha and durations from 2 to
+  75 days. Daily summary/raster area agreement, daily weather completeness, fuel/terrain
+  coverage, and independent identifiers were checked. The breadth coverage gate **passes**.
+  This is observation-only breadth evidence, not hourly/FBP model skill. Artifacts:
+  `notes/reports/p165-daily-corpus.json`, `notes/reports/p165-daily-corpus.csv`, and
+  `notes/reports/p165-daily-corpus.md`. Dashboard: **GREEN**.
+
+- P165.4: closed P165 as a partial success. Depth remains blocked at two limited cases and no
+  fully ready case; the CFSDS `2023_321` depth review was a no-go. The observation-only daily
+  breadth corpus has 20 ready cases across 3 years and 4 ecozones and passes its coverage gate.
+  P164.3 calibration remains paused until a daily model driver or an independent hourly/FBP
+  depth case exists. Report: `notes/reports/p165-closeout.md`. Dashboard: **GREEN**.

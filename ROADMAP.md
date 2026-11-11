@@ -160,8 +160,9 @@ exists and the maintainer approves it.
 | P160 Dogrib burning conditions and wind-grid fidelity | #947 | `feature/p160-dogrib-wind-thresholds` | complete |
 | P161 Second observed fire and calibration protocol | #954 | `feature/p161-second-fire-calibration` | complete |
 | P162 Calibration sensitivity diagnostic | #961 | `feature/p162-calibration-sensitivity` | complete |
-| P159 Fire surrogate feasibility | #946 | `feature/p159-fire-surrogate` | pr-open |
-| P163 Fire behaviour completeness | #971 | `feature/p163-fire-behaviour-completeness` | pr-open |
+| P159 Fire surrogate feasibility | #946 | `feature/p159-fire-surrogate` | complete |
+| P163 Fire behaviour completeness | #971 | `feature/p163-fire-behaviour-completeness` | complete |
+| P165 Public fire corpus | #985 | `feature/p165-public-fire-corpus` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -4700,7 +4701,8 @@ Acceptance:
 
 Parent issue: #946
 Branch: `feature/p159-fire-surrogate`
-Status: pr-open
+Status: complete
+Merge commit: `b28826b`
 Design note: `notes/design/ws4-open-fire-model-reuse.md`
 Corpus manifest: `notes/reports/p159-corpus-manifest.json`
 Model card: `notes/reports/p159-model-card.md`
@@ -4824,7 +4826,8 @@ Acceptance:
 
 Parent issue: #971
 Branch: `feature/p163-fire-behaviour-completeness`
-Status: pr-open
+Status: complete
+Merge commit: `39fca0d`
 Design note: `notes/design/ws4-fire-behaviour.md`
 Validation ladder: `notes/design/ws4-fire-validation-ladder.md`
 Report: `notes/reports/p163-closeout.md`
@@ -4845,4 +4848,34 @@ Acceptance:
 - Spotting is bounded, seeded, and labelled as a model assumption.
 - The 3D scene distinguishes surface scorch, torching, and consumption.
 - A no-go for any component is recorded rather than hidden.
+- `python scripts/dashboard.py` is green.
+
+## Phase 165: Public fire corpus
+
+Parent issue: #985
+Branch: `feature/p165-public-fire-corpus`
+Status: pr-open
+Design note: `notes/design/ws4-public-fire-corpus.md`
+Registry: `ws4/fire/corpus.py`
+Manifest: `notes/reports/p165-corpus-manifest.json`
+Inventory report: `notes/reports/p165-corpus-inventory.md`
+Daily corpus report: `notes/reports/p165-daily-corpus.md`
+Close-out: `notes/reports/p165-closeout.md`
+PR: #990
+
+Goal: build a tiered, provenance-complete public fire corpus so event and risk validation is
+not decided by two cases.
+
+- [x] P165.1 Corpus contract and candidate inventory (#986)
+- [x] P165.2 Hourly/FBP depth cases (#987, no-go: 2023_321 is breadth-only)
+- [x] P165.3 Daily CFSDS breadth corpus (#988, observation-only gate passes)
+- [x] P165.4 Verify and close out (#989)
+
+Acceptance:
+
+- Every case records tier, source, licence, inputs, and status.
+- Missing inputs are explicit; no field is inferred silently.
+- Depth, breadth, and model-only evidence remain separate.
+- At least one new independent case is added, or a no-go is recorded.
+- Calibration remains paused until the corpus gate passes.
 - `python scripts/dashboard.py` is green.

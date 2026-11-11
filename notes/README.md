@@ -34,8 +34,14 @@ Working notes for WS4. Notes are living: update them in the same change set as t
   standard-case validation plan.
 - `design/ws4-fire-validation-ladder.md` — published validation statistics, decision-grade
   benchmarks, and the P163/P164 plan.
+- `design/ws4-public-fire-corpus.md` — the P165 depth/breadth/model-only corpus contract and
+  the two-fire data gap.
 - `reports/p163-closeout.md` — P163 behaviour classes, spotting, 3D outcomes, and accepted
   proxy limits.
+- `reports/p165-corpus-inventory.md` — P165.1 candidate inventory and the blocked corpus gate.
+- `reports/p165-depth-review.md` — P165.2 depth-candidate review and the 2023_321 no-go.
+- `reports/p165-daily-corpus.md` — P165.3 20-case daily CFSDS breadth corpus and integrity gate.
+- `reports/p165-closeout.md` — P165 outcome: depth blocked, daily breadth passes, P164.3 paused.
 - `design/ws4-open-fire-model-reuse.md` — Planscape/burn-emulator review, the observed-fire
   calibration gap, and the bounded P159 surrogate plan.
 - `reports/p159-corpus-manifest.json` — P159.1 deterministic synthetic corpus metadata and
