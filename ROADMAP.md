@@ -5157,6 +5157,7 @@ Status: pr-open
 Report: `notes/reports/p175-ros-scale.md`
 Close-out: `notes/reports/p175-closeout.md`
 Manifest: `notes/reports/p175-ros-scale.json`
+PR: #1040
 
 Goal: test whether a uniform head-ROS factor explains the residual large-fire bias.
 

@@ -3,7 +3,7 @@
 Date: 2026-11-11
 Phase: P175 (#1036)
 Branch: `feature/p175-ros-scale`
-Pull request: queued for maintainer approval
+Pull request: #1040
 
 ## Outcome
 
