@@ -191,3 +191,16 @@ P175 ran two 100 m large cases at head-ROS multipliers 1.0, 0.75, 0.5, and 0.25.
 The final area and IoU were unchanged. Lowering ROS only delays arrival; the model still fills
 the connected burnable basin. The residual bias is not a uniform ROS-scale error. It is a
 containment/stopping problem or a burnable-basin problem.
+
+Burnable-basin diagnosis
+------------------------
+
+P176 compared simulated and observed area with the connected burnable basin across 12 cases.
+
+- median simulated area / basin: 0.995;
+- median observed area / basin: 0.130;
+- 8 of 12 simulations fill at least 95% of the basin;
+- all 12 observed fires burn less than 50%.
+
+The model is basin-limited. The next fix is containment/stopping or a defensible burnable-area
+constraint, not a ROS, fuel, weather, or terrain multiplier.

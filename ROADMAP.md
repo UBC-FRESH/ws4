@@ -172,7 +172,8 @@ exists and the maintainer approves it.
 | P172 Fuel-map sensitivity | #1021 | `feature/p172-fuel-sensitivity` | complete |
 | P173 Large-fire reanalysis benchmark | #1026 | `feature/p173-large-fire-benchmark` | complete |
 | P174 Large-fire resolution sensitivity | #1031 | `feature/p174-resolution-sensitivity` | complete |
-| P175 ROS-scale sensitivity | #1036 | `feature/p175-ros-scale` | pr-open |
+| P175 ROS-scale sensitivity | #1036 | `feature/p175-ros-scale` | complete |
+| P176 Burnable-basin and stopping diagnosis | #1041 | `feature/p176-burnable-basin` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -5153,7 +5154,8 @@ Acceptance:
 
 Parent issue: #1036
 Branch: `feature/p175-ros-scale`
-Status: pr-open
+Status: complete
+Merge commit: `786e03e`
 Report: `notes/reports/p175-ros-scale.md`
 Close-out: `notes/reports/p175-closeout.md`
 Manifest: `notes/reports/p175-ros-scale.json`
@@ -5174,4 +5176,30 @@ Acceptance:
 - Multiplier table for both cases.
 - Uniformity decision explicit.
 - No default change.
+- Dashboard green.
+
+## Phase 176: Burnable-basin and stopping diagnosis
+
+Parent issue: #1041
+Branch: `feature/p176-burnable-basin`
+Status: pr-open
+Report: `notes/reports/p176-burnable-basin.md`
+Close-out: `notes/reports/p176-closeout.md`
+Manifest: `notes/reports/p176-burnable-basin.json`
+PR: #1045
+
+Goal: quantify how much of the overprediction is the model filling the burnable basin.
+
+- [x] P176.1 Add burnable-basin diagnostic (#1042)
+- [x] P176.2 Run and report (#1043)
+- [x] P176.3 Close out (#1044)
+
+Result: median simulated area / basin 0.995; median observed / basin 0.130; 8 of 12
+simulations fill at least 95% of the basin. The model is basin-limited.
+
+Acceptance:
+
+- Basin table.
+- Sim/basin and observed/basin explicit.
+- Stopping conclusion explicit.
 - Dashboard green.

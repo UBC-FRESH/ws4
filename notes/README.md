@@ -67,6 +67,8 @@ Working notes for WS4. Notes are living: update them in the same change set as t
 - `reports/p174-closeout.md` — P174 decision: residual bias is not a coarse-grid artifact.
 - `reports/p175-ros-scale.md` — P175 ROS multiplier sensitivity.
 - `reports/p175-closeout.md` — P175 decision: final area is burnable-area-limited, not ROS-scaled.
+- `reports/p176-burnable-basin.md` — P176 basin fractions and stopping diagnosis.
+- `reports/p176-closeout.md` — P176 decision: implement containment/stopping.
 - `reports/p159-model-card.md` — P159.2 surrogate architecture, training data, losses, and
   limitations.
 - `reports/p159-evaluation.md` — P159.3 held-out synthetic and Dogrib OOD evaluation.

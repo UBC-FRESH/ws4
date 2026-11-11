@@ -1,0 +1,120 @@
+{
+  "interpretation": "When simulated area approaches burnable area while observed area is much smaller, the model lacks a stopping/containment mechanism.",
+  "rows": [
+    {
+      "burnable_ha": 5385.0,
+      "case": "2003_526",
+      "cell_size_m": 100.0,
+      "observed_burnable": 0.0947632311977716,
+      "observed_ha": 510.3,
+      "sim_burnable": 0.9888579387186629,
+      "simulated_ha": 5325.0
+    },
+    {
+      "burnable_ha": 9612.0,
+      "case": "2003_706",
+      "cell_size_m": 100.0,
+      "observed_burnable": 0.08561797752808989,
+      "observed_ha": 822.96,
+      "sim_burnable": 0.9964627548897211,
+      "simulated_ha": 9578.0
+    },
+    {
+      "burnable_ha": 7350.0,
+      "case": "2009_147",
+      "cell_size_m": 100.0,
+      "observed_burnable": 0.07703265306122449,
+      "observed_ha": 566.19,
+      "sim_burnable": 0.6297959183673469,
+      "simulated_ha": 4629.0
+    },
+    {
+      "burnable_ha": 11376.0,
+      "case": "2009_79",
+      "cell_size_m": 100.0,
+      "observed_burnable": 0.0766139240506329,
+      "observed_ha": 871.56,
+      "sim_burnable": 0.999648382559775,
+      "simulated_ha": 11372.0
+    },
+    {
+      "burnable_ha": 5630.0,
+      "case": "2023_19",
+      "cell_size_m": 100.0,
+      "observed_burnable": 0.09279751332149201,
+      "observed_ha": 522.45,
+      "sim_burnable": 0.9996447602131439,
+      "simulated_ha": 5628.0
+    },
+    {
+      "burnable_ha": 14170.0,
+      "case": "2023_786",
+      "cell_size_m": 100.0,
+      "observed_burnable": 0.0725970359915314,
+      "observed_ha": 1028.7,
+      "sim_burnable": 0.9996471418489767,
+      "simulated_ha": 14165.0
+    },
+    {
+      "burnable_ha": 159800.0,
+      "case": "2003_96",
+      "cell_size_m": 500.0,
+      "observed_burnable": 0.17743967459324156,
+      "observed_ha": 28354.86,
+      "sim_burnable": 0.9169712140175219,
+      "simulated_ha": 146532.0
+    },
+    {
+      "burnable_ha": 77925.0,
+      "case": "2003_663",
+      "cell_size_m": 500.0,
+      "observed_burnable": 0.3271079884504331,
+      "observed_ha": 25489.89,
+      "sim_burnable": 0.7861790182868142,
+      "simulated_ha": 61263.0
+    },
+    {
+      "burnable_ha": 517650.0,
+      "case": "2023_331",
+      "cell_size_m": 500.0,
+      "observed_burnable": 0.2570844392929586,
+      "observed_ha": 133079.76,
+      "sim_burnable": 0.993286969960398,
+      "simulated_ha": 514175.0
+    },
+    {
+      "burnable_ha": 1150350.0,
+      "case": "2023_366",
+      "cell_size_m": 500.0,
+      "observed_burnable": 0.16550447255183207,
+      "observed_ha": 190388.07,
+      "sim_burnable": 0.9990655018037988,
+      "simulated_ha": 1149275.0
+    },
+    {
+      "burnable_ha": 146599.0,
+      "case": "2003_96",
+      "cell_size_m": 100.0,
+      "observed_burnable": 0.19341782686102907,
+      "observed_ha": 28354.86,
+      "sim_burnable": 0.9995429709616027,
+      "simulated_ha": 146532.0
+    },
+    {
+      "burnable_ha": 68087.0,
+      "case": "2003_663",
+      "cell_size_m": 100.0,
+      "observed_burnable": 0.37437234714409506,
+      "observed_ha": 25489.89,
+      "sim_burnable": 0.8997752874998164,
+      "simulated_ha": 61263.0
+    }
+  ],
+  "summary": {
+    "case_count": 12,
+    "cases_observed_under_50pct_basin": 12,
+    "cases_sim_over_95pct_basin": 8,
+    "median_observed_burnable": 0.13013385187480184,
+    "median_sim_burnable": 0.9948748624250596
+  }
+}

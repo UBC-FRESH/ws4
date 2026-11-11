@@ -5252,3 +5252,12 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   uniform ROS-scale error.
 - P175.3: closed P175. Next: containment/stopping or a defensible burnable-area limit. Reports:
   `notes/reports/p175-ros-scale.md` and `notes/reports/p175-closeout.md`. Dashboard: **GREEN**.
+
+- P176.1: added a burnable-basin diagnostic comparing simulated and observed area with the
+  connected FBP fuel basin.
+- P176.2: across 12 small, large, and fine cases, median simulated area / basin was 0.995 and
+  median observed / basin was 0.130; 8 of 12 simulations filled at least 95% of the basin.
+  The model is basin-limited.
+- P176.3: closed P176. Implement containment/stopping or a defensible burnable-area constraint.
+  No global multiplier. Reports: `notes/reports/p176-burnable-basin.md` and
+  `notes/reports/p176-closeout.md`. Dashboard: **GREEN**.
