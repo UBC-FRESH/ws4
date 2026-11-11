@@ -171,3 +171,14 @@ Small fires:
 
 The large-fire bias is far smaller, supporting small-fire suppression as a major cause. Residual
 large-fire overprediction remains. The large cases use a coarse 500 m grid.
+
+Resolution sensitivity
+----------------------
+
+P174 reran two large cases at 100 m.
+
+- `2003_96`: area bias 4.12x -> 3.67x; IoU 0.192 -> 0.209.
+- `2003_663`: area bias 1.67x -> 1.39x; IoU 0.350 -> 0.387.
+
+Resolution explains part of the bias, but a 1.4x-3.7x residual remains. The residual is not just
+a coarse-grid artifact.

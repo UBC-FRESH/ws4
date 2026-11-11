@@ -170,7 +170,8 @@ exists and the maintainer approves it.
 | P170 Reanalysis weather consistency | #1011 | `feature/p170-fwi-consistency` | complete |
 | P171 Terrain and fuel scale diagnosis | #1016 | `feature/p171-terrain-sensitivity` | complete |
 | P172 Fuel-map sensitivity | #1021 | `feature/p172-fuel-sensitivity` | complete |
-| P173 Large-fire reanalysis benchmark | #1026 | `feature/p173-large-fire-benchmark` | pr-open |
+| P173 Large-fire reanalysis benchmark | #1026 | `feature/p173-large-fire-benchmark` | complete |
+| P174 Large-fire resolution sensitivity | #1031 | `feature/p174-resolution-sensitivity` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -5096,7 +5097,8 @@ Acceptance:
 
 Parent issue: #1026
 Branch: `feature/p173-large-fire-benchmark`
-Status: pr-open
+Status: complete
+Merge commit: `3b87faf`
 Report: `notes/reports/p173-large-fire-benchmark.md`
 Close-out: `notes/reports/p173-closeout.md`
 Manifest: `notes/reports/p173-large-fire-benchmark.json`
@@ -5116,4 +5118,30 @@ Acceptance:
 - Four large cases run.
 - Same protocol, no calibration.
 - Large-vs-small comparison explicit.
+- Dashboard green.
+
+## Phase 174: Large-fire resolution sensitivity
+
+Parent issue: #1031
+Branch: `feature/p174-resolution-sensitivity`
+Status: pr-open
+Report: `notes/reports/p174-resolution-sensitivity.md`
+Close-out: `notes/reports/p174-closeout.md`
+Manifest: `notes/reports/p174-resolution-sensitivity.json`
+
+Goal: test whether the residual large-fire bias is a coarse-grid artifact.
+
+- [x] P174.1 Build fine-grid large cases (#1032)
+- [x] P174.2 Run resolution comparison (#1033)
+- [x] P174.3 Close out (#1034)
+
+Result: 100 m improves `2003_96` from 4.12x to 3.67x and `2003_663` from 1.67x to 1.39x.
+A 1.4x-3.7x residual remains; it is not just resolution.
+
+Acceptance:
+
+- Two fine-grid cases run.
+- 500 m vs 100 m table.
+- Resolution contribution explicit.
+- No calibration.
 - Dashboard green.
