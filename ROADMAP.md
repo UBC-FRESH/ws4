@@ -165,7 +165,8 @@ exists and the maintainer approves it.
 | P165 Public fire corpus | #985 | `feature/p165-public-fire-corpus` | complete |
 | P166 Hourly reanalysis depth case | #991 | `feature/p166-reanalysis-depth-case` | complete |
 | P167 Reanalysis event benchmark | #996 | `feature/p167-reanalysis-benchmark` | complete |
-| P168 Start-perimeter event benchmark | #1001 | `feature/p168-start-perimeter` | pr-open |
+| P168 Start-perimeter event benchmark | #1001 | `feature/p168-start-perimeter` | complete |
+| P169 Growth trajectory diagnosis | #1006 | `feature/p169-growth-trajectory` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -4947,7 +4948,8 @@ Acceptance:
 
 Parent issue: #1001
 Branch: `feature/p168-start-perimeter`
-Status: pr-open
+Status: complete
+Merge commit: `3a507fa`
 Report: `notes/reports/p168-start-perimeter.md`
 Close-out: `notes/reports/p168-closeout.md`
 Manifest: `notes/reports/p168-reanalysis-first-perimeter.json`
@@ -4970,4 +4972,32 @@ Acceptance:
 - Six-case rerun with the same weather/fuel/terrain protocol.
 - Point-vs-perimeter comparison explicit.
 - No calibration applied.
+- Dashboard green.
+
+## Phase 169: Growth trajectory diagnosis
+
+Parent issue: #1006
+Branch: `feature/p169-growth-trajectory`
+Status: pr-open
+Report: `notes/reports/p169-growth-trajectory.md`
+Close-out: `notes/reports/p169-closeout.md`
+Manifest: `notes/reports/p169-growth-trajectory.json`
+PR: #1010
+
+Goal: determine whether the overprediction is early growth or late/continued growth, without
+calibration.
+
+- [x] P169.1 Add trajectory and kernel controls (#1007)
+- [x] P169.2 Run trajectory and radius sensitivity (#1008)
+- [x] P169.3 Close out (#1009)
+
+Result: median day-1 ratio 1.07x, but every case is >2x by day 2 and 10-14x at the end. Radius
+1 does not help. The dominant issue is late/continued growth, not ignition or neighbor radius.
+
+Acceptance:
+
+- Daily trajectory reported.
+- Radius 1 vs 2 reported.
+- No calibration.
+- Dominant structural cause narrowed.
 - Dashboard green.

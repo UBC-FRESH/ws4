@@ -5191,3 +5191,13 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   diagnosis is containment/stopping and growth-kernel scale. Reports:
   `notes/reports/p168-start-perimeter.md` and `notes/reports/p168-closeout.md`.
   Dashboard: **GREEN**.
+
+- P169.1: added `snapshot_interval_min` and `neighbor_radius` controls to
+  `run_observed_case`, with tests for daily snapshots and invalid controls.
+- P169.2: compared simulated daily area with observed CFSDS cumulative area for six cases.
+  Median day-1 ratio 1.07x; every case is >2x by day 2; median final ratio 12.07x at radius 2
+  and 11.90x at radius 1. Radius 1 does not fix the bias.
+- P169.3: closed P169. The dominant issue is late/continued growth, not ignition or neighbor
+  radius. Next work should model containment/stopping or verify weather/FFMC, not tune a global
+  multiplier. Reports: `notes/reports/p169-growth-trajectory.md` and
+  `notes/reports/p169-closeout.md`. Dashboard: pending.

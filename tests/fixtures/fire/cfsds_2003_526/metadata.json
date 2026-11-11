@@ -14,5 +14,23 @@
     "cfsds": "https://osf.io/f48ry/",
     "weather": "https://archive-api.open-meteo.com/",
     "fuel": "FireSTARR Fuel 2023 V1.0 tile 11_0"
-  }
+  },
+  "daily_cumuarea_ha": [
+    0.81,
+    5.67,
+    5.67,
+    5.67,
+    5.67,
+    5.67,
+    5.67,
+    5.67,
+    5.67,
+    58.32,
+    154.71,
+    234.9,
+    488.43,
+    509.49,
+    510.3,
+    510.3
+  ]
 }

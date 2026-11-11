@@ -100,3 +100,17 @@ The correction did not remove the bias:
 
 Point ignition was a protocol flaw, but not the dominant cause. The model fills large connected
 burnable areas while the observed fires stop far short.
+
+Growth-trajectory diagnosis
+---------------------------
+
+P169 compared simulated daily area with observed CFSDS cumulative area.
+
+- median day-1 ratio: 1.07x;
+- every case is >2x by day 2;
+- median final ratio: 12.07x at radius 2 and 11.90x at radius 1;
+- all six remain >2x at both radii.
+
+The initial growth is approximately correct. The failure is **late/continued growth**. Neighbor
+radius is not the cause. The next fix should model containment/stopping or verify the
+weather/FFMC sequence, not apply a global ROS multiplier.
