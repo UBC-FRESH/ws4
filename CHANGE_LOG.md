@@ -5227,3 +5227,12 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P172.3: closed P172. Remaining explanations are suppression/containment or a genuine ROS-scale
   issue. Reports: `notes/reports/p172-fuel-sensitivity.md` and
   `notes/reports/p172-closeout.md`. Dashboard: **GREEN**.
+
+- P173.1: added four large CFSDS reanalysis fixtures at 500 m (`2003_96`, `2003_663`,
+  `2023_331`, `2023_366`).
+- P173.2: ran the large-fire benchmark. Median IoU 0.238, median area bias 2.89x, range 1.67x
+  to 4.12x; all four overpredicted. Small fires were 0.096 and 10.35x. This supports
+  suppression-dominated small-fire error with residual large-fire ROS bias.
+- P173.3: closed P173. Add containment/stopping for small fires and audit residual large-fire
+  ROS. Reports: `notes/reports/p173-large-fire-benchmark.md` and
+  `notes/reports/p173-closeout.md`. Dashboard: **GREEN**.

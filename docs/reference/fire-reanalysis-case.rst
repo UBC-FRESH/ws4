@@ -154,3 +154,20 @@ P172 compared per-cell fuel with the dominant homogeneous fuel.
 
 Fuel heterogeneity is not the cause. The remaining explanations are suppression/containment or
 a genuine ROS-scale issue. The six cases are small fires and may be suppression-dominated.
+
+Large-fire benchmark
+--------------------
+
+P173 ran four large fires at 500 m with the same protocol.
+
+- median large-fire IoU: 0.238;
+- median large-fire area bias: 2.89x;
+- best/worst area bias: 1.67x/4.12x.
+
+Small fires:
+
+- median IoU: 0.096;
+- median area bias: 10.35x.
+
+The large-fire bias is far smaller, supporting small-fire suppression as a major cause. Residual
+large-fire overprediction remains. The large cases use a coarse 500 m grid.

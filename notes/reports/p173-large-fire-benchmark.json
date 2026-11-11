@@ -1,0 +1,78 @@
+{
+  "cases": [
+    {
+      "area_bias": 4.118589743589744,
+      "area_obs_ha": 31200.0,
+      "area_sim_ha": 159700.0,
+      "case": "2003_96",
+      "centroid_distance_m": 186.33234792937617,
+      "duration_min": 97080.0,
+      "event_start": "2003-08-01T13:00:00",
+      "iou": 0.19182144529420947,
+      "orientation_error_deg": 9.684450242799045,
+      "perimeter_bias": 0.8103448275862069,
+      "seed": "first-perimeter",
+      "sorensen": 0.321896280775275,
+      "start_cells": 35
+    },
+    {
+      "area_bias": 1.6650390625,
+      "area_obs_ha": 25600.0,
+      "area_sim_ha": 68225.0,
+      "case": "2003_663",
+      "centroid_distance_m": 7704.564453033557,
+      "duration_min": 32280.0,
+      "event_start": "2003-08-16T13:00:00",
+      "iou": 0.34951456310679613,
+      "orientation_error_deg": 0.9931733476343823,
+      "perimeter_bias": 0.5592105263157895,
+      "seed": "first-perimeter",
+      "sorensen": 0.5179856115107914,
+      "start_cells": 4
+    },
+    {
+      "area_bias": 2.1457632303456715,
+      "area_obs_ha": 163450.0,
+      "area_sim_ha": 514175.0,
+      "case": "2023_331",
+      "centroid_distance_m": 3363.626184855634,
+      "duration_min": 107160.0,
+      "event_start": "2023-06-29T13:00:00",
+      "iou": 0.26481567895473634,
+      "orientation_error_deg": 32.073438914688325,
+      "perimeter_bias": 7.188436830835117,
+      "seed": "first-perimeter",
+      "sorensen": 0.4187419295332964,
+      "start_cells": 8
+    },
+    {
+      "area_bias": 3.6388496468213924,
+      "area_obs_ha": 247750.0,
+      "area_sim_ha": 1149275.0,
+      "case": "2023_366",
+      "centroid_distance_m": 3012.86431463647,
+      "duration_min": 95640.0,
+      "event_start": "2023-05-04T13:00:00",
+      "iou": 0.2113021047839941,
+      "orientation_error_deg": 32.260296340566384,
+      "perimeter_bias": 0.21299303944315545,
+      "seed": "first-perimeter",
+      "sorensen": 0.3488842361446646,
+      "start_cells": 559
+    }
+  ],
+  "limitations": "Reanalysis weather, daily satellite perimeters, reconstructed ignition, and one fuel/terrain tile. No calibration was applied. This is event evidence, not operational validation.",
+  "model_skill": false,
+  "protocol": "uncalibrated CFSDS hourly reanalysis; seed=first-perimeter",
+  "summary": {
+    "best_iou": 0.34951456310679613,
+    "case_count": 4,
+    "max_area_bias": 4.118589743589744,
+    "median_area_bias": 2.8923064385835318,
+    "median_iou": 0.23805889186936524,
+    "min_area_bias": 1.6650390625,
+    "overpredicted_cases": 4,
+    "systematic_overprediction": true,
+    "worst_iou": 0.19182144529420947
+  }
+}
