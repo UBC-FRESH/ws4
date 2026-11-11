@@ -166,7 +166,8 @@ exists and the maintainer approves it.
 | P166 Hourly reanalysis depth case | #991 | `feature/p166-reanalysis-depth-case` | complete |
 | P167 Reanalysis event benchmark | #996 | `feature/p167-reanalysis-benchmark` | complete |
 | P168 Start-perimeter event benchmark | #1001 | `feature/p168-start-perimeter` | complete |
-| P169 Growth trajectory diagnosis | #1006 | `feature/p169-growth-trajectory` | pr-open |
+| P169 Growth trajectory diagnosis | #1006 | `feature/p169-growth-trajectory` | complete |
+| P170 Reanalysis weather consistency | #1011 | `feature/p170-fwi-consistency` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -4978,7 +4979,8 @@ Acceptance:
 
 Parent issue: #1006
 Branch: `feature/p169-growth-trajectory`
-Status: pr-open
+Status: complete
+Merge commit: `f3626d5`
 Report: `notes/reports/p169-growth-trajectory.md`
 Close-out: `notes/reports/p169-closeout.md`
 Manifest: `notes/reports/p169-growth-trajectory.json`
@@ -5000,4 +5002,31 @@ Acceptance:
 - Radius 1 vs 2 reported.
 - No calibration.
 - Dominant structural cause narrowed.
+- Dashboard green.
+
+## Phase 170: Reanalysis weather consistency
+
+Parent issue: #1011
+Branch: `feature/p170-fwi-consistency`
+Status: pr-open
+Report: `notes/reports/p170-fwi-consistency.md`
+Close-out: `notes/reports/p170-closeout.md`
+Manifest: `notes/reports/p170-fwi-consistency.json`
+
+Goal: test whether Open-Meteo reanalysis weather explains the late-growth bias.
+
+- [x] P170.1 Add daily CFSDS FWI fields (#1012)
+- [x] P170.2 Run FWI consistency diagnostic (#1013)
+- [x] P170.3 Close out (#1014)
+
+Result: FFMC and ISI are close (median absolute deltas 0.77 and 0.88); BUI is higher but not
+the dominant ROS driver. Weather is not the primary cause. Next: containment/stopping or event
+timing.
+
+Acceptance:
+
+- Daily deltas reported.
+- Weather mismatch quantified.
+- Conclusion explicit.
+- No model tuning.
 - Dashboard green.

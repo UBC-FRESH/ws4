@@ -5201,3 +5201,12 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   radius. Next work should model containment/stopping or verify weather/FFMC, not tune a global
   multiplier. Reports: `notes/reports/p169-growth-trajectory.md` and
   `notes/reports/p169-closeout.md`. Dashboard: pending.
+
+- P170.1: added daily CFSDS FWI fields (FFMC, DMC, DC, BUI, ISI, wind, RH, precipitation,
+  temperature) to the six reanalysis fixtures and the fixture builder.
+- P170.2: compared Open-Meteo-derived daily FWI with CFSDS daily fields. Median absolute FFMC
+  delta 0.77, BUI 11.62, ISI 0.88; reanalysis ISI higher on 56 of 68 days. Weather is not the
+  primary cause of the 10-14x area bias.
+- P170.3: closed P170. Next test is containment/stopping or event timing, not weather
+  replacement. Reports: `notes/reports/p170-fwi-consistency.md` and
+  `notes/reports/p170-closeout.md`. Dashboard: **GREEN**.

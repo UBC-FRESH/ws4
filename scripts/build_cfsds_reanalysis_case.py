@@ -191,6 +191,8 @@ def main() -> None:  # pragma: no cover - builds fixture from external data
     days = int(rows["fireday"].max())
     end_doy = start_doy + days - 1
     ffmc = float(rows["ffmc"].iloc[0])
+    dmc = float(rows["dmc"].iloc[0])
+    dc = float(rows["dc"].iloc[0])
     bui = float(rows["bui"].iloc[0])
     start_date = datetime(year, 1, 1) + timedelta(days=start_doy - 1)
     end_date = datetime(year, 1, 1) + timedelta(days=end_doy - 1)
@@ -310,8 +312,14 @@ def main() -> None:  # pragma: no cover - builds fixture from external data
         "event_end": event_end.isoformat(),
         "duration_min": (event_end - event_start).total_seconds() / 60.0,
         "ffmc": ffmc,
+        "dmc": dmc,
+        "dc": dc,
         "bui": bui,
         "daily_cumuarea_ha": [float(value) for value in rows["cumuarea"].tolist()],
+        "daily_cfsds": {
+            name: [float(value) for value in rows[name].tolist()]
+            for name in ("ffmc", "dmc", "dc", "bui", "isi", "ws", "rh", "prec", "tmax")
+        },
         "source": f"CFSDS {year} daily raster; FireSTARR fuel/DEM; Open-Meteo hourly reanalysis",
         "licence": "CFSDS public OSF f48ry; FireSTARR public fuel index; Open-Meteo CC-BY 4.0",
         "weather_mode": "hourly reanalysis (Open-Meteo), not an on-site station",
