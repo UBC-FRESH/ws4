@@ -1,0 +1,18 @@
+{
+  "case_id": "2023_19",
+  "name": "CFSDS 2023_19",
+  "event_start": "2023-07-27T13:00:00",
+  "event_end": "2023-08-10T23:00:00",
+  "duration_min": 20760.0,
+  "ffmc": 88.8705825805664,
+  "bui": 70.1091842651367,
+  "source": "CFSDS 2023 daily raster; FireSTARR fuel/DEM; Open-Meteo hourly reanalysis",
+  "licence": "CFSDS public OSF f48ry; FireSTARR public fuel index; Open-Meteo CC-BY 4.0",
+  "weather_mode": "hourly reanalysis (Open-Meteo), not an on-site station",
+  "ignition_mode": "centroid of the first-day burned cells; reconstructed",
+  "provenance": {
+    "cfsds": "https://osf.io/f48ry/",
+    "weather": "https://archive-api.open-meteo.com/",
+    "fuel": "FireSTARR Fuel 2023 V1.0 tile 11_0"
+  }
+}

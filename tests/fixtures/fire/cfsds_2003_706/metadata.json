@@ -1,0 +1,18 @@
+{
+  "case_id": "2003_706",
+  "name": "CFSDS 2003_706",
+  "event_start": "2003-07-16T13:00:00",
+  "event_end": "2003-07-20T23:00:00",
+  "duration_min": 6360.0,
+  "ffmc": 93.7066086834262,
+  "bui": 180.196184028009,
+  "source": "CFSDS 2003 daily raster; FireSTARR fuel/DEM; Open-Meteo hourly reanalysis",
+  "licence": "CFSDS public OSF f48ry; FireSTARR public fuel index; Open-Meteo CC-BY 4.0",
+  "weather_mode": "hourly reanalysis (Open-Meteo), not an on-site station",
+  "ignition_mode": "centroid of the first-day burned cells; reconstructed",
+  "provenance": {
+    "cfsds": "https://osf.io/f48ry/",
+    "weather": "https://archive-api.open-meteo.com/",
+    "fuel": "FireSTARR Fuel 2023 V1.0 tile 11_0"
+  }
+}

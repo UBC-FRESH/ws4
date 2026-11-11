@@ -22,6 +22,7 @@ def test_fuel_label_mapping() -> None:
     module: Any = importlib.import_module("build_cfsds_reanalysis_case")
     assert module._fuel_label(2) == "C-2"
     assert module._fuel_label(31) == "O-1A"
+    assert module._fuel_label(0) is None
     assert module._fuel_label(101) is None
     assert module._fuel_label(415) == "M-1 (15 PC)"
     assert module._fuel_label(675) == "M-1 (75 PC)"

@@ -5170,3 +5170,13 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P166.3: closed P166 as a single depth-with-limit case with a poor result. P164.3 remains
   paused. Reports: `notes/reports/p166-reanalysis-case.md` and
   `notes/reports/p166-closeout.md`. Dashboard: **GREEN**.
+
+- P167.1: added five independent CFSDS hourly-reanalysis fixtures (`2003_706`, `2009_147`,
+  `2009_79`, `2023_19`, `2023_786`) using the P166 builder. All six fixtures load.
+- P167.2: ran the six-case uncalibrated distribution. Median IoU 0.096, best 0.127, worst
+  0.079; area bias +6.68x to +11.60x; all six overpredicted. This is systematic scale/shape
+  error, not the P166 case alone. Artifacts: `notes/reports/p167-reanalysis-benchmark.json`
+  and `.csv`.
+- P167.3: closed P167. The next work is process diagnosis of scale/shape, not a global
+  multiplier. P164.3 remains paused. Reports: `notes/reports/p167-reanalysis-benchmark.md` and
+  `notes/reports/p167-closeout.md`. Dashboard: **GREEN**.

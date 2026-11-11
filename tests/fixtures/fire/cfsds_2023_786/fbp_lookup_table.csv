@@ -1,0 +1,15 @@
+grid_value,fuel_type
+0,Non-fuel
+2,C-2
+3,C-3
+4,C-4
+5,C-5
+11,D-1
+13,D-1/D-2
+31,O-1A
+101,Non-fuel
+102,Non-fuel
+415,M-1 (15 PC)
+625,M-1 (25 PC)
+650,M-1 (50 PC)
+675,M-1 (75 PC)

@@ -1,0 +1,96 @@
+{
+  "cases": [
+    {
+      "area_bias": 9.240384615384615,
+      "area_obs_ha": 520.0,
+      "area_sim_ha": 5325.0,
+      "case": "2003_526",
+      "centroid_distance_m": 174.69119277442272,
+      "duration_min": 22200.0,
+      "event_start": "2003-08-20T13:00:00",
+      "iou": 0.09559512652296158,
+      "orientation_error_deg": 21.642970351518244,
+      "perimeter_bias": 4.959183673469388,
+      "sorensen": 0.174508126603935
+    },
+    {
+      "area_bias": 9.254817987152034,
+      "area_obs_ha": 934.0,
+      "area_sim_ha": 9578.0,
+      "case": "2003_706",
+      "centroid_distance_m": 644.4079604269328,
+      "duration_min": 6360.0,
+      "event_start": "2003-07-16T13:00:00",
+      "iou": 0.09522817253594498,
+      "orientation_error_deg": 47.91349175182823,
+      "perimeter_bias": 2.5428571428571427,
+      "sorensen": 0.173896499238965
+    },
+    {
+      "area_bias": 6.676616915422885,
+      "area_obs_ha": 603.0,
+      "area_sim_ha": 4629.0,
+      "case": "2009_147",
+      "centroid_distance_m": 313.47209055590855,
+      "duration_min": 2040.0,
+      "event_start": "2009-06-13T13:00:00",
+      "iou": 0.12661498708010335,
+      "orientation_error_deg": 12.637385127036737,
+      "perimeter_bias": 1.480263157894737,
+      "sorensen": 0.22477064220183487
+    },
+    {
+      "area_bias": 9.43302752293578,
+      "area_obs_ha": 1090.0,
+      "area_sim_ha": 11372.0,
+      "case": "2009_79",
+      "centroid_distance_m": 299.1512740331657,
+      "duration_min": 2040.0,
+      "event_start": "2009-06-14T13:00:00",
+      "iou": 0.09584945480126626,
+      "orientation_error_deg": 25.838510197678957,
+      "perimeter_bias": 0.6864864864864865,
+      "sorensen": 0.17493179264965494
+    },
+    {
+      "area_bias": 8.770833333333334,
+      "area_obs_ha": 576.0,
+      "area_sim_ha": 5628.0,
+      "case": "2023_19",
+      "centroid_distance_m": 29.778466638812336,
+      "duration_min": 20760.0,
+      "event_start": "2023-07-27T13:00:00",
+      "iou": 0.09669436096871133,
+      "orientation_error_deg": 23.746256167937503,
+      "perimeter_bias": 7.128378378378378,
+      "sorensen": 0.17633784655061252
+    },
+    {
+      "area_bias": 11.602313167259787,
+      "area_obs_ha": 1124.0,
+      "area_sim_ha": 14165.0,
+      "case": "2023_786",
+      "centroid_distance_m": 677.9756260790919,
+      "duration_min": 39480.0,
+      "event_start": "2023-07-22T13:00:00",
+      "iou": 0.07935051182492057,
+      "orientation_error_deg": 2.844327367533708,
+      "perimeter_bias": 2.74609375,
+      "sorensen": 0.14703381516122702
+    }
+  ],
+  "limitations": "Reanalysis weather, daily satellite perimeters, reconstructed ignition, and one fuel/terrain tile. No calibration was applied. This is event evidence, not operational validation.",
+  "model_skill": false,
+  "protocol": "uncalibrated CFSDS hourly reanalysis; reconstructed ignition",
+  "summary": {
+    "best_iou": 0.12661498708010335,
+    "case_count": 6,
+    "max_area_bias": 11.602313167259787,
+    "median_area_bias": 9.247601301268325,
+    "median_iou": 0.09572229066211392,
+    "min_area_bias": 6.676616915422885,
+    "overpredicted_cases": 6,
+    "systematic_overprediction": true,
+    "worst_iou": 0.07935051182492057
+  }
+}

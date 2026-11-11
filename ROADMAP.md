@@ -163,7 +163,8 @@ exists and the maintainer approves it.
 | P159 Fire surrogate feasibility | #946 | `feature/p159-fire-surrogate` | complete |
 | P163 Fire behaviour completeness | #971 | `feature/p163-fire-behaviour-completeness` | complete |
 | P165 Public fire corpus | #985 | `feature/p165-public-fire-corpus` | complete |
-| P166 Hourly reanalysis depth case | #991 | `feature/p166-reanalysis-depth-case` | pr-open |
+| P166 Hourly reanalysis depth case | #991 | `feature/p166-reanalysis-depth-case` | complete |
+| P167 Reanalysis event benchmark | #996 | `feature/p167-reanalysis-benchmark` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -4886,7 +4887,8 @@ Acceptance:
 
 Parent issue: #991
 Branch: `feature/p166-reanalysis-depth-case`
-Status: pr-open
+Status: complete
+Merge commit: `56278cd`
 Case report: `notes/reports/p166-reanalysis-case.md`
 Close-out: `notes/reports/p166-closeout.md`
 Fixture: `tests/fixtures/fire/cfsds_2003_526`
@@ -4909,4 +4911,31 @@ Acceptance:
 - Weather is hourly and its reanalysis limit is explicit.
 - Ignition is reconstructed.
 - Metrics are reported without calibration.
+- Dashboard green.
+
+## Phase 167: Reanalysis event benchmark
+
+Parent issue: #996
+Branch: `feature/p167-reanalysis-benchmark`
+Status: pr-open
+Distribution: `notes/reports/p167-reanalysis-benchmark.md`
+Close-out: `notes/reports/p167-closeout.md`
+Manifest: `notes/reports/p167-reanalysis-benchmark.json`
+
+Goal: run six independent CFSDS events with the same uncalibrated hourly-reanalysis protocol and
+test whether the P166 overprediction is an outlier or systematic.
+
+- [x] P167.1 Add the multi-case fixture set (#997)
+- [x] P167.2 Run the distribution and report (#998)
+- [x] P167.3 Close out (#999)
+
+Result: systematic overprediction. Median IoU 0.096; area bias +6.68x to +11.60x; 6 of 6
+overpredicted. Do not tune a global multiplier; diagnose scale/shape next.
+
+Acceptance:
+
+- Six independent cases run.
+- Same uncalibrated protocol for every case.
+- Median, best, and worst reported.
+- Systematic failure recorded.
 - Dashboard green.
