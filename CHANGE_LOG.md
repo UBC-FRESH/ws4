@@ -5154,3 +5154,9 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   This is observation-only breadth evidence, not hourly/FBP model skill. Artifacts:
   `notes/reports/p165-daily-corpus.json`, `notes/reports/p165-daily-corpus.csv`, and
   `notes/reports/p165-daily-corpus.md`. Dashboard: **GREEN**.
+
+- P165.4: closed P165 as a partial success. Depth remains blocked at two limited cases and no
+  fully ready case; the CFSDS `2023_321` depth review was a no-go. The observation-only daily
+  breadth corpus has 20 ready cases across 3 years and 4 ecozones and passes its coverage gate.
+  P164.3 calibration remains paused until a daily model driver or an independent hourly/FBP
+  depth case exists. Report: `notes/reports/p165-closeout.md`. Dashboard: **GREEN**.

@@ -162,7 +162,7 @@ exists and the maintainer approves it.
 | P162 Calibration sensitivity diagnostic | #961 | `feature/p162-calibration-sensitivity` | complete |
 | P159 Fire surrogate feasibility | #946 | `feature/p159-fire-surrogate` | complete |
 | P163 Fire behaviour completeness | #971 | `feature/p163-fire-behaviour-completeness` | complete |
-| P165 Public fire corpus | #985 | `feature/p165-public-fire-corpus` | active |
+| P165 Public fire corpus | #985 | `feature/p165-public-fire-corpus` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -4854,11 +4854,13 @@ Acceptance:
 
 Parent issue: #985
 Branch: `feature/p165-public-fire-corpus`
-Status: active
+Status: pr-open
 Design note: `notes/design/ws4-public-fire-corpus.md`
 Registry: `ws4/fire/corpus.py`
 Manifest: `notes/reports/p165-corpus-manifest.json`
 Inventory report: `notes/reports/p165-corpus-inventory.md`
+Daily corpus report: `notes/reports/p165-daily-corpus.md`
+Close-out: `notes/reports/p165-closeout.md`
 
 Goal: build a tiered, provenance-complete public fire corpus so event and risk validation is
 not decided by two cases.
@@ -4866,7 +4868,7 @@ not decided by two cases.
 - [x] P165.1 Corpus contract and candidate inventory (#986)
 - [x] P165.2 Hourly/FBP depth cases (#987, no-go: 2023_321 is breadth-only)
 - [x] P165.3 Daily CFSDS breadth corpus (#988, observation-only gate passes)
-- [ ] P165.4 Verify and close out (#989)
+- [x] P165.4 Verify and close out (#989)
 
 Acceptance:
 
