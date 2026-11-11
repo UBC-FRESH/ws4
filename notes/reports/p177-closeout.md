@@ -3,7 +3,7 @@
 Date: 2026-11-11
 Phase: P177 (#1046)
 Branch: `feature/p177-containment-protocol`
-Pull request: queued for maintainer approval
+Pull request: #1050
 
 ## Outcome
 

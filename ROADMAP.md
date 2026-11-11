@@ -5213,6 +5213,7 @@ Branch: `feature/p177-containment-protocol`
 Status: pr-open
 Report: `notes/reports/p177-containment-protocol.md`
 Close-out: `notes/reports/p177-closeout.md`
+PR: #1050
 
 Goal: add an explicit containment-boundary input and stop treating suppressed small fires as
 ROS-skill evidence.
