@@ -916,6 +916,135 @@ def load_hay_river(directory: str | Path) -> ObservedFire:
     )
 
 
+def load_cfsds_reanalysis_case(directory: str | Path) -> ObservedFire:
+    """Load a CFSDS case with hourly reanalysis weather.
+
+    Parameters
+    ----------
+    directory : str or Path
+        Fixture directory containing metadata, ASCII grids, weather, and KML perimeters.
+
+    Returns
+    -------
+    ObservedFire
+        The validated observed fire.
+
+    Raises
+    ------
+    ObservedFireError
+        If a file is missing, the grids disagree, or the weather does not cover the event.
+    """
+    root = Path(directory)
+    metadata_path = root / "metadata.json"
+    if not metadata_path.is_file():
+        raise ObservedFireError("reanalysis fixture needs metadata.json")
+    metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+    fuel_codes, fuel_grid = read_ascii_grid(root / "fbp_fuel_type.asc", crs="EPSG:26911")
+    elevation, elevation_grid = read_ascii_grid(root / "elevation.asc", crs="EPSG:26911")
+    if (
+        fuel_grid.ncols,
+        fuel_grid.nrows,
+        fuel_grid.xll,
+        fuel_grid.yll,
+        fuel_grid.cell_size_m,
+        fuel_grid.crs,
+    ) != (
+        elevation_grid.ncols,
+        elevation_grid.nrows,
+        elevation_grid.xll,
+        elevation_grid.yll,
+        elevation_grid.cell_size_m,
+        elevation_grid.crs,
+    ):
+        raise ObservedFireError("fuel and elevation grids have different geometry")
+    lookup_frame = pd.read_csv(root / "fbp_lookup_table.csv")
+    if not {"grid_value", "fuel_type"}.issubset(lookup_frame.columns):
+        raise ObservedFireError("fuel lookup table needs grid_value and fuel_type")
+    lookup: dict[int, str | None] = {}
+    for row in lookup_frame.itertuples(index=False):
+        code = int(str(row.grid_value))
+        name = str(row.fuel_type).strip()
+        lookup[code] = None if name.lower() == "non-fuel" else name
+    lookup[int(fuel_grid.nodata)] = None
+    unknown = sorted({int(code) for code in np.unique(fuel_codes)} - set(lookup))
+    if unknown:
+        raise ObservedFireError(f"fuel grid has unknown codes: {unknown[:10]}")
+    weather = read_weather(root / "weather.csv")
+    perimeter_paths = sorted(root.glob("perimeter_*.kml"))
+    if len(perimeter_paths) < 2:
+        raise ObservedFireError("observed fire needs at least two perimeter snapshots")
+    ignition_lonlat = read_kml_point(root / "ignition.kml")
+    try:
+        from pyproj import Transformer
+    except ImportError as error:  # pragma: no cover - pyproj is a declared dependency
+        raise ObservedFireError("pyproj is required to load observed-fire KML") from error
+    transformer = Transformer.from_crs("EPSG:4326", fuel_grid.crs, always_xy=True)
+    ignition_xy = transformer.transform(*ignition_lonlat)
+    if not fuel_grid.contains(*ignition_xy):
+        raise ObservedFireError("ignition point is outside the observed grid")
+    perimeters: list[ObservedPerimeter] = []
+    for path in perimeter_paths:
+        match = re.search(r"perimeter_(\d{8})_(\d{4})\.kml$", path.name)
+        if match is None:
+            raise ObservedFireError(f"perimeter filename has no timestamp: {path.name}")
+        observed_at = datetime.strptime(match.group(1) + match.group(2), "%Y%m%d%H%M")
+        rings_lonlat = read_kml_rings(path)
+        rings_projected = tuple(
+            tuple(transformer.transform(lon, lat) for lon, lat in ring) for ring in rings_lonlat
+        )
+        points = [point for ring in rings_projected for point in ring]
+        min_x = min(point[0] for point in points)
+        max_x = max(point[0] for point in points)
+        min_y = min(point[1] for point in points)
+        max_y = max(point[1] for point in points)
+        grid_min_x, grid_min_y, grid_max_x, grid_max_y = fuel_grid.bounds
+        if max_x < grid_min_x or min_x > grid_max_x or max_y < grid_min_y or min_y > grid_max_y:
+            raise ObservedFireError(f"perimeter {path.name} does not overlap the observed grid")
+        perimeters.append(
+            ObservedPerimeter(
+                observed_at=observed_at,
+                rings_lonlat=rings_lonlat,
+                rings_projected=rings_projected,
+                source=path.name,
+            )
+        )
+    perimeters.sort(key=lambda item: item.observed_at)
+    event_start = datetime.fromisoformat(str(metadata["event_start"]))
+    event_end = datetime.fromisoformat(str(metadata["event_end"]))
+    if weather["local_time"].min() > event_start or weather["local_time"].max() < event_end:
+        raise ObservedFireError("weather stream does not cover the event window")
+    if not weather["local_time"].diff().dropna().eq(pd.Timedelta(hours=1)).all():
+        raise ObservedFireError("weather stream has a gap between hourly records")
+    if event_start >= event_end:
+        raise ObservedFireError("event window must be increasing")
+    provenance = {
+        "source": str(metadata["source"]),
+        "weather_mode": str(metadata["weather_mode"]),
+        "ignition_mode": str(metadata["ignition_mode"]),
+        "provenance": metadata.get("provenance", {}),
+        "projection": "NAD83 UTM zone 11N (EPSG:26911)",
+    }
+    return ObservedFire(
+        fire_id=str(metadata["case_id"]),
+        name=str(metadata["name"]),
+        source=str(metadata["source"]),
+        licence=str(metadata["licence"]),
+        time_zone="America/Edmonton",
+        event_start=event_start,
+        event_end=event_end,
+        ignition_lonlat=ignition_lonlat,
+        ignition_xy=ignition_xy,
+        grid=fuel_grid,
+        fuel_codes=fuel_codes,
+        elevation_m=elevation,
+        fuel_lookup=lookup,
+        perimeters=tuple(perimeters),
+        weather=weather,
+        weather_patch_projected=None,
+        provenance=provenance,
+    )
+
+
 def observed_fire_summary(fire: ObservedFire) -> str:
     """Return a compact JSON summary of an observed fire.
 

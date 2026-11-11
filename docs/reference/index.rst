@@ -89,6 +89,8 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
      - The FBP ellipse benchmark, the scenario ensemble, and the reported tolerances.
    * - :doc:`fire-observed`
      - The observed-fire contract and the Dogrib validation fixture.
+   * - :doc:`fire-reanalysis-case`
+     - One CFSDS event with hourly reanalysis weather and its uncalibrated overprediction result.
    * - :doc:`fire-wind`
      - WindNinja angle and velocity pairs, direction selection, and provenance.
    * - :doc:`fire-scene`
@@ -135,6 +137,7 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
    fire-vri
    fire-benchmark
    fire-observed
+   fire-reanalysis-case
    fire-wind
    fire-scene
    femic-hydrology

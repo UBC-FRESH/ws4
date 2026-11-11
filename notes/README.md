@@ -40,6 +40,9 @@ Working notes for WS4. Notes are living: update them in the same change set as t
   calibration gap, and the bounded P159 surrogate plan.
 - `reports/p159-corpus-manifest.json` — P159.1 deterministic synthetic corpus metadata and
   train/validation split.
+- `reports/p166-reanalysis-case.md` — P166 CFSDS `2003_526` hourly-reanalysis case and
+  uncalibrated overprediction result.
+- `reports/p166-closeout.md` — P166 depth-with-limit decision and next options.
 - `reports/p159-model-card.md` — P159.2 surrogate architecture, training data, losses, and
   limitations.
 - `reports/p159-evaluation.md` — P159.3 held-out synthetic and Dogrib OOD evaluation.

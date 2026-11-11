@@ -162,6 +162,7 @@ exists and the maintainer approves it.
 | P162 Calibration sensitivity diagnostic | #961 | `feature/p162-calibration-sensitivity` | complete |
 | P159 Fire surrogate feasibility | #946 | `feature/p159-fire-surrogate` | pr-open |
 | P163 Fire behaviour completeness | #971 | `feature/p163-fire-behaviour-completeness` | pr-open |
+| P166 Hourly reanalysis depth case | #991 | `feature/p166-reanalysis-depth-case` | active |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -4846,3 +4847,31 @@ Acceptance:
 - The 3D scene distinguishes surface scorch, torching, and consumption.
 - A no-go for any component is recorded rather than hidden.
 - `python scripts/dashboard.py` is green.
+
+## Phase 166: Hourly reanalysis depth case
+
+Parent issue: #991
+Branch: `feature/p166-reanalysis-depth-case`
+Status: active
+Case report: `notes/reports/p166-reanalysis-case.md`
+Close-out: `notes/reports/p166-closeout.md`
+Fixture: `tests/fixtures/fire/cfsds_2003_526`
+Metrics: `notes/reports/p166-reanalysis-case.json`
+
+Goal: add one independent CFSDS event with hourly reanalysis weather, FBP fuel/terrain, and an
+observed final scar; run WS4 and report the uncalibrated result.
+
+- [x] P166.1 Build the hourly reanalysis case (#992)
+- [x] P166.2 Run and report the case (#993)
+- [x] P166.3 Close out (#994)
+
+Result: depth-with-limit. Area bias +924%, IoU 0.096, Sorensen 0.175. The case is a recorded
+overprediction failure, not calibration evidence.
+
+Acceptance:
+
+- Fixture inputs and provenance are reproducible.
+- Weather is hourly and its reanalysis limit is explicit.
+- Ignition is reconstructed.
+- Metrics are reported without calibration.
+- Dashboard green.
