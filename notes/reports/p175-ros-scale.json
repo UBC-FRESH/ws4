@@ -1,0 +1,80 @@
+{
+  "rows": [
+    {
+      "area_bias": 3.669300873111975,
+      "area_obs_ha": 31382.0,
+      "area_sim_ha": 146532.0,
+      "case": "2003_96",
+      "iou": 0.209402551849309,
+      "multiplier": 1.0
+    },
+    {
+      "area_bias": 1.3873972175675149,
+      "area_obs_ha": 25661.0,
+      "area_sim_ha": 61263.0,
+      "case": "2003_663",
+      "iou": 0.3869228069055749,
+      "multiplier": 1.0
+    },
+    {
+      "area_bias": 3.669300873111975,
+      "area_obs_ha": 31382.0,
+      "area_sim_ha": 146532.0,
+      "case": "2003_96",
+      "iou": 0.209402551849309,
+      "multiplier": 0.75
+    },
+    {
+      "area_bias": 1.3873972175675149,
+      "area_obs_ha": 25661.0,
+      "area_sim_ha": 61263.0,
+      "case": "2003_663",
+      "iou": 0.3869228069055749,
+      "multiplier": 0.75
+    },
+    {
+      "area_bias": 3.669300873111975,
+      "area_obs_ha": 31382.0,
+      "area_sim_ha": 146532.0,
+      "case": "2003_96",
+      "iou": 0.209402551849309,
+      "multiplier": 0.5
+    },
+    {
+      "area_bias": 1.3873972175675149,
+      "area_obs_ha": 25661.0,
+      "area_sim_ha": 61263.0,
+      "case": "2003_663",
+      "iou": 0.3869228069055749,
+      "multiplier": 0.5
+    },
+    {
+      "area_bias": 3.669300873111975,
+      "area_obs_ha": 31382.0,
+      "area_sim_ha": 146532.0,
+      "case": "2003_96",
+      "iou": 0.209402551849309,
+      "multiplier": 0.25
+    },
+    {
+      "area_bias": 1.3873972175675149,
+      "area_obs_ha": 25661.0,
+      "area_sim_ha": 61263.0,
+      "case": "2003_663",
+      "iou": 0.3869228069055749,
+      "multiplier": 0.25
+    }
+  ],
+  "summary": {
+    "area_changes_with_multiplier": false,
+    "case_count": 8,
+    "multipliers": [
+      1.0,
+      0.75,
+      0.5,
+      0.25
+    ],
+    "note": "Final area is unchanged from 1.0x to 0.25x; the model is burnable-area-limited.",
+    "uniform_factor_fits": false
+  }
+}

@@ -46,6 +46,12 @@ def main() -> None:
         help="One or more CFSDS reanalysis fixture directories.",
     )
     parser.add_argument(
+        "--head-ros-multiplier",
+        type=float,
+        default=1.0,
+        help="Diagnostic head-ROS multiplier; default 1.0.",
+    )
+    parser.add_argument(
         "--seed",
         choices=("point", "first-perimeter"),
         default="point",
@@ -74,12 +80,14 @@ def main() -> None:
             bui=float(metadata["bui"]),
             duration_min=float(metadata["duration_min"]),
             initial_mask=initial_mask,
+            head_ros_multiplier=args.head_ros_multiplier,
         )
         metrics = result.metrics
         rows.append(
             {
                 "case": fire.fire_id,
                 "seed": args.seed,
+                "head_ros_multiplier": args.head_ros_multiplier,
                 "start_cells": result.start_cells,
                 "event_start": metadata["event_start"],
                 "duration_min": metadata["duration_min"],
@@ -94,7 +102,10 @@ def main() -> None:
             }
         )
     payload = {
-        "protocol": f"uncalibrated CFSDS hourly reanalysis; seed={args.seed}",
+        "protocol": (
+            f"uncalibrated CFSDS hourly reanalysis; seed={args.seed}; "
+            f"head_ros_multiplier={args.head_ros_multiplier}"
+        ),
         "model_skill": False,
         "cases": rows,
         "summary": _summary(rows),

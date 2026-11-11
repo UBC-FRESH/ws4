@@ -78,3 +78,33 @@ def test_benchmark_can_seed_first_perimeter(
     payload = json.loads(output.read_text(encoding="utf-8"))
     assert payload["cases"][0]["seed"] == "first-perimeter"
     assert payload["cases"][0]["start_cells"] > 1
+
+
+def test_benchmark_records_head_ros_multiplier(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The runner records a diagnostic head-ROS multiplier."""
+    module: Any = importlib.import_module("run_reanalysis_benchmark")
+    output = tmp_path / "ros.json"
+    csv = tmp_path / "ros.csv"
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "run_reanalysis_benchmark.py",
+            "--head-ros-multiplier",
+            "0.5",
+            "--fixtures",
+            str(FIXTURES / "cfsds_2009_147"),
+            "--output",
+            str(output),
+            "--csv",
+            str(csv),
+        ],
+    )
+
+    module.main()
+
+    payload = json.loads(output.read_text(encoding="utf-8"))
+    assert payload["cases"][0]["head_ros_multiplier"] == 0.5
