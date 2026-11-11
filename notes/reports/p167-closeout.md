@@ -3,7 +3,7 @@
 Date: 2026-11-11
 Phase: P167 (#996)
 Branch: `feature/p167-reanalysis-benchmark`
-Pull request: queued for maintainer approval
+Pull request: #1000
 
 ## Outcome
 

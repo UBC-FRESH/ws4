@@ -4921,6 +4921,7 @@ Status: pr-open
 Distribution: `notes/reports/p167-reanalysis-benchmark.md`
 Close-out: `notes/reports/p167-closeout.md`
 Manifest: `notes/reports/p167-reanalysis-benchmark.json`
+PR: #1000
 
 Goal: run six independent CFSDS events with the same uncalibrated hourly-reanalysis protocol and
 test whether the P166 overprediction is an outlier or systematic.
