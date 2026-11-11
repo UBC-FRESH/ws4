@@ -114,3 +114,17 @@ P169 compared simulated daily area with observed CFSDS cumulative area.
 The initial growth is approximately correct. The failure is **late/continued growth**. Neighbor
 radius is not the cause. The next fix should model containment/stopping or verify the
 weather/FFMC sequence, not apply a global ROS multiplier.
+
+Weather consistency
+-------------------
+
+P170 compared reanalysis-derived daily FWI with CFSDS daily FWI.
+
+- median absolute FFMC delta: 0.77;
+- median absolute BUI delta: 11.62;
+- median absolute ISI delta: 0.88;
+- reanalysis ISI was higher on 56 of 68 days.
+
+FFMC and ISI are close enough that weather is not the primary cause of the 10-14x area bias.
+BUI is higher, but it is not the dominant ROS driver in FBP. The next test is
+containment/stopping or event timing, not weather replacement.
