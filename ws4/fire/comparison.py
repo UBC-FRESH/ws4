@@ -850,6 +850,7 @@ def run_observed_case(
     neighbor_radius: int = 2,
     flat_terrain: bool = False,
     fuel_override: str | None = None,
+    containment_mask: np.ndarray | None = None,
 ) -> DogribCase:
     """Run one generic point-ignition observed-fire case.
 
@@ -881,6 +882,8 @@ def run_observed_case(
         Set slope to zero and aspect to flat for diagnosis.
     fuel_override : str or None, optional
         Replace burnable-cell fuel with one FBP type for diagnosis.
+    containment_mask : numpy.ndarray or None, optional
+        Cells that are contained/non-burnable, such as a firebreak or suppression line.
 
     Returns
     -------
@@ -918,6 +921,12 @@ def run_observed_case(
         slope_grid = np.zeros_like(slope_grid)
         aspect_grid = np.full_like(aspect_grid, 180.0)
     burnable = np.array([[value is not None for value in row] for row in fuel_grid], dtype=bool)
+    if containment_mask is not None:
+        if containment_mask.shape != burnable.shape:
+            raise ComparisonError("containment_mask shape must match the observed grid")
+        burnable = burnable & ~np.asarray(containment_mask, dtype=bool)
+        if not burnable.any():
+            raise ComparisonError("containment_mask leaves no burnable cells")
     if fuel_override is not None:
         override = canonical_fuel_type(fuel_override)
         fuel_grid = np.where(burnable, override, None).astype(object)

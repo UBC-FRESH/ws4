@@ -69,6 +69,8 @@ Working notes for WS4. Notes are living: update them in the same change set as t
 - `reports/p175-closeout.md` — P175 decision: final area is burnable-area-limited, not ROS-scaled.
 - `reports/p176-burnable-basin.md` — P176 basin fractions and stopping diagnosis.
 - `reports/p176-closeout.md` — P176 decision: implement containment/stopping.
+- `reports/p177-containment-protocol.md` — P177 containment-mask contract and free-burn vs suppressed protocol.
+- `reports/p177-closeout.md` — P177 decision: containment is a management input, not calibration.
 - `reports/p159-model-card.md` — P159.2 surrogate architecture, training data, losses, and
   limitations.
 - `reports/p159-evaluation.md` — P159.3 held-out synthetic and Dogrib OOD evaluation.

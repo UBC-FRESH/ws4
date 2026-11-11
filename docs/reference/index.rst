@@ -93,6 +93,8 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
      - The tiered public fire corpus, admission gate, and candidate inventory.
    * - :doc:`fire-reanalysis-case`
      - One CFSDS event with hourly reanalysis weather and its uncalibrated overprediction result.
+   * - :doc:`fire-containment`
+     - Containment masks and the free-burn versus suppressed validation protocol.
    * - :doc:`fire-wind`
      - WindNinja angle and velocity pairs, direction selection, and provenance.
    * - :doc:`fire-scene`
@@ -141,6 +143,7 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
    fire-observed
    fire-corpus
    fire-reanalysis-case
+   fire-containment
    fire-wind
    fire-scene
    femic-hydrology

@@ -173,7 +173,8 @@ exists and the maintainer approves it.
 | P173 Large-fire reanalysis benchmark | #1026 | `feature/p173-large-fire-benchmark` | complete |
 | P174 Large-fire resolution sensitivity | #1031 | `feature/p174-resolution-sensitivity` | complete |
 | P175 ROS-scale sensitivity | #1036 | `feature/p175-ros-scale` | complete |
-| P176 Burnable-basin and stopping diagnosis | #1041 | `feature/p176-burnable-basin` | pr-open |
+| P176 Burnable-basin and stopping diagnosis | #1041 | `feature/p176-burnable-basin` | complete |
+| P177 Containment contract and validation protocol | #1046 | `feature/p177-containment-protocol` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -5182,7 +5183,8 @@ Acceptance:
 
 Parent issue: #1041
 Branch: `feature/p176-burnable-basin`
-Status: pr-open
+Status: complete
+Merge commit: `bae307d`
 Report: `notes/reports/p176-burnable-basin.md`
 Close-out: `notes/reports/p176-closeout.md`
 Manifest: `notes/reports/p176-burnable-basin.json`
@@ -5202,4 +5204,30 @@ Acceptance:
 - Basin table.
 - Sim/basin and observed/basin explicit.
 - Stopping conclusion explicit.
+- Dashboard green.
+
+## Phase 177: Containment contract and validation protocol
+
+Parent issue: #1046
+Branch: `feature/p177-containment-protocol`
+Status: pr-open
+Report: `notes/reports/p177-containment-protocol.md`
+Close-out: `notes/reports/p177-closeout.md`
+PR: #1050
+
+Goal: add an explicit containment-boundary input and stop treating suppressed small fires as
+ROS-skill evidence.
+
+- [x] P177.1 Add containment boundary input (#1047)
+- [x] P177.2 Define validation protocol (#1048)
+- [x] P177.3 Close out (#1049)
+
+Result: containment masks are a scenario input; small fires are suppression-dominated and are not
+ROS-skill evidence. Large/free-burn cases remain the ROS validation set.
+
+Acceptance:
+
+- Containment mask works and is tested.
+- Default free-burn behavior unchanged.
+- Suppressed small fires are not ROS skill.
 - Dashboard green.
