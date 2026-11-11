@@ -34,7 +34,7 @@ def _summary(rows: list[dict[str, Any]]) -> dict[str, object]:
 def main() -> None:
     """Run every fixture and write the distribution."""
     import pandas as pd
-    from ws4.fire.comparison import run_observed_case
+    from ws4.fire.comparison import observed_mask, run_observed_case
     from ws4.fire.observed import load_cfsds_reanalysis_case
 
     parser = argparse.ArgumentParser(description=__doc__)
@@ -44,6 +44,12 @@ def main() -> None:
         nargs="+",
         required=True,
         help="One or more CFSDS reanalysis fixture directories.",
+    )
+    parser.add_argument(
+        "--seed",
+        choices=("point", "first-perimeter"),
+        default="point",
+        help="Ignition seeding mode.",
     )
     parser.add_argument(
         "--output",
@@ -60,17 +66,21 @@ def main() -> None:
     for fixture in args.fixtures:
         metadata = json.loads((fixture / "metadata.json").read_text(encoding="utf-8"))
         fire = load_cfsds_reanalysis_case(fixture)
+        initial_mask = observed_mask(fire, 0) if args.seed == "first-perimeter" else None
         result = run_observed_case(
             fire,
             scenario="cfsds-reanalysis-uncalibrated",
             ffmc=float(metadata["ffmc"]),
             bui=float(metadata["bui"]),
             duration_min=float(metadata["duration_min"]),
+            initial_mask=initial_mask,
         )
         metrics = result.metrics
         rows.append(
             {
                 "case": fire.fire_id,
+                "seed": args.seed,
+                "start_cells": result.start_cells,
                 "event_start": metadata["event_start"],
                 "duration_min": metadata["duration_min"],
                 "area_obs_ha": metrics.area_obs_ha,
@@ -84,7 +94,7 @@ def main() -> None:
             }
         )
     payload = {
-        "protocol": "uncalibrated CFSDS hourly reanalysis; reconstructed ignition",
+        "protocol": f"uncalibrated CFSDS hourly reanalysis; seed={args.seed}",
         "model_skill": False,
         "cases": rows,
         "summary": _summary(rows),

@@ -84,3 +84,19 @@ P167 adds five more independent CFSDS reanalysis cases. All six overpredict fina
 The failure is systematic across years, sizes, and fuel codes. It is a scale/shape problem, not
 a single-case outlier. The full distribution is in
 ``notes/reports/p167-reanalysis-benchmark.md``.
+
+Start-perimeter correction
+--------------------------
+
+P168 reran the six cases from the observed first perimeter instead of a point.
+
+The correction did not remove the bias:
+
+- median IoU 0.095;
+- best IoU 0.097;
+- worst IoU 0.079;
+- area bias +8.77x to +11.60x;
+- all six still overpredicted.
+
+Point ignition was a protocol flaw, but not the dominant cause. The model fills large connected
+burnable areas while the observed fires stop far short.

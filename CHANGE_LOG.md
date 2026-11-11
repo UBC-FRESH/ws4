@@ -5180,3 +5180,14 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P167.3: closed P167. The next work is process diagnosis of scale/shape, not a global
   multiplier. P164.3 remains paused. Reports: `notes/reports/p167-reanalysis-benchmark.md` and
   `notes/reports/p167-closeout.md`. Dashboard: **GREEN**.
+
+- P168.1: added optional first-perimeter seeding to `run_observed_case`, with shape, empty-mask,
+  and seeding tests. Point ignition remains available.
+- P168.2: reran the six-case reanalysis benchmark from observed first perimeters. Median IoU
+  0.095, best 0.097, worst 0.079; area bias +8.77x to +11.60x; all six still overpredicted.
+  First-perimeter seeding did not fix the bias and slightly worsened one case. Artifact:
+  `notes/reports/p168-reanalysis-first-perimeter.json`.
+- P168.3: closed P168. Point ignition was a protocol flaw, not the dominant cause. The next
+  diagnosis is containment/stopping and growth-kernel scale. Reports:
+  `notes/reports/p168-start-perimeter.md` and `notes/reports/p168-closeout.md`.
+  Dashboard: **GREEN**.
