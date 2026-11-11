@@ -4982,6 +4982,7 @@ Status: pr-open
 Report: `notes/reports/p169-growth-trajectory.md`
 Close-out: `notes/reports/p169-closeout.md`
 Manifest: `notes/reports/p169-growth-trajectory.json`
+PR: #1010
 
 Goal: determine whether the overprediction is early growth or late/continued growth, without
 calibration.

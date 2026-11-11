@@ -3,7 +3,7 @@
 Date: 2026-11-11
 Phase: P169 (#1006)
 Branch: `feature/p169-growth-trajectory`
-Pull request: queued for maintainer approval
+Pull request: #1010
 
 ## Outcome
 
