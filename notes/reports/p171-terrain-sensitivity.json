@@ -1,0 +1,72 @@
+{
+  "protocol": "first-perimeter seed; hourly reanalysis; terrain sensitivity only",
+  "rows": [
+    {
+      "case": "2003_526",
+      "dem_area_ha": 5325.0,
+      "dem_area_ratio": 10.240384615384615,
+      "dem_iou": 0.09559512652296158,
+      "flat_area_ha": 5325.0,
+      "flat_area_ratio": 10.240384615384615,
+      "flat_iou": 0.09559512652296158,
+      "observed_final_ha": 520.0
+    },
+    {
+      "case": "2003_706",
+      "dem_area_ha": 9578.0,
+      "dem_area_ratio": 10.254817987152034,
+      "dem_iou": 0.09522817253594498,
+      "flat_area_ha": 9578.0,
+      "flat_area_ratio": 10.254817987152034,
+      "flat_iou": 0.09522817253594498,
+      "observed_final_ha": 934.0
+    },
+    {
+      "case": "2009_147",
+      "dem_area_ha": 7075.0,
+      "dem_area_ratio": 11.733001658374793,
+      "dem_iou": 0.08293370944992948,
+      "flat_area_ha": 7081.0,
+      "flat_area_ratio": 11.742951907131012,
+      "flat_iou": 0.08286358511837655,
+      "observed_final_ha": 603.0
+    },
+    {
+      "case": "2009_79",
+      "dem_area_ha": 11376.0,
+      "dem_area_ratio": 10.436697247706421,
+      "dem_iou": 0.09581575246132208,
+      "flat_area_ha": 11376.0,
+      "flat_area_ratio": 10.436697247706421,
+      "flat_iou": 0.09581575246132208,
+      "observed_final_ha": 1090.0
+    },
+    {
+      "case": "2023_19",
+      "dem_area_ha": 5628.0,
+      "dem_area_ratio": 9.770833333333334,
+      "dem_iou": 0.09669436096871133,
+      "flat_area_ha": 5628.0,
+      "flat_area_ratio": 9.770833333333334,
+      "flat_iou": 0.09669436096871133,
+      "observed_final_ha": 576.0
+    },
+    {
+      "case": "2023_786",
+      "dem_area_ha": 14165.0,
+      "dem_area_ratio": 12.602313167259787,
+      "dem_iou": 0.07935051182492057,
+      "flat_area_ha": 14165.0,
+      "flat_area_ratio": 12.602313167259787,
+      "flat_iou": 0.07935051182492057,
+      "observed_final_ha": 1124.0
+    }
+  ],
+  "summary": {
+    "case_count": 6,
+    "flat_reduces_ratio_cases": 0,
+    "median_dem_ratio": 10.345757617429229,
+    "median_flat_ratio": 10.345757617429229,
+    "terrain_explains_bias": false
+  }
+}

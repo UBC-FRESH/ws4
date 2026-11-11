@@ -847,6 +847,7 @@ def run_observed_case(
     initial_mask: np.ndarray | None = None,
     snapshot_interval_min: float | None = None,
     neighbor_radius: int = 2,
+    flat_terrain: bool = False,
 ) -> DogribCase:
     """Run one generic point-ignition observed-fire case.
 
@@ -874,6 +875,8 @@ def run_observed_case(
         Snapshot spacing in minutes. None uses the full duration.
     neighbor_radius : int, optional
         Cell-neighbor radius for growth (default 2).
+    flat_terrain : bool, optional
+        Set slope to zero and aspect to flat for diagnosis.
 
     Returns
     -------
@@ -907,6 +910,9 @@ def run_observed_case(
     slope_grid, aspect_grid = slope_aspect_from_elevation(
         fire.elevation_m, fire.grid.cell_size_m, nodata=fire.grid.nodata
     )
+    if flat_terrain:
+        slope_grid = np.zeros_like(slope_grid)
+        aspect_grid = np.full_like(aspect_grid, 180.0)
     burnable = np.array([[value is not None for value in row] for row in fuel_grid], dtype=bool)
     ignition_cells: tuple[tuple[int, int], ...]
     if initial_mask is None:

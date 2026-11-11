@@ -167,7 +167,8 @@ exists and the maintainer approves it.
 | P167 Reanalysis event benchmark | #996 | `feature/p167-reanalysis-benchmark` | complete |
 | P168 Start-perimeter event benchmark | #1001 | `feature/p168-start-perimeter` | complete |
 | P169 Growth trajectory diagnosis | #1006 | `feature/p169-growth-trajectory` | complete |
-| P170 Reanalysis weather consistency | #1011 | `feature/p170-fwi-consistency` | pr-open |
+| P170 Reanalysis weather consistency | #1011 | `feature/p170-fwi-consistency` | complete |
+| P171 Terrain and fuel scale diagnosis | #1016 | `feature/p171-terrain-sensitivity` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -5008,7 +5009,8 @@ Acceptance:
 
 Parent issue: #1011
 Branch: `feature/p170-fwi-consistency`
-Status: pr-open
+Status: complete
+Merge commit: `af7b4e8`
 Report: `notes/reports/p170-fwi-consistency.md`
 Close-out: `notes/reports/p170-closeout.md`
 Manifest: `notes/reports/p170-fwi-consistency.json`
@@ -5030,4 +5032,30 @@ Acceptance:
 - Weather mismatch quantified.
 - Conclusion explicit.
 - No model tuning.
+- Dashboard green.
+
+## Phase 171: Terrain and fuel scale diagnosis
+
+Parent issue: #1016
+Branch: `feature/p171-terrain-sensitivity`
+Status: pr-open
+Report: `notes/reports/p171-terrain-sensitivity.md`
+Close-out: `notes/reports/p171-closeout.md`
+Manifest: `notes/reports/p171-terrain-sensitivity.json`
+
+Goal: test whether terrain explains the early 8-150x growth ratios.
+
+- [x] P171.1 Add flat-terrain diagnostic (#1017)
+- [x] P171.2 Run terrain sensitivity (#1018)
+- [x] P171.3 Close out (#1019)
+
+Result: flat terrain changes nothing. Median DEM and flat ratios are both 10.35x; 0 of 6 cases
+improved. Terrain is not the cause. Next: fuel mapping/ROS scale or containment.
+
+Acceptance:
+
+- Flat-vs-DEM table.
+- Terrain contribution explicit.
+- No calibration.
+- Next step identified.
 - Dashboard green.

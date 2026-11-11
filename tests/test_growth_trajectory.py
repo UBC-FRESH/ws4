@@ -16,6 +16,7 @@ def _run(
     *,
     snapshot_interval_min: float | None = None,
     neighbor_radius: int = 2,
+    flat_terrain: bool = False,
 ) -> DogribCase:
     """Run one fixture with optional controls."""
     fire = load_cfsds_reanalysis_case(FIXTURE)
@@ -29,6 +30,7 @@ def _run(
         initial_mask=observed_mask(fire, 0),
         snapshot_interval_min=snapshot_interval_min,
         neighbor_radius=neighbor_radius,
+        flat_terrain=flat_terrain,
     )
 
 
@@ -45,3 +47,9 @@ def test_invalid_trajectory_controls_fail() -> None:
         _run(neighbor_radius=0)
     with pytest.raises(ComparisonError, match="positive"):
         _run(snapshot_interval_min=0.0)
+
+
+def test_flat_terrain_runs() -> None:
+    """The flat-terrain diagnostic preserves the output contract."""
+    result = _run(flat_terrain=True)
+    assert result.growth.burned_area_ha > 0

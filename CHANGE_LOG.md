@@ -5210,3 +5210,12 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P170.3: closed P170. Next test is containment/stopping or event timing, not weather
   replacement. Reports: `notes/reports/p170-fwi-consistency.md` and
   `notes/reports/p170-closeout.md`. Dashboard: **GREEN**.
+
+- P171.1: added a flat-terrain diagnostic switch to `run_observed_case`, preserving DEM
+  behavior by default.
+- P171.2: reran six cases with DEM and flat terrain. Median area ratio was 10.35x in both
+  modes; flat terrain reduced the ratio in 0 of 6 cases; IoU unchanged. Terrain is not the
+  cause.
+- P171.3: closed P171 as a negative terrain result. Next: fuel mapping/ROS scale or
+  containment. Reports: `notes/reports/p171-terrain-sensitivity.md` and
+  `notes/reports/p171-closeout.md`. Dashboard: **GREEN**.
