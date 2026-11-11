@@ -5186,6 +5186,7 @@ Status: pr-open
 Report: `notes/reports/p176-burnable-basin.md`
 Close-out: `notes/reports/p176-closeout.md`
 Manifest: `notes/reports/p176-burnable-basin.json`
+PR: #1045
 
 Goal: quantify how much of the overprediction is the model filling the burnable basin.
 

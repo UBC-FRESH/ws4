@@ -3,7 +3,7 @@
 Date: 2026-11-11
 Phase: P176 (#1041)
 Branch: `feature/p176-burnable-basin`
-Pull request: queued for maintainer approval
+Pull request: #1045
 
 ## Outcome
 
