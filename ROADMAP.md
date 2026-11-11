@@ -4861,6 +4861,7 @@ Manifest: `notes/reports/p165-corpus-manifest.json`
 Inventory report: `notes/reports/p165-corpus-inventory.md`
 Daily corpus report: `notes/reports/p165-daily-corpus.md`
 Close-out: `notes/reports/p165-closeout.md`
+PR: #990
 
 Goal: build a tiered, provenance-complete public fire corpus so event and risk validation is
 not decided by two cases.

@@ -3,7 +3,7 @@
 Date: 2026-11-11
 Phase: P165 (#985)
 Branch: `feature/p165-public-fire-corpus`
-Pull request: queued for maintainer approval
+Pull request: #990
 Design: `notes/design/ws4-public-fire-corpus.md`
 Registry: `ws4/fire/corpus.py`
 Daily corpus: `ws4/fire/daily_corpus.py`
