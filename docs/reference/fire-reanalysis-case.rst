@@ -55,3 +55,32 @@ Limits
 
 The full report is ``notes/reports/p166-reanalysis-case.md``. The close-out is
 ``notes/reports/p166-closeout.md``.
+
+Multi-case distribution
+-----------------------
+
+P167 adds five more independent CFSDS reanalysis cases. All six overpredict final area.
+
+.. list-table::
+   :header-rows: 1
+
+   * - Summary
+     - Value
+   * - Case count
+     - 6
+   * - Median IoU
+     - 0.096
+   * - Best IoU
+     - 0.127
+   * - Worst IoU
+     - 0.079
+   * - Median area bias
+     - +9.25x
+   * - Area bias range
+     - +6.68x to +11.60x
+   * - Overpredicted cases
+     - 6 of 6
+
+The failure is systematic across years, sizes, and fuel codes. It is a scale/shape problem, not
+a single-case outlier. The full distribution is in
+``notes/reports/p167-reanalysis-benchmark.md``.
