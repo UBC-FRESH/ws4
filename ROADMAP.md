@@ -4864,7 +4864,7 @@ for event reconstruction, burn probability, treatment response, tree effects, an
 decisions.
 
 - [x] P164.1 Published benchmark registry and decision gates (#978)
-- [ ] P164.2 Multi-fire event benchmark (#979)
+- [x] P164.2 Multi-fire event benchmark (#979)
 - [ ] P164.3 Burn-probability calibration and skill scores (#980)
 - [ ] P164.4 Treatment-effect validation (#981)
 - [ ] P164.5 Uncertainty propagation and decision quality (#982)

@@ -36,6 +36,8 @@ Working notes for WS4. Notes are living: update them in the same change set as t
   benchmarks, and the P163/P164 plan.
 - `reports/p163-closeout.md` — P163 behaviour classes, spotting, 3D outcomes, and accepted
   proxy limits.
+- `reports/p164-multi-fire.md` — P164.2 two-fire event benchmark with the published envelope
+  and data-gap caveat.
 - `design/ws4-open-fire-model-reuse.md` — Planscape/burn-emulator review, the observed-fire
   calibration gap, and the bounded P159 surrogate plan.
 - `reports/p159-corpus-manifest.json` — P159.1 deterministic synthetic corpus metadata and

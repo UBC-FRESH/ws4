@@ -5137,3 +5137,10 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   registry of published event, burn-probability, and tree-mortality envelopes. Added
   tier-specific benchmark lookup and single-fire context policy, plus docs and tests. No new
   model run or calibration. Dashboard: **GREEN**.
+
+- P164.2: added the fixed two-fire public event benchmark. Dogrib Scenario 2b: IoU 0.385,
+  Sorensen 0.556, area +58.9%, perimeter +75.9%; Hay River full: IoU 0.275, Sorensen 0.431,
+  area +263.1%, perimeter +223.1%. Median IoU 0.330, worst 0.275. Both are inside/above the
+  published Jaccard envelope, but biases remain large and Hay River is saturated. Only two
+  public fixtures exist; no third case was invented. Report:
+  `notes/reports/p164-multi-fire.md`. Dashboard: **GREEN**.

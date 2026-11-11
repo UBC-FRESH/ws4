@@ -1,0 +1,36 @@
+{
+  "best_iou": 0.38534031413612563,
+  "case_count": 2,
+  "cases": [
+    {
+      "area_bias": 0.5892944515118896,
+      "area_obs_ha": 10219.0,
+      "area_sim_ha": 16241.0,
+      "case": "dogrib-2b",
+      "centroid_distance_m": 1774.0191010916042,
+      "iou": 0.38534031413612563,
+      "orientation_error_deg": 6.545919075750618,
+      "perimeter_bias": 0.7590511860174781,
+      "published_jaccard_position": "above",
+      "sorensen": 0.5563114134542706
+    },
+    {
+      "area_bias": 2.6310679611650487,
+      "area_obs_ha": 2987.0,
+      "area_sim_ha": 10846.0,
+      "case": "hay-river-full",
+      "centroid_distance_m": 1430.437231231801,
+      "iou": 0.27493087557603685,
+      "orientation_error_deg": 27.612807441310906,
+      "perimeter_bias": 2.2311557788944723,
+      "published_jaccard_position": "within",
+      "sorensen": 0.4312875009036362
+    }
+  ],
+  "limitations": "Only two public observed-fire fixtures exist. Hay River is saturated and is retained as a failure case. This is not a regional validation.",
+  "median_iou": 0.33013559485608124,
+  "median_sorensen": 0.4937994571789534,
+  "published_event_envelope": "Jaccard 0.15-0.30; context, not a pass mark",
+  "worst_iou": 0.27493087557603685,
+  "worst_sorensen": 0.4312875009036362
+}
