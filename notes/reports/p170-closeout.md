@@ -3,7 +3,7 @@
 Date: 2026-11-11
 Phase: P170 (#1011)
 Branch: `feature/p170-fwi-consistency`
-Pull request: queued for maintainer approval
+Pull request: #1015
 
 ## Outcome
 

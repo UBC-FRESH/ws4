@@ -5012,6 +5012,7 @@ Status: pr-open
 Report: `notes/reports/p170-fwi-consistency.md`
 Close-out: `notes/reports/p170-closeout.md`
 Manifest: `notes/reports/p170-fwi-consistency.json`
+PR: #1015
 
 Goal: test whether Open-Meteo reanalysis weather explains the late-growth bias.
 
