@@ -164,7 +164,8 @@ exists and the maintainer approves it.
 | P163 Fire behaviour completeness | #971 | `feature/p163-fire-behaviour-completeness` | complete |
 | P165 Public fire corpus | #985 | `feature/p165-public-fire-corpus` | complete |
 | P166 Hourly reanalysis depth case | #991 | `feature/p166-reanalysis-depth-case` | complete |
-| P167 Reanalysis event benchmark | #996 | `feature/p167-reanalysis-benchmark` | pr-open |
+| P167 Reanalysis event benchmark | #996 | `feature/p167-reanalysis-benchmark` | complete |
+| P168 Start-perimeter event benchmark | #1001 | `feature/p168-start-perimeter` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -4917,7 +4918,8 @@ Acceptance:
 
 Parent issue: #996
 Branch: `feature/p167-reanalysis-benchmark`
-Status: pr-open
+Status: complete
+Merge commit: `4181a8f`
 Distribution: `notes/reports/p167-reanalysis-benchmark.md`
 Close-out: `notes/reports/p167-closeout.md`
 Manifest: `notes/reports/p167-reanalysis-benchmark.json`
@@ -4939,4 +4941,32 @@ Acceptance:
 - Same uncalibrated protocol for every case.
 - Median, best, and worst reported.
 - Systematic failure recorded.
+- Dashboard green.
+
+## Phase 168: Start-perimeter event benchmark
+
+Parent issue: #1001
+Branch: `feature/p168-start-perimeter`
+Status: pr-open
+Report: `notes/reports/p168-start-perimeter.md`
+Close-out: `notes/reports/p168-closeout.md`
+Manifest: `notes/reports/p168-reanalysis-first-perimeter.json`
+
+Goal: seed the six P167 cases from their observed first perimeters and separate protocol error
+from model bias.
+
+- [x] P168.1 Add first-perimeter seeding (#1002)
+- [x] P168.2 Rerun the six-case distribution (#1003)
+- [x] P168.3 Close out (#1004)
+
+Result: first-perimeter seeding did not fix the bias. Median IoU 0.095; area bias +8.77x to
++11.60x; all six still overpredicted. Point ignition was a protocol flaw, not the dominant cause.
+Next: containment/stopping, growth timing, fuel/weather scale, and kernel scale.
+
+Acceptance:
+
+- First-perimeter seeding tested.
+- Six-case rerun with the same weather/fuel/terrain protocol.
+- Point-vs-perimeter comparison explicit.
+- No calibration applied.
 - Dashboard green.

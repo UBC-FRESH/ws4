@@ -47,3 +47,34 @@ def test_benchmark_writes_distribution(
     assert payload["summary"]["systematic_overprediction"] is True
     assert payload["summary"]["overpredicted_cases"] == 2
     assert len(pd.read_csv(csv)) == 2
+
+
+def test_benchmark_can_seed_first_perimeter(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The runner records first-perimeter seeding and a multi-cell start."""
+    module: Any = importlib.import_module("run_reanalysis_benchmark")
+    output = tmp_path / "perimeter.json"
+    csv = tmp_path / "perimeter.csv"
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "run_reanalysis_benchmark.py",
+            "--seed",
+            "first-perimeter",
+            "--fixtures",
+            str(FIXTURES / "cfsds_2009_147"),
+            "--output",
+            str(output),
+            "--csv",
+            str(csv),
+        ],
+    )
+
+    module.main()
+
+    payload = json.loads(output.read_text(encoding="utf-8"))
+    assert payload["cases"][0]["seed"] == "first-perimeter"
+    assert payload["cases"][0]["start_cells"] > 1

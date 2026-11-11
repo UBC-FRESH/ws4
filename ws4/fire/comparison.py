@@ -844,6 +844,7 @@ def run_observed_case(
     wind_multiplier: float = 1.0,
     head_ros_multiplier: float = 1.0,
     observed_index: int = -1,
+    initial_mask: np.ndarray | None = None,
 ) -> DogribCase:
     """Run one generic point-ignition observed-fire case.
 
@@ -865,6 +866,8 @@ def run_observed_case(
         Global calibration multipliers.
     observed_index : int, optional
         Observed-perimeter index to compare (default -1, the final perimeter).
+    initial_mask : numpy.ndarray or None, optional
+        Burned cells to seed the simulation. None uses point ignition.
 
     Returns
     -------
@@ -892,16 +895,27 @@ def run_observed_case(
         fire.elevation_m, fire.grid.cell_size_m, nodata=fire.grid.nodata
     )
     burnable = np.array([[value is not None for value in row] for row in fuel_grid], dtype=bool)
-    x, y = fire.ignition_xy
-    ign_col = int((x - fire.grid.xll) // fire.grid.cell_size_m)
-    ign_row = fire.grid.nrows - 1 - int((y - fire.grid.yll) // fire.grid.cell_size_m)
-    if not (0 <= ign_row < rows and 0 <= ign_col < cols and burnable[ign_row, ign_col]):
-        candidates = np.argwhere(burnable)
-        if len(candidates) == 0:
-            raise ComparisonError("grid has no burnable cells near the ignition point")
-        distances = (candidates[:, 0] - ign_row) ** 2 + (candidates[:, 1] - ign_col) ** 2
-        nearest = candidates[int(np.argmin(distances))]
-        ign_row, ign_col = int(nearest[0]), int(nearest[1])
+    ignition_cells: tuple[tuple[int, int], ...]
+    if initial_mask is None:
+        x, y = fire.ignition_xy
+        ign_col = int((x - fire.grid.xll) // fire.grid.cell_size_m)
+        ign_row = fire.grid.nrows - 1 - int((y - fire.grid.yll) // fire.grid.cell_size_m)
+        if not (0 <= ign_row < rows and 0 <= ign_col < cols and burnable[ign_row, ign_col]):
+            candidates = np.argwhere(burnable)
+            if len(candidates) == 0:
+                raise ComparisonError("grid has no burnable cells near the ignition point")
+            distances = (candidates[:, 0] - ign_row) ** 2 + (candidates[:, 1] - ign_col) ** 2
+            nearest = candidates[int(np.argmin(distances))]
+            ign_row, ign_col = int(nearest[0]), int(nearest[1])
+        ignition_cells = ((ign_row, ign_col),)
+        seed_mask = None
+    else:
+        if initial_mask.shape != (rows, cols):
+            raise ComparisonError("initial_mask shape must match the observed grid")
+        seed_mask = np.asarray(initial_mask, dtype=bool) & burnable
+        if not seed_mask.any():
+            raise ComparisonError("initial_mask has no burnable cells")
+        ignition_cells = tuple((int(row), int(col)) for row, col in np.argwhere(seed_mask))
     grid = SiteGrid(
         fuel_type="C2",
         rows=rows,
@@ -925,7 +939,7 @@ def run_observed_case(
     growth = grow_fire(
         grid,
         GrowthConfig(
-            ignition_cells=((ign_row, ign_col),),
+            ignition_cells=ignition_cells,
             max_time_min=duration_min,
             snapshot_interval_min=duration_min,
             neighbor_radius=2,
@@ -952,8 +966,8 @@ def run_observed_case(
         duration_min=duration_min,
         growth=growth,
         metrics=metrics,
-        start_cells=1,
-        initial_burned_mask=None,
+        start_cells=len(ignition_cells),
+        initial_burned_mask=seed_mask,
     )
 
 
