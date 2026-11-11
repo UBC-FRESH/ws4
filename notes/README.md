@@ -53,6 +53,8 @@ Working notes for WS4. Notes are living: update them in the same change set as t
 - `reports/p167-closeout.md` — P167 decision: diagnose scale/shape, do not tune a multiplier.
 - `reports/p168-start-perimeter.md` — P168 first-perimeter rerun and the negative result.
 - `reports/p168-closeout.md` — P168 decision: point ignition is not the dominant cause.
+- `reports/p169-growth-trajectory.md` — P169 daily trajectory and radius diagnosis.
+- `reports/p169-closeout.md` — P169 decision: late/continued growth is the dominant cause.
 - `reports/p159-model-card.md` — P159.2 surrogate architecture, training data, losses, and
   limitations.
 - `reports/p159-evaluation.md` — P159.3 held-out synthetic and Dogrib OOD evaluation.

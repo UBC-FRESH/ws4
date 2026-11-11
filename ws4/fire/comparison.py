@@ -845,6 +845,8 @@ def run_observed_case(
     head_ros_multiplier: float = 1.0,
     observed_index: int = -1,
     initial_mask: np.ndarray | None = None,
+    snapshot_interval_min: float | None = None,
+    neighbor_radius: int = 2,
 ) -> DogribCase:
     """Run one generic point-ignition observed-fire case.
 
@@ -868,6 +870,10 @@ def run_observed_case(
         Observed-perimeter index to compare (default -1, the final perimeter).
     initial_mask : numpy.ndarray or None, optional
         Burned cells to seed the simulation. None uses point ignition.
+    snapshot_interval_min : float or None, optional
+        Snapshot spacing in minutes. None uses the full duration.
+    neighbor_radius : int, optional
+        Cell-neighbor radius for growth (default 2).
 
     Returns
     -------
@@ -880,7 +886,14 @@ def run_observed_case(
         If the ignition is unburnable and no nearby burnable cell exists.
     """
     if not point_ignition:
-        raise ComparisonError("generic observed runner currently supports point ignition only")
+        raise ComparisonError("use initial_mask for first-perimeter seeding")
+    if isinstance(neighbor_radius, bool) or not isinstance(neighbor_radius, int):
+        raise ComparisonError("neighbor_radius must be an integer")
+    if neighbor_radius < 1:
+        raise ComparisonError("neighbor_radius must be at least 1")
+    interval = duration_min if snapshot_interval_min is None else snapshot_interval_min
+    if interval <= 0.0:
+        raise ComparisonError("snapshot_interval_min must be positive")
     if isinstance(observed_index, bool) or not isinstance(observed_index, int):
         raise ComparisonError("observed_index must be an integer")
     if observed_index < -len(fire.perimeters) or observed_index >= len(fire.perimeters):
@@ -941,8 +954,8 @@ def run_observed_case(
         GrowthConfig(
             ignition_cells=ignition_cells,
             max_time_min=duration_min,
-            snapshot_interval_min=duration_min,
-            neighbor_radius=2,
+            snapshot_interval_min=interval,
+            neighbor_radius=neighbor_radius,
             weather_steps=steps,
             burning_conditions=burning_conditions,
             wind_multiplier=wind_multiplier,
