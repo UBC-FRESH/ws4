@@ -5236,3 +5236,12 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P173.3: closed P173. Add containment/stopping for small fires and audit residual large-fire
   ROS. Reports: `notes/reports/p173-large-fire-benchmark.md` and
   `notes/reports/p173-closeout.md`. Dashboard: **GREEN**.
+
+- P174.1: added 100 m fixtures for `2003_96` and `2003_663`, reusing the large-case weather
+  stream to avoid a network re-fetch.
+- P174.2: compared 500 m and 100 m large-fire runs. `2003_96`: 4.12x -> 3.67x bias,
+  IoU 0.192 -> 0.209. `2003_663`: 1.67x -> 1.39x, IoU 0.350 -> 0.387. Resolution explains part
+  of the bias; a 1.4x-3.7x residual remains.
+- P174.3: closed P174. Next: residual ROS audit or containment for small fires. Reports:
+  `notes/reports/p174-resolution-sensitivity.md` and `notes/reports/p174-closeout.md`.
+  Dashboard: **GREEN**.

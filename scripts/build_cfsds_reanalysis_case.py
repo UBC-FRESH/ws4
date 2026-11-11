@@ -154,7 +154,7 @@ def _fetch_weather(  # pragma: no cover - network access
         }
     )
     url = f"https://archive-api.open-meteo.com/v1/archive?{query}"
-    with urllib.request.urlopen(url, timeout=60) as response:
+    with urllib.request.urlopen(url, timeout=180) as response:
         payload = json.load(response)
     hourly = payload["hourly"]
     return pd.DataFrame(
@@ -177,6 +177,7 @@ def main() -> None:  # pragma: no cover - builds fixture from external data
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--padding-cells", type=int, default=20)
     parser.add_argument("--cell-size", type=float, default=100.0)
+    parser.add_argument("--weather-from", type=Path, default=None)
     args = parser.parse_args()
     case = str(args.case)
     year = int(case.split("_")[0])
@@ -283,27 +284,30 @@ def main() -> None:  # pragma: no cover - builds fixture from external data
     _write_kml(output / f"perimeter_{event_start.strftime('%Y%m%d_%H%M')}.kml", start_rings)
     _write_kml(output / f"perimeter_{event_end.strftime('%Y%m%d_%H%M')}.kml", final_rings)
     _write_point(output / "ignition.kml", float(ignition_lon), float(ignition_lat))
-    weather = _fetch_weather(
-        float(ignition_lat),
-        float(ignition_lon),
-        start_date.date().isoformat(),
-        end_date.date().isoformat(),
-    )
-    weather = weather[
-        (weather["local_time"] >= pd.Timestamp(event_start))
-        & (weather["local_time"] <= pd.Timestamp(event_end))
-    ].reset_index(drop=True)
-    weather_rows = pd.DataFrame(
-        {
-            "HOURLY": weather["local_time"].dt.strftime("%d/%m/%Y"),
-            "HOUR": weather["local_time"].dt.hour,
-            "TEMP": weather["temperature_c"],
-            "RH": weather["relative_humidity_percent"],
-            "WD": weather["wind_direction_deg"],
-            "WS": weather["wind_speed_kmh"],
-            "PRECIP": weather["precipitation_mm"],
-        }
-    )
+    if args.weather_from is not None:
+        weather_rows = pd.read_csv(args.weather_from)
+    else:
+        weather = _fetch_weather(
+            float(ignition_lat),
+            float(ignition_lon),
+            start_date.date().isoformat(),
+            end_date.date().isoformat(),
+        )
+        weather = weather[
+            (weather["local_time"] >= pd.Timestamp(event_start))
+            & (weather["local_time"] <= pd.Timestamp(event_end))
+        ].reset_index(drop=True)
+        weather_rows = pd.DataFrame(
+            {
+                "HOURLY": weather["local_time"].dt.strftime("%d/%m/%Y"),
+                "HOUR": weather["local_time"].dt.hour,
+                "TEMP": weather["temperature_c"],
+                "RH": weather["relative_humidity_percent"],
+                "WD": weather["wind_direction_deg"],
+                "WS": weather["wind_speed_kmh"],
+                "PRECIP": weather["precipitation_mm"],
+            }
+        )
     weather_rows.to_csv(output / "weather.csv", index=False)
     metadata = {
         "case_id": case,
