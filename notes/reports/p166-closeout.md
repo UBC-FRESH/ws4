@@ -3,7 +3,7 @@
 Date: 2026-11-11
 Phase: P166 (#991)
 Branch: `feature/p166-reanalysis-depth-case`
-Pull request: queued for maintainer approval
+Pull request: #995
 
 ## Outcome
 

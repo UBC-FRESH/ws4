@@ -162,7 +162,7 @@ exists and the maintainer approves it.
 | P162 Calibration sensitivity diagnostic | #961 | `feature/p162-calibration-sensitivity` | complete |
 | P159 Fire surrogate feasibility | #946 | `feature/p159-fire-surrogate` | pr-open |
 | P163 Fire behaviour completeness | #971 | `feature/p163-fire-behaviour-completeness` | pr-open |
-| P166 Hourly reanalysis depth case | #991 | `feature/p166-reanalysis-depth-case` | active |
+| P166 Hourly reanalysis depth case | #991 | `feature/p166-reanalysis-depth-case` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -4852,11 +4852,12 @@ Acceptance:
 
 Parent issue: #991
 Branch: `feature/p166-reanalysis-depth-case`
-Status: active
+Status: pr-open
 Case report: `notes/reports/p166-reanalysis-case.md`
 Close-out: `notes/reports/p166-closeout.md`
 Fixture: `tests/fixtures/fire/cfsds_2003_526`
 Metrics: `notes/reports/p166-reanalysis-case.json`
+PR: #995
 
 Goal: add one independent CFSDS event with hourly reanalysis weather, FBP fuel/terrain, and an
 observed final scar; run WS4 and report the uncalibrated result.
