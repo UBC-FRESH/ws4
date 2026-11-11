@@ -89,6 +89,8 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
      - The FBP ellipse benchmark, the scenario ensemble, and the reported tolerances.
    * - :doc:`fire-observed`
      - The observed-fire contract and the Dogrib validation fixture.
+   * - :doc:`fire-corpus`
+     - The tiered public fire corpus, admission gate, and candidate inventory.
    * - :doc:`fire-wind`
      - WindNinja angle and velocity pairs, direction selection, and provenance.
    * - :doc:`fire-scene`
@@ -135,6 +137,7 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
    fire-vri
    fire-benchmark
    fire-observed
+   fire-corpus
    fire-wind
    fire-scene
    femic-hydrology

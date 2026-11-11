@@ -5132,3 +5132,11 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   Ground fire, spotting, and tree outcomes are documented as proxies, not validated process
   models. Validation ladder recorded; next phase is P164 decision-grade risk validation.
   Report: `notes/reports/p163-closeout.md`. Dashboard: **GREEN**.
+
+- P165.1: added the tiered public fire corpus contract and candidate registry. The inventory
+  records 7 cases (3 depth, 2 breadth, 2 model-only), rejects the duplicate Hay River daily
+  event, and keeps FireSTARR/BurnP3 as model-only evidence. The observed-corpus gate is
+  **blocked**: 0 fully ready depth cases of 3 and 0 fully ready breadth cases of 20; Dogrib and
+  Hay River are depth cases with documented limits. Manifest:
+  `notes/reports/p165-corpus-manifest.json`. Report: `notes/reports/p165-corpus-inventory.md`.
+  Dashboard: **GREEN**.

@@ -1,0 +1,228 @@
+{
+  "case_count": 7,
+  "cases": [
+    {
+      "case_id": "dogrib-2b",
+      "duplicate_of": null,
+      "independent": true,
+      "inputs": {
+        "daily_weather": false,
+        "fuel": true,
+        "hourly_weather": true,
+        "ignition": true,
+        "licence_documented": false,
+        "perimeter": true,
+        "provenance": true,
+        "terrain": true
+      },
+      "licence": "Prometheus sample terms; redistribution review required",
+      "missing_inputs": [
+        "licence_documented"
+      ],
+      "name": "Dogrib RWF085 Scenario 2b",
+      "notes": "Existing P157 fixture with observed start perimeter and hourly patches. Licence-cleared redistribution is not established.",
+      "ready": true,
+      "region": "Northwest Territories, Canada",
+      "source": "Prometheus sample archive (Dogrib RWF085)",
+      "status": "ready_with_limit",
+      "tier": "hourly_fbp",
+      "year": 2001
+    },
+    {
+      "case_id": "hay-river-2023-320",
+      "duplicate_of": null,
+      "independent": true,
+      "inputs": {
+        "daily_weather": true,
+        "fuel": true,
+        "hourly_weather": true,
+        "ignition": true,
+        "licence_documented": true,
+        "perimeter": true,
+        "provenance": true,
+        "terrain": true
+      },
+      "licence": "Open government data; verify third-party fuel terms",
+      "missing_inputs": [],
+      "name": "Hay River / K'atl'odeeche 2023_320",
+      "notes": "Existing P161 fixture. Daily CFSDS weather is expanded to hourly; point ignition is reconstructed; the full event saturates the burnable domain.",
+      "ready": true,
+      "region": "South Slave, Northwest Territories, Canada",
+      "source": "CFSDS 2023_320; ECCC Hay River 2202402; FireSTARR 2023 fuel; NRCan DEM",
+      "status": "ready_with_limit",
+      "tier": "hourly_fbp",
+      "year": 2023
+    },
+    {
+      "case_id": "cfsds-2023-321-daily",
+      "duplicate_of": null,
+      "independent": true,
+      "inputs": {
+        "daily_weather": true,
+        "fuel": true,
+        "hourly_weather": false,
+        "ignition": false,
+        "licence_documented": true,
+        "perimeter": true,
+        "provenance": true,
+        "terrain": true
+      },
+      "licence": "Open government data; fuel terms to verify",
+      "missing_inputs": [],
+      "name": "Enterprise / Hay River 2023_321 daily candidate",
+      "notes": "Daily candidate not yet acquired. First-burn ignition must be reconstructed; fuel is year-limited and requires a documented crosswalk.",
+      "ready": false,
+      "region": "South Slave, Northwest Territories, Canada",
+      "source": "CFSDS 2023_321; FireSTARR 2023 fuel; NRCan DEM",
+      "status": "candidate",
+      "tier": "daily_cfsds",
+      "year": 2023
+    },
+    {
+      "case_id": "cfsds-2023-320-daily",
+      "duplicate_of": "hay-river-2023-320",
+      "independent": false,
+      "inputs": {
+        "daily_weather": true,
+        "fuel": true,
+        "hourly_weather": false,
+        "ignition": false,
+        "licence_documented": true,
+        "perimeter": true,
+        "provenance": true,
+        "terrain": true
+      },
+      "licence": "Open government data",
+      "missing_inputs": [],
+      "name": "Hay River 2023_320 daily duplicate",
+      "notes": "Same event as hay-river-2023-320; not an independent breadth case.",
+      "ready": false,
+      "region": "South Slave, Northwest Territories, Canada",
+      "source": "CFSDS 2023_320 daily grids",
+      "status": "rejected",
+      "tier": "daily_cfsds",
+      "year": 2023
+    },
+    {
+      "case_id": "wildfireav-us",
+      "duplicate_of": null,
+      "independent": true,
+      "inputs": {
+        "daily_weather": false,
+        "fuel": false,
+        "hourly_weather": true,
+        "ignition": false,
+        "licence_documented": false,
+        "perimeter": true,
+        "provenance": true,
+        "terrain": true
+      },
+      "licence": "Source terms vary by dataset; review required",
+      "missing_inputs": [
+        "ignition",
+        "fuel",
+        "licence_documented"
+      ],
+      "name": "WildfireAV US fires",
+      "notes": "LANDFIRE FBFM40 fuels are not Canadian FBP. A separate US fuel/growth adapter and licensing review are required before admission.",
+      "ready": false,
+      "region": "Western United States",
+      "source": "WildfireAV event archive",
+      "status": "blocked",
+      "tier": "hourly_fbp",
+      "year": 2020
+    },
+    {
+      "case_id": "firestarr-model-only",
+      "duplicate_of": null,
+      "independent": true,
+      "inputs": {
+        "daily_weather": false,
+        "fuel": false,
+        "hourly_weather": false,
+        "ignition": false,
+        "licence_documented": false,
+        "perimeter": false,
+        "provenance": true,
+        "terrain": false
+      },
+      "licence": "Model output; source terms apply",
+      "missing_inputs": [],
+      "name": "FireSTARR model output",
+      "notes": "Model-to-model evidence only; not an observed fire.",
+      "ready": true,
+      "region": "Model domain",
+      "source": "FireSTARR simulation",
+      "status": "model_only",
+      "tier": "model_only",
+      "year": 2023
+    },
+    {
+      "case_id": "burnp3-model-only",
+      "duplicate_of": null,
+      "independent": true,
+      "inputs": {
+        "daily_weather": false,
+        "fuel": false,
+        "hourly_weather": false,
+        "ignition": false,
+        "licence_documented": false,
+        "perimeter": false,
+        "provenance": true,
+        "terrain": false
+      },
+      "licence": "Model output; source terms apply",
+      "missing_inputs": [],
+      "name": "BurnP3 model output",
+      "notes": "Model-to-model evidence only; not an observed fire.",
+      "ready": true,
+      "region": "Model domain",
+      "source": "BurnP3 simulation",
+      "status": "model_only",
+      "tier": "model_only",
+      "year": 2023
+    }
+  ],
+  "gaps": {
+    "blocked": [
+      "wildfireav-us"
+    ],
+    "candidate": [
+      "cfsds-2023-321-daily"
+    ],
+    "model_only": [
+      "burnp3-model-only",
+      "firestarr-model-only"
+    ],
+    "ready_with_limit": [
+      "dogrib-2b",
+      "hay-river-2023-320"
+    ],
+    "rejected": [
+      "cfsds-2023-320-daily"
+    ]
+  },
+  "gate": {
+    "breadth_minimum": 20,
+    "breadth_ready": 0,
+    "breadth_ready_with_limit": 0,
+    "depth_minimum": 3,
+    "depth_ready": 0,
+    "depth_ready_with_limit": 2,
+    "reason": "Need 3 fully ready depth cases and 20 fully ready breadth cases; have 0 and 0.",
+    "status": "blocked"
+  },
+  "independent_case_count": 6,
+  "status_counts": {
+    "blocked": 1,
+    "candidate": 1,
+    "model_only": 2,
+    "ready_with_limit": 2,
+    "rejected": 1
+  },
+  "tier_counts": {
+    "daily_cfsds": 2,
+    "hourly_fbp": 3,
+    "model_only": 2
+  }
+}
