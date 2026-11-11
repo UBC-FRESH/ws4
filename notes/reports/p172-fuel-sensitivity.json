@@ -1,0 +1,84 @@
+{
+  "protocol": "first-perimeter seed; hourly reanalysis; fuel override diagnostic",
+  "rows": [
+    {
+      "burnable_cells": 5385,
+      "case": "2003_526",
+      "dominant_fuel": "C3",
+      "homogeneous_area_ha": 5325.0,
+      "homogeneous_iou": 0.09559512652296158,
+      "homogeneous_ratio": 10.240384615384615,
+      "observed_final_ha": 520.0,
+      "per_cell_area_ha": 5325.0,
+      "per_cell_iou": 0.09559512652296158,
+      "per_cell_ratio": 10.240384615384615
+    },
+    {
+      "burnable_cells": 9612,
+      "case": "2003_706",
+      "dominant_fuel": "C3",
+      "homogeneous_area_ha": 9578.0,
+      "homogeneous_iou": 0.09522817253594498,
+      "homogeneous_ratio": 10.254817987152034,
+      "observed_final_ha": 934.0,
+      "per_cell_area_ha": 9578.0,
+      "per_cell_iou": 0.09522817253594498,
+      "per_cell_ratio": 10.254817987152034
+    },
+    {
+      "burnable_cells": 7350,
+      "case": "2009_147",
+      "dominant_fuel": "M1",
+      "homogeneous_area_ha": 6729.0,
+      "homogeneous_iou": 0.08718861209964412,
+      "homogeneous_ratio": 11.159203980099502,
+      "observed_final_ha": 603.0,
+      "per_cell_area_ha": 7075.0,
+      "per_cell_iou": 0.08293370944992948,
+      "per_cell_ratio": 11.733001658374793
+    },
+    {
+      "burnable_cells": 11376,
+      "case": "2009_79",
+      "dominant_fuel": "M1",
+      "homogeneous_area_ha": 10985.0,
+      "homogeneous_iou": 0.09922621756941284,
+      "homogeneous_ratio": 10.077981651376147,
+      "observed_final_ha": 1090.0,
+      "per_cell_area_ha": 11376.0,
+      "per_cell_iou": 0.09581575246132208,
+      "per_cell_ratio": 10.436697247706421
+    },
+    {
+      "burnable_cells": 5630,
+      "case": "2023_19",
+      "dominant_fuel": "D1",
+      "homogeneous_area_ha": 5628.0,
+      "homogeneous_iou": 0.09669436096871133,
+      "homogeneous_ratio": 9.770833333333334,
+      "observed_final_ha": 576.0,
+      "per_cell_area_ha": 5628.0,
+      "per_cell_iou": 0.09669436096871133,
+      "per_cell_ratio": 9.770833333333334
+    },
+    {
+      "burnable_cells": 14170,
+      "case": "2023_786",
+      "dominant_fuel": "C3",
+      "homogeneous_area_ha": 14165.0,
+      "homogeneous_iou": 0.07935051182492057,
+      "homogeneous_ratio": 12.602313167259787,
+      "observed_final_ha": 1124.0,
+      "per_cell_area_ha": 14165.0,
+      "per_cell_iou": 0.07935051182492057,
+      "per_cell_ratio": 12.602313167259787
+    }
+  ],
+  "summary": {
+    "case_count": 6,
+    "fuel_explains_bias": false,
+    "homogeneous_reduces_ratio_cases": 2,
+    "median_homogeneous_ratio": 10.247601301268325,
+    "median_per_cell_ratio": 10.345757617429229
+  }
+}

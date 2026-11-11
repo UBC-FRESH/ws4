@@ -168,7 +168,8 @@ exists and the maintainer approves it.
 | P168 Start-perimeter event benchmark | #1001 | `feature/p168-start-perimeter` | complete |
 | P169 Growth trajectory diagnosis | #1006 | `feature/p169-growth-trajectory` | complete |
 | P170 Reanalysis weather consistency | #1011 | `feature/p170-fwi-consistency` | complete |
-| P171 Terrain and fuel scale diagnosis | #1016 | `feature/p171-terrain-sensitivity` | pr-open |
+| P171 Terrain and fuel scale diagnosis | #1016 | `feature/p171-terrain-sensitivity` | complete |
+| P172 Fuel-map sensitivity | #1021 | `feature/p172-fuel-sensitivity` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -5038,7 +5039,8 @@ Acceptance:
 
 Parent issue: #1016
 Branch: `feature/p171-terrain-sensitivity`
-Status: pr-open
+Status: complete
+Merge commit: `601f1cc`
 Report: `notes/reports/p171-terrain-sensitivity.md`
 Close-out: `notes/reports/p171-closeout.md`
 Manifest: `notes/reports/p171-terrain-sensitivity.json`
@@ -5057,6 +5059,33 @@ Acceptance:
 
 - Flat-vs-DEM table.
 - Terrain contribution explicit.
+- No calibration.
+- Next step identified.
+- Dashboard green.
+
+## Phase 172: Fuel-map sensitivity
+
+Parent issue: #1021
+Branch: `feature/p172-fuel-sensitivity`
+Status: pr-open
+Report: `notes/reports/p172-fuel-sensitivity.md`
+Close-out: `notes/reports/p172-closeout.md`
+Manifest: `notes/reports/p172-fuel-sensitivity.json`
+PR: #1025
+
+Goal: test whether fuel heterogeneity drives the overprediction.
+
+- [x] P172.1 Add homogeneous-fuel diagnostic (#1022)
+- [x] P172.2 Run fuel sensitivity (#1023)
+- [x] P172.3 Close out (#1024)
+
+Result: median per-cell ratio 10.35x; homogeneous-dominant 10.25x; only 2 of 6 changed
+slightly. Fuel is not the cause. Remaining: suppression/containment or ROS scale.
+
+Acceptance:
+
+- Per-cell vs dominant table.
+- Fuel contribution explicit.
 - No calibration.
 - Next step identified.
 - Dashboard green.

@@ -59,6 +59,8 @@ Working notes for WS4. Notes are living: update them in the same change set as t
 - `reports/p170-closeout.md` — P170 decision: weather is not the primary cause.
 - `reports/p171-terrain-sensitivity.md` — P171 flat-vs-DEM terrain result.
 - `reports/p171-closeout.md` — P171 decision: terrain is not the cause.
+- `reports/p172-fuel-sensitivity.md` — P172 per-cell vs homogeneous fuel result.
+- `reports/p172-closeout.md` — P172 decision: fuel is not the cause.
 - `reports/p159-model-card.md` — P159.2 surrogate architecture, training data, losses, and
   limitations.
 - `reports/p159-evaluation.md` — P159.3 held-out synthetic and Dogrib OOD evaluation.

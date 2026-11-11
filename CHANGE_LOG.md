@@ -5219,3 +5219,11 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P171.3: closed P171 as a negative terrain result. Next: fuel mapping/ROS scale or
   containment. Reports: `notes/reports/p171-terrain-sensitivity.md` and
   `notes/reports/p171-closeout.md`. Dashboard: **GREEN**.
+
+- P172.1: added a homogeneous-fuel diagnostic (`fuel_override`) to `run_observed_case`,
+  preserving per-cell behavior by default.
+- P172.2: compared per-cell fuel with the dominant homogeneous fuel on six cases. Median area
+  ratio 10.35x vs 10.25x; only 2 of 6 changed slightly. Fuel heterogeneity is not the cause.
+- P172.3: closed P172. Remaining explanations are suppression/containment or a genuine ROS-scale
+  issue. Reports: `notes/reports/p172-fuel-sensitivity.md` and
+  `notes/reports/p172-closeout.md`. Dashboard: **GREEN**.

@@ -17,6 +17,7 @@ def _run(
     snapshot_interval_min: float | None = None,
     neighbor_radius: int = 2,
     flat_terrain: bool = False,
+    fuel_override: str | None = None,
 ) -> DogribCase:
     """Run one fixture with optional controls."""
     fire = load_cfsds_reanalysis_case(FIXTURE)
@@ -31,6 +32,7 @@ def _run(
         snapshot_interval_min=snapshot_interval_min,
         neighbor_radius=neighbor_radius,
         flat_terrain=flat_terrain,
+        fuel_override=fuel_override,
     )
 
 
@@ -52,4 +54,10 @@ def test_invalid_trajectory_controls_fail() -> None:
 def test_flat_terrain_runs() -> None:
     """The flat-terrain diagnostic preserves the output contract."""
     result = _run(flat_terrain=True)
+    assert result.growth.burned_area_ha > 0
+
+
+def test_fuel_override_runs() -> None:
+    """A homogeneous fuel override preserves the output contract."""
+    result = _run(fuel_override="C2")
     assert result.growth.burned_area_ha > 0
