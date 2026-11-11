@@ -5140,3 +5140,9 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   Hay River are depth cases with documented limits. Manifest:
   `notes/reports/p165-corpus-manifest.json`. Report: `notes/reports/p165-corpus-inventory.md`.
   Dashboard: **GREEN**.
+
+- P165.2: reviewed CFSDS `2023_321` as the strongest untried depth candidate and recorded a
+  **no-go** for the hourly/FBP tier. The event spans 53 days, 433,036 ha, and about 104 x 106
+  km; CFSDS supplies daily weather only, and one regional station cannot represent hourly
+  weather across the footprint. It remains a breadth candidate. No other public case meets the
+  depth contract. Report: `notes/reports/p165-depth-review.md`. Dashboard: **GREEN**.

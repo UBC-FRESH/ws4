@@ -4864,7 +4864,7 @@ Goal: build a tiered, provenance-complete public fire corpus so event and risk v
 not decided by two cases.
 
 - [x] P165.1 Corpus contract and candidate inventory (#986)
-- [ ] P165.2 Hourly/FBP depth cases (#987)
+- [x] P165.2 Hourly/FBP depth cases (#987, no-go: 2023_321 is breadth-only)
 - [ ] P165.3 Daily CFSDS breadth corpus (#988)
 - [ ] P165.4 Verify and close out (#989)
 

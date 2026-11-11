@@ -326,8 +326,11 @@ CASES: Final[tuple[FireCase, ...]] = (
             licence_documented=True,
         ),
         notes=(
-            "Daily candidate not yet acquired. First-burn ignition must be reconstructed; "
-            "fuel is year-limited and requires a documented crosswalk."
+            "Breadth candidate, not depth. The event spans 53 days, 433,036 ha, and about "
+            "104 x 106 km. CFSDS supplies daily weather only; the nearest ECCC station is near "
+            "the eastern edge and about 36 km from the centroid, so it cannot represent the "
+            "hourly weather across the footprint. First-burn ignition is reconstructed and the "
+            "fuel is year-limited."
         ),
     ),
     FireCase(
