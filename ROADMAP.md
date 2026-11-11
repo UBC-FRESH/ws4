@@ -4951,6 +4951,7 @@ Status: pr-open
 Report: `notes/reports/p168-start-perimeter.md`
 Close-out: `notes/reports/p168-closeout.md`
 Manifest: `notes/reports/p168-reanalysis-first-perimeter.json`
+PR: #1005
 
 Goal: seed the six P167 cases from their observed first perimeters and separate protocol error
 from model bias.

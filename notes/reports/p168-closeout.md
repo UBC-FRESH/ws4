@@ -3,7 +3,7 @@
 Date: 2026-11-11
 Phase: P168 (#1001)
 Branch: `feature/p168-start-perimeter`
-Pull request: queued for maintainer approval
+Pull request: #1005
 
 ## Outcome
 
