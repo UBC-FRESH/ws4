@@ -182,3 +182,12 @@ P174 reran two large cases at 100 m.
 
 Resolution explains part of the bias, but a 1.4x-3.7x residual remains. The residual is not just
 a coarse-grid artifact.
+
+ROS-scale sensitivity
+---------------------
+
+P175 ran two 100 m large cases at head-ROS multipliers 1.0, 0.75, 0.5, and 0.25.
+
+The final area and IoU were unchanged. Lowering ROS only delays arrival; the model still fills
+the connected burnable basin. The residual bias is not a uniform ROS-scale error. It is a
+containment/stopping problem or a burnable-basin problem.

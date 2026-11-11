@@ -5245,3 +5245,10 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P174.3: closed P174. Next: residual ROS audit or containment for small fires. Reports:
   `notes/reports/p174-resolution-sensitivity.md` and `notes/reports/p174-closeout.md`.
   Dashboard: **GREEN**.
+
+- P175.1: added a diagnostic `--head-ros-multiplier` option to the reanalysis benchmark runner.
+- P175.2: ran two 100 m large cases at 1.0, 0.75, 0.5, and 0.25x head ROS. Final area and IoU
+  were unchanged; both cases fill the burnable basin even at 0.25x. The residual is not a
+  uniform ROS-scale error.
+- P175.3: closed P175. Next: containment/stopping or a defensible burnable-area limit. Reports:
+  `notes/reports/p175-ros-scale.md` and `notes/reports/p175-closeout.md`. Dashboard: **GREEN**.

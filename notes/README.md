@@ -65,6 +65,8 @@ Working notes for WS4. Notes are living: update them in the same change set as t
 - `reports/p173-closeout.md` — P173 decision: small-fire suppression dominates, residual ROS remains.
 - `reports/p174-resolution-sensitivity.md` — P174 500 m vs 100 m large-fire result.
 - `reports/p174-closeout.md` — P174 decision: residual bias is not a coarse-grid artifact.
+- `reports/p175-ros-scale.md` — P175 ROS multiplier sensitivity.
+- `reports/p175-closeout.md` — P175 decision: final area is burnable-area-limited, not ROS-scaled.
 - `reports/p159-model-card.md` — P159.2 surrogate architecture, training data, losses, and
   limitations.
 - `reports/p159-evaluation.md` — P159.3 held-out synthetic and Dogrib OOD evaluation.

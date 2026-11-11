@@ -171,7 +171,8 @@ exists and the maintainer approves it.
 | P171 Terrain and fuel scale diagnosis | #1016 | `feature/p171-terrain-sensitivity` | complete |
 | P172 Fuel-map sensitivity | #1021 | `feature/p172-fuel-sensitivity` | complete |
 | P173 Large-fire reanalysis benchmark | #1026 | `feature/p173-large-fire-benchmark` | complete |
-| P174 Large-fire resolution sensitivity | #1031 | `feature/p174-resolution-sensitivity` | pr-open |
+| P174 Large-fire resolution sensitivity | #1031 | `feature/p174-resolution-sensitivity` | complete |
+| P175 ROS-scale sensitivity | #1036 | `feature/p175-ros-scale` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -5124,7 +5125,8 @@ Acceptance:
 
 Parent issue: #1031
 Branch: `feature/p174-resolution-sensitivity`
-Status: pr-open
+Status: complete
+Merge commit: `23bc537`
 Report: `notes/reports/p174-resolution-sensitivity.md`
 Close-out: `notes/reports/p174-closeout.md`
 Manifest: `notes/reports/p174-resolution-sensitivity.json`
@@ -5145,4 +5147,31 @@ Acceptance:
 - 500 m vs 100 m table.
 - Resolution contribution explicit.
 - No calibration.
+- Dashboard green.
+
+## Phase 175: ROS-scale sensitivity
+
+Parent issue: #1036
+Branch: `feature/p175-ros-scale`
+Status: pr-open
+Report: `notes/reports/p175-ros-scale.md`
+Close-out: `notes/reports/p175-closeout.md`
+Manifest: `notes/reports/p175-ros-scale.json`
+PR: #1040
+
+Goal: test whether a uniform head-ROS factor explains the residual large-fire bias.
+
+- [x] P175.1 Add ROS multiplier diagnostic (#1037)
+- [x] P175.2 Run ROS-scale sensitivity (#1038)
+- [x] P175.3 Close out (#1039)
+
+Result: final area and IoU are unchanged at 1.0, 0.75, 0.5, and 0.25x ROS. The model fills the
+burnable basin; the residual is a containment/stopping or burnable-basin problem, not a uniform
+ROS scale error.
+
+Acceptance:
+
+- Multiplier table for both cases.
+- Uniformity decision explicit.
+- No default change.
 - Dashboard green.

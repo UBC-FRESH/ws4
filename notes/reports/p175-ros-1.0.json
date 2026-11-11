@@ -1,0 +1,50 @@
+{
+  "cases": [
+    {
+      "area_bias": 3.669300873111975,
+      "area_obs_ha": 31382.0,
+      "area_sim_ha": 146532.0,
+      "case": "2003_96",
+      "centroid_distance_m": 475.3402705676193,
+      "duration_min": 97080.0,
+      "event_start": "2003-08-01T13:00:00",
+      "head_ros_multiplier": 1.0,
+      "iou": 0.209402551849309,
+      "orientation_error_deg": 8.562215613511,
+      "perimeter_bias": 0.9351565946184385,
+      "seed": "first-perimeter",
+      "sorensen": 0.3462909045943546,
+      "start_cells": 927
+    },
+    {
+      "area_bias": 1.3873972175675149,
+      "area_obs_ha": 25661.0,
+      "area_sim_ha": 61263.0,
+      "case": "2003_663",
+      "centroid_distance_m": 6814.542335294856,
+      "duration_min": 32280.0,
+      "event_start": "2003-08-16T13:00:00",
+      "head_ros_multiplier": 1.0,
+      "iou": 0.3869228069055749,
+      "orientation_error_deg": 2.9392153076693432,
+      "perimeter_bias": 1.861198738170347,
+      "seed": "first-perimeter",
+      "sorensen": 0.5579586765450278,
+      "start_cells": 106
+    }
+  ],
+  "limitations": "Reanalysis weather, daily satellite perimeters, reconstructed ignition, and one fuel/terrain tile. No calibration was applied. This is event evidence, not operational validation.",
+  "model_skill": false,
+  "protocol": "uncalibrated CFSDS hourly reanalysis; seed=first-perimeter; head_ros_multiplier=1.0",
+  "summary": {
+    "best_iou": 0.3869228069055749,
+    "case_count": 2,
+    "max_area_bias": 3.669300873111975,
+    "median_area_bias": 2.528349045339745,
+    "median_iou": 0.29816267937744195,
+    "min_area_bias": 1.3873972175675149,
+    "overpredicted_cases": 2,
+    "systematic_overprediction": true,
+    "worst_iou": 0.209402551849309
+  }
+}
