@@ -128,3 +128,16 @@ P170 compared reanalysis-derived daily FWI with CFSDS daily FWI.
 FFMC and ISI are close enough that weather is not the primary cause of the 10-14x area bias.
 BUI is higher, but it is not the dominant ROS driver in FBP. The next test is
 containment/stopping or event timing, not weather replacement.
+
+Terrain sensitivity
+-------------------
+
+P171 reran the six cases with flat terrain.
+
+- median DEM area ratio: 10.35x;
+- median flat area ratio: 10.35x;
+- flat terrain reduced the ratio in 0 of 6 cases;
+- IoU was unchanged.
+
+Terrain is not the cause of the overprediction in this path. The remaining candidates are fuel
+mapping, ROS scale, or containment/stopping.
