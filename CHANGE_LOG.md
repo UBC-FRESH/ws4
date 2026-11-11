@@ -5160,3 +5160,13 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   breadth corpus has 20 ready cases across 3 years and 4 ecozones and passes its coverage gate.
   P164.3 calibration remains paused until a daily model driver or an independent hourly/FBP
   depth case exists. Report: `notes/reports/p165-closeout.md`. Dashboard: **GREEN**.
+
+- P166.1: added a reproducible CFSDS hourly-reanalysis fixture for `2003_526`, using CFSDS
+  final/start perimeters, FireSTARR fuel/terrain, and Open-Meteo hourly reanalysis. Added
+  `load_cfsds_reanalysis_case`, the fixture builder, and loader tests.
+- P166.2: ran the uncalibrated case. Simulated 5,325 ha vs observed 520 ha; area bias +924%,
+  perimeter bias +496%, IoU 0.096, Sorensen 0.175, centroid 175 m, orientation 21.6°. This is a
+  clear overprediction failure and is recorded as depth-with-limit, not a fully ready case.
+- P166.3: closed P166 as a single depth-with-limit case with a poor result. P164.3 remains
+  paused. Reports: `notes/reports/p166-reanalysis-case.md` and
+  `notes/reports/p166-closeout.md`. Dashboard: **GREEN**.

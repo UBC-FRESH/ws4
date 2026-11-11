@@ -1,0 +1,46 @@
+{
+  "bui": 74.1177673339844,
+  "case": "2003_526",
+  "event_end": "2003-09-04T23:00:00",
+  "event_start": "2003-08-20T13:00:00",
+  "ffmc": 90.831901550293,
+  "ignition_mode": "centroid of the first-day burned cells; reconstructed",
+  "result": {
+    "aspect_deg": 180.0,
+    "bui": 74.1177673339844,
+    "duration_min": 22200.0,
+    "ffmc": 90.831901550293,
+    "fuel_mode": "observed grid",
+    "fuel_type": "C2",
+    "growth": {
+      "burned_area_ha": 5325.0,
+      "burning_conditions": null,
+      "effective_wind_kmh": 23.98857526462355,
+      "head_ros_m_min": 11.386921049572736,
+      "length_to_breadth": 2.6562082976217942,
+      "perimeter_m": 116800.0,
+      "spread_azimuth_deg": 30.261473267117342
+    },
+    "initial_burned_ha": 0.0,
+    "metrics": {
+      "area_bias": 9.240384615384615,
+      "area_obs_ha": 520.0,
+      "area_sim_ha": 5325.0,
+      "centroid_distance_m": 174.69119277442272,
+      "iou": 0.09559512652296158,
+      "orientation_error_deg": 21.642970351518244,
+      "perimeter_bias": 4.959183673469388,
+      "perimeter_obs_m": 19600.0,
+      "perimeter_sim_m": 116800.0,
+      "sorensen": 0.174508126603935
+    },
+    "scenario": "cfsds-reanalysis-uncalibrated",
+    "slope_percent": 32.0,
+    "start_cells": 1,
+    "weather_mode": "hourly",
+    "wind_direction_deg": 252.0,
+    "wind_grids": null,
+    "wind_kmh": 9.1
+  },
+  "weather_mode": "hourly reanalysis (Open-Meteo), not an on-site station"
+}
