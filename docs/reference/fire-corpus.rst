@@ -84,8 +84,28 @@ Current inventory
      - model_only
      - not applicable
 
-The gate is currently **blocked**: 0 fully ready depth cases and 0 fully ready breadth cases.
-Two depth cases are usable with limits.
+The P165.1 observed-registry gate is currently **blocked** for depth: 0 fully ready depth
+cases. Two depth cases are usable with limits. The P165.3 daily breadth coverage gate passes
+separately, as described below.
+
+Daily breadth corpus
+--------------------
+
+P165.3 adds an observation-only daily breadth corpus from CFSDS 2003, 2009, and 2023:
+
+- 20 ready cases;
+- 3 years;
+- 4 ecozones;
+- final areas from 510 to 49,766 ha;
+- growth durations from 2 to 75 days.
+
+The breadth coverage gate **passes**. This is a corpus and integrity result, not hourly/FBP
+model skill. The cases are inside one FireSTARR fuel/terrain tile (UTM 11N), use daily weather,
+and have satellite-derived perimeters. No WS4 simulation was run.
+
+See ``notes/reports/p165-daily-corpus.md`` and
+``notes/reports/p165-daily-corpus.json``.
+
 
 Limits
 ------

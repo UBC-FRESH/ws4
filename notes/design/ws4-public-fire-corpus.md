@@ -117,3 +117,13 @@ candidates to ready.
 - Counting model outputs as observations.
 - Calibrating before the gate passes.
 - Redistributing data whose licence is not documented.
+
+## P165.3 daily breadth result
+
+The daily breadth sample has 20 ready cases across CFSDS 2003, 2009, and 2023, covering four
+ecozones and final areas from 510 to 49,766 ha. The coverage gate passes.
+
+This is **observation-only** evidence. The cases use daily weather, satellite-derived
+perimeters, and one FireSTARR fuel/terrain tile. No hourly/FBP model run was made. The sample
+supports a future daily event check and observed-distribution work, not a regional validation
+or P164.3 calibration claim.

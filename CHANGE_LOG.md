@@ -5146,3 +5146,11 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   km; CFSDS supplies daily weather only, and one regional station cannot represent hourly
   weather across the footprint. It remains a breadth candidate. No other public case meets the
   depth contract. Report: `notes/reports/p165-depth-review.md`. Dashboard: **GREEN**.
+
+- P165.3: built a 20-case daily CFSDS breadth corpus from 2003, 2009, and 2023. The sample
+  covers 3 years and 4 ecozones, with final areas from 510 to 49,766 ha and durations from 2 to
+  75 days. Daily summary/raster area agreement, daily weather completeness, fuel/terrain
+  coverage, and independent identifiers were checked. The breadth coverage gate **passes**.
+  This is observation-only breadth evidence, not hourly/FBP model skill. Artifacts:
+  `notes/reports/p165-daily-corpus.json`, `notes/reports/p165-daily-corpus.csv`, and
+  `notes/reports/p165-daily-corpus.md`. Dashboard: **GREEN**.
