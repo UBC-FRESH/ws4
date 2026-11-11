@@ -169,7 +169,8 @@ exists and the maintainer approves it.
 | P169 Growth trajectory diagnosis | #1006 | `feature/p169-growth-trajectory` | complete |
 | P170 Reanalysis weather consistency | #1011 | `feature/p170-fwi-consistency` | complete |
 | P171 Terrain and fuel scale diagnosis | #1016 | `feature/p171-terrain-sensitivity` | complete |
-| P172 Fuel-map sensitivity | #1021 | `feature/p172-fuel-sensitivity` | pr-open |
+| P172 Fuel-map sensitivity | #1021 | `feature/p172-fuel-sensitivity` | complete |
+| P173 Large-fire reanalysis benchmark | #1026 | `feature/p173-large-fire-benchmark` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -5067,7 +5068,8 @@ Acceptance:
 
 Parent issue: #1021
 Branch: `feature/p172-fuel-sensitivity`
-Status: pr-open
+Status: complete
+Merge commit: `1ee37e1`
 Report: `notes/reports/p172-fuel-sensitivity.md`
 Close-out: `notes/reports/p172-closeout.md`
 Manifest: `notes/reports/p172-fuel-sensitivity.json`
@@ -5088,4 +5090,29 @@ Acceptance:
 - Fuel contribution explicit.
 - No calibration.
 - Next step identified.
+- Dashboard green.
+
+## Phase 173: Large-fire reanalysis benchmark
+
+Parent issue: #1026
+Branch: `feature/p173-large-fire-benchmark`
+Status: pr-open
+Report: `notes/reports/p173-large-fire-benchmark.md`
+Close-out: `notes/reports/p173-closeout.md`
+Manifest: `notes/reports/p173-large-fire-benchmark.json`
+
+Goal: separate small-fire suppression bias from residual ROS-scale bias.
+
+- [x] P173.1 Build large-fire fixtures (#1027)
+- [x] P173.2 Run large-fire distribution (#1028)
+- [x] P173.3 Close out (#1029)
+
+Result: large fires have median IoU 0.238 and area bias 2.89x, versus 0.096 and 10.35x for
+small fires. Suppression dominates small-fire error; residual large-fire overprediction remains.
+
+Acceptance:
+
+- Four large cases run.
+- Same protocol, no calibration.
+- Large-vs-small comparison explicit.
 - Dashboard green.

@@ -61,6 +61,8 @@ Working notes for WS4. Notes are living: update them in the same change set as t
 - `reports/p171-closeout.md` — P171 decision: terrain is not the cause.
 - `reports/p172-fuel-sensitivity.md` — P172 per-cell vs homogeneous fuel result.
 - `reports/p172-closeout.md` — P172 decision: fuel is not the cause.
+- `reports/p173-large-fire-benchmark.md` — P173 large-fire distribution and small/large comparison.
+- `reports/p173-closeout.md` — P173 decision: small-fire suppression dominates, residual ROS remains.
 - `reports/p159-model-card.md` — P159.2 surrogate architecture, training data, losses, and
   limitations.
 - `reports/p159-evaluation.md` — P159.3 held-out synthetic and Dogrib OOD evaluation.
