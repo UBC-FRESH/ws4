@@ -5100,6 +5100,7 @@ Status: pr-open
 Report: `notes/reports/p173-large-fire-benchmark.md`
 Close-out: `notes/reports/p173-closeout.md`
 Manifest: `notes/reports/p173-large-fire-benchmark.json`
+PR: #1030
 
 Goal: separate small-fire suppression bias from residual ROS-scale bias.
 

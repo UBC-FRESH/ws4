@@ -3,7 +3,7 @@
 Date: 2026-11-11
 Phase: P173 (#1026)
 Branch: `feature/p173-large-fire-benchmark`
-Pull request: queued for maintainer approval
+Pull request: #1030
 
 ## Outcome
 
