@@ -175,7 +175,7 @@ exists and the maintainer approves it.
 | P175 ROS-scale sensitivity | #1036 | `feature/p175-ros-scale` | complete |
 | P176 Burnable-basin and stopping diagnosis | #1041 | `feature/p176-burnable-basin` | complete |
 | P177 Containment contract and validation protocol | #1046 | `feature/p177-containment-protocol` | pr-open |
-| P179 Generic process executor | #1056 | `feature/p179-process-executor` | active |
+| P179 Generic process executor | #1056 | `feature/p179-process-executor` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -5238,8 +5238,10 @@ Acceptance:
 
 Parent issue: #1056
 Branch: `feature/p179-process-executor`
-Status: active
+Status: pr-open
 Design note: `notes/design/ws4-process-executor.md`
+Report: `notes/reports/p179-closeout.md`
+PR: #1061
 
 Goal: turn the P144 stochastic engine from a fire-specific runner into a generic
 multi-process executor. Fire and salvage become sources behind one protocol; a synthetic
@@ -5248,7 +5250,7 @@ second process proves the executor is not fire-shaped.
 - [x] P179.1 Define the process and decision-source protocols (#1057)
 - [x] P179.2 Implement the generic multi-process executor (#1058)
 - [x] P179.3 Migrate fire and salvage to the executor (#1059)
-- [ ] P179.4 Verify and close out the process executor (#1060)
+- [x] P179.4 Verify and close out the process executor (#1060)
 
 Acceptance:
 

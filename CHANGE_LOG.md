@@ -5283,3 +5283,8 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   `SalvageProcessSource`; the public `FireResult`, event log, and account behavior remain
   unchanged. Added a synthetic mutating process and a test that runs fire, synthetic, and
   salvage sources in one execution. Dashboard: **GREEN**.
+
+- P179.4: verified the generic executor and closed P179. Full dashboard **OVERALL: GREEN**.
+  The existing fire event log and account tests pass through the executor; the synthetic
+  mutating process shares the run with fire and salvage. Report:
+  `notes/reports/p179-closeout.md`. Design: `notes/design/ws4-process-executor.md`. PR: #1061.
