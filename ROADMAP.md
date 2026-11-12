@@ -176,7 +176,7 @@ exists and the maintainer approves it.
 | P176 Burnable-basin and stopping diagnosis | #1041 | `feature/p176-burnable-basin` | complete |
 | P177 Containment contract and validation protocol | #1046 | `feature/p177-containment-protocol` | pr-open |
 | P179 Generic process executor | #1056 | `feature/p179-process-executor` | pr-open |
-| P180 Succession, regeneration, and yield bridge | #1062 | `feature/p180-succession-yield` | active |
+| P180 Succession, regeneration, and yield bridge | #1062 | `feature/p180-succession-yield` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -5267,8 +5267,10 @@ Acceptance:
 
 Parent issue: #1062
 Branch: `feature/p180-succession-yield`
-Status: active
+Status: pr-open
 Design note: `notes/design/ws4-succession-yield.md`
+Report: `notes/reports/p180-closeout.md`
+PR: #1067
 
 Goal: add the first living ecological processes to the P179 executor and a provisional bridge
 from species biomass to merchantable volume.
@@ -5276,7 +5278,7 @@ from species biomass to merchantable volume.
 - [x] P180.1 Add the succession process (#1063)
 - [x] P180.2 Add the regeneration process (#1064)
 - [x] P180.3 Add the provisional yield bridge (#1065)
-- [ ] P180.4 Integrate and close out succession and yield (#1066)
+- [x] P180.4 Integrate and close out succession and yield (#1066)
 
 Acceptance:
 

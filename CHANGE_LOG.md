@@ -5303,3 +5303,8 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   and a versioned parameter table. The bridge records `calibration_status: provisional` and
   does not modify the compiled dataset. Tests cover arithmetic, unknown species, zero
   biomass, management attachment, and parameter persistence.
+
+- P180.4: integrated fire, succession, salvage, regeneration, and the bridge through one
+  executor and closed P180. Full dashboard **OVERALL: GREEN**. The bridge is explicitly
+  provisional, not calibrated. Report: `notes/reports/p180-closeout.md`. Design:
+  `notes/design/ws4-succession-yield.md`. PR: #1067.
