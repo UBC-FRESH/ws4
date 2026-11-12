@@ -26,7 +26,9 @@ from ws4.fire.behavior import classify_fire_behaviour
 from ws4.fire.growth import directional_ros, effective_wind, length_to_breadth
 
 from .events import Event
-from .log import EventLog, EventLogBuilder, EventLogMetadata
+from .executor import Executor
+from .log import EventLog, EventLogMetadata
+from .process import ProcessContext
 from .state import BridgeSpec, CohortState, StateSchema, StateVariable
 from .tape import DrawKey, RandomTape
 
@@ -95,6 +97,20 @@ def _attribute_number(event: Event, name: str) -> float | None:
 def _mean(values: Sequence[float]) -> float:
     """Return the arithmetic mean, or zero for an empty sequence."""
     return 0.0 if not values else sum(values) / len(values)
+
+
+def _totals_for(state: CohortState) -> dict[str, float]:
+    """Return the biomass, fuel, and snag totals of one state."""
+    frame = state.cohorts
+    if frame.empty:
+        return {"biomass_t": 0.0, "fuel_t": 0.0, "snag_t": 0.0}
+    area = frame["fragment_id"].map(state.fragment_areas)
+    weight = frame["area_fraction"] * area
+    return {
+        "biomass_t": float((frame["biomass_t_ha"] * weight).sum()),
+        "fuel_t": float((frame["fuel_t_ha"] * weight).sum()),
+        "snag_t": float((frame["snag_t_ha"] * weight).sum()),
+    }
 
 
 def _area_weighted_mean(events: Sequence[Event], name: str) -> float:
@@ -840,6 +856,170 @@ class SalvageSource:
         )
 
 
+class FireProcessSource:
+    """Adapt the fire process to the generic process protocol.
+
+    The source emits ignitions in the ``ignition`` phase and one ignition's spread batch in
+    the ``propagation`` phase. The executor applies each propagation batch before asking for
+    the next one, so a later ignition sees the fuel state left by earlier fire events.
+
+    Parameters
+    ----------
+    process : FireProcess
+        The fire process to adapt.
+    """
+
+    process_id: str = FIRE_PROCESS_ID
+    phases: tuple[str, ...] = ("ignition", "propagation")
+    state_reads: frozenset[str] = frozenset(
+        {"area_ha", "fragment_areas", "biomass_t_ha", "fuel_t_ha", "snag_t_ha"}
+    )
+    state_writes: frozenset[str] = frozenset({"biomass_t_ha", "fuel_t_ha", "snag_t_ha"})
+
+    def __init__(self, process: FireProcess) -> None:
+        """Wrap one fire process.
+
+        Parameters
+        ----------
+        process : FireProcess
+            The fire process to adapt.
+        """
+        self.process = process
+        self._year = -1
+        self._processed_ignitions: set[str] = set()
+
+    def _sync_year(self, year: int) -> None:
+        """Reset per-year ignition bookkeeping."""
+        if year != self._year:
+            self._year = year
+            self._processed_ignitions.clear()
+
+    def events(self, state: CohortState, context: ProcessContext) -> tuple[Event, ...]:
+        """Return ignitions or the next ignition's spread events.
+
+        Parameters
+        ----------
+        state : CohortState
+            The current cohort state.
+        context : ProcessContext
+            The annual context.
+
+        Returns
+        -------
+        tuple of Event
+            The next event batch.
+        """
+        self._sync_year(context.year)
+        if context.phase == "ignition":
+            existing = {event.event_id for event in context.year_events}
+            return tuple(
+                event
+                for event in self.process.ignitions(state, context.year)
+                if event.event_id not in existing
+            )
+        ignitions = [
+            event
+            for event in context.year_events
+            if event.event_id not in self._processed_ignitions
+            and event.event_type == "fire_ignition"
+        ]
+        burned = {
+            event.fragment_ids[0]
+            for event in context.year_events
+            if event.event_type == "fire" and event.fragment_ids
+        }
+        for ignition in sorted(ignitions, key=lambda event: event.sort_key):
+            if not ignition.fragment_ids:
+                self._processed_ignitions.add(ignition.event_id)
+                continue
+            self._processed_ignitions.add(ignition.event_id)
+            if ignition.fragment_ids[0] in burned:
+                continue
+            return self.process.spread(state, ignition)
+        return ()
+
+    def apply(self, state: CohortState, event: Event) -> CohortState:
+        """Apply one fire event.
+
+        Parameters
+        ----------
+        state : CohortState
+            The state before the event.
+        event : Event
+            A fire event.
+
+        Returns
+        -------
+        CohortState
+            The state after the event.
+        """
+        return self.process.apply(state, event)
+
+
+class SalvageProcessSource:
+    """Adapt the deterministic salvage source to the generic process protocol.
+
+    Parameters
+    ----------
+    source : SalvageSource
+        The salvage source to adapt.
+    """
+
+    process_id: str = SALVAGE_PROCESS_ID
+    phases: tuple[str, ...] = ("treatment",)
+    state_reads: frozenset[str] = frozenset({"snag_t_ha"})
+    state_writes: frozenset[str] = frozenset({"snag_t_ha"})
+
+    def __init__(self, source: SalvageSource) -> None:
+        """Wrap one salvage source.
+
+        Parameters
+        ----------
+        source : SalvageSource
+            The salvage source to adapt.
+        """
+        self.source = source
+
+    def events(self, state: CohortState, context: ProcessContext) -> tuple[Event, ...]:
+        """Return the salvage events for the current year.
+
+        Parameters
+        ----------
+        state : CohortState
+            The current cohort state.
+        context : ProcessContext
+            The annual context.
+
+        Returns
+        -------
+        tuple of Event
+            The salvage events.
+        """
+        fires = [
+            event
+            for event in (*context.history, *context.year_events)
+            if event.process_id == FIRE_PROCESS_ID and event.event_type == "fire"
+        ]
+        return self.source.events(state, context.year, fires)
+
+    def apply(self, state: CohortState, event: Event) -> CohortState:
+        """Apply one salvage event.
+
+        Parameters
+        ----------
+        state : CohortState
+            The state before the event.
+        event : Event
+            A salvage event.
+
+        Returns
+        -------
+        CohortState
+            The state after the event.
+        """
+        return self.source.apply(state, event)
+
+
 @dataclass(frozen=True)
 class FireResult:
     """The output of one fire run.
@@ -943,7 +1123,8 @@ class FireRun:
             package_hashes=tuple(package_hashes),
             attributes=(("calendar_start_year", start_year),),
         )
-        self._builder = EventLogBuilder(self.metadata)
+        self._fire_source = FireProcessSource(self.fire)
+        self._salvage_source = SalvageProcessSource(self.salvage)
         self._fires: list[Event] = []
         self._salvage: list[Event] = []
 
@@ -963,40 +1144,43 @@ class FireRun:
         if isinstance(years, bool) or not isinstance(years, int) or years < 0:
             raise FireError("years must be a non-negative integer")
         rows: list[dict[str, object]] = []
-        for year in range(years):
-            year_events: list[Event] = []
-            year_fires: list[Event] = []
-            year_salvage: list[Event] = []
-            year_killed_biomass = 0.0
-            burned_this_year: set[int] = set()
-            ignitions = self.fire.ignitions(self.state, year)
-            for ignition in ignitions:
-                year_events.append(ignition)
-                fragment = ignition.fragment_ids[0]
-                if fragment in burned_this_year:
-                    continue
-                events = self.fire.spread(self.state, ignition)
-                for event in events:
-                    before = self._state_totals()["biomass_t"]
-                    self.state = self.fire.apply(self.state, event)
-                    after = self._state_totals()["biomass_t"]
-                    year_killed_biomass += max(0.0, before - after)
-                    burned_this_year.add(event.fragment_ids[0])
-                    year_fires.append(event)
-                    year_events.append(event)
-            salvage_events = self.salvage.events(self.state, year, self._fires + year_fires)
-            for event in salvage_events:
-                self.state = self.salvage.apply(self.state, event)
-                year_salvage.append(event)
-                year_events.append(event)
+        killed = [0.0]
+
+        def on_event(event: Event, before: CohortState, after: CohortState) -> None:
+            if event.process_id == FIRE_PROCESS_ID and event.event_type == "fire":
+                killed[0] += max(
+                    0.0, _totals_for(before)["biomass_t"] - _totals_for(after)["biomass_t"]
+                )
+
+        def on_year(year: int, state: CohortState, events: Sequence[Event]) -> None:
+            self.state = state
+            year_fires = tuple(
+                event
+                for event in events
+                if event.process_id == FIRE_PROCESS_ID and event.event_type == "fire"
+            )
+            year_salvage = tuple(
+                event
+                for event in events
+                if event.process_id == SALVAGE_PROCESS_ID and event.event_type == "salvage"
+            )
             self._fires.extend(year_fires)
             self._salvage.extend(year_salvage)
-            year_events.sort(key=lambda event: event.sort_key)
-            self._builder.extend(year_events)
-            rows.extend(self._account_rows(year, year_fires, year_salvage, year_killed_biomass))
+            rows.extend(self._account_rows(year, year_fires, year_salvage, killed[0]))
+            killed[0] = 0.0
+
+        executor = Executor(
+            self.state,
+            (self._fire_source, self._salvage_source),
+            self.metadata,
+            on_event=on_event,
+            on_year=on_year,
+        )
+        result = executor.run(years)
+        self.state = result.state
         return FireResult(
             state=self.state,
-            log=self._builder.build(),
+            log=result.log,
             accounts=pd.DataFrame(rows, columns=["year", "account", "value"]),
             fires=tuple(self._fires),
             salvage=tuple(self._salvage),
@@ -1126,16 +1310,7 @@ class FireRun:
 
     def _state_totals(self) -> dict[str, float]:
         """Return the cohort state's biomass, fuel, and snag totals."""
-        frame = self.state.cohorts
-        if frame.empty:
-            return {"biomass_t": 0.0, "fuel_t": 0.0, "snag_t": 0.0}
-        area = frame["fragment_id"].map(self.state.fragment_areas)
-        weight = frame["area_fraction"] * area
-        return {
-            "biomass_t": float((frame["biomass_t_ha"] * weight).sum()),
-            "fuel_t": float((frame["fuel_t_ha"] * weight).sum()),
-            "snag_t": float((frame["snag_t_ha"] * weight).sum()),
-        }
+        return _totals_for(self.state)
 
 
 def synthetic_grid(

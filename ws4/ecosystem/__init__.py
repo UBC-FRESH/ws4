@@ -9,6 +9,7 @@ dataset remains the contract; this package is the optional ecological layer over
 from __future__ import annotations
 
 from .events import EVENT_PHASES, EVENT_SCHEMA_VERSION, Event, EventError
+from .executor import ExecutionResult, Executor
 from .fire import (
     FireBehaviourConfig,
     FireConfig,
@@ -40,6 +41,14 @@ from .package import (
     load_ecosystem_package,
     package_fingerprint,
     validate_ecosystem_package,
+)
+from .process import (
+    DecisionSource,
+    Process,
+    ProcessContext,
+    ProcessError,
+    validate_process,
+    validate_sources,
 )
 from .scenarios import (
     RISK_AGGREGATIONS,
@@ -76,6 +85,7 @@ __all__ = [
     "BridgeSpec",
     "CohortState",
     "CohortStateError",
+    "DecisionSource",
     "DrawKey",
     "EcosystemManifest",
     "EcosystemPackage",
@@ -87,6 +97,8 @@ __all__ = [
     "EventLog",
     "EventLogBuilder",
     "EventLogMetadata",
+    "ExecutionResult",
+    "Executor",
     "FireBehaviourConfig",
     "FireConfig",
     "FireEdge",
@@ -96,6 +108,9 @@ __all__ = [
     "FireRun",
     "NullBridge",
     "OutOfSampleReport",
+    "Process",
+    "ProcessContext",
+    "ProcessError",
     "RandomTape",
     "ReplayError",
     "ReplayRunner",
@@ -120,4 +135,6 @@ __all__ = [
     "run_fire_demo",
     "synthetic_grid",
     "validate_ecosystem_package",
+    "validate_process",
+    "validate_sources",
 ]
