@@ -76,6 +76,8 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
      - Schedule-to-cohort harvest bridge for process-conditioned landscapes.
    * - :doc:`ecosystem-landis`
      - LANDIS-II-compatible succession kernel and exact reference tests.
+   * - :doc:`fire-regime`
+     - scfm fire-regime parameters and distributional diagnostics.
    * - :doc:`ecosystem-fire`
      - The first stochastic process: Poisson ignition, graph spread, mortality, salvage,
        and disturbance accounts.
@@ -149,6 +151,7 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
    ecosystem-ensemble
    ecosystem-management
    ecosystem-landis
+   fire-regime
    ecosystem-fire
    ecosystem-scenarios
    fire-behaviour

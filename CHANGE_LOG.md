@@ -5415,3 +5415,17 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P185–P186 merged: the Predictive Ecology benchmark registry/LANDIS kernel and the LANDIS
   succession process are on `main` as `b4986fe` and `296e26a`. Branches deleted; no tag,
   release, or settings change.
+
+- P187.1: added `ws4/fire/regime.py` with the scfm ignition-rate, escape-probability,
+  escaped-size, burn-rate, per-pixel ignition, and max-burn-cell formulas.
+
+- P187.2: added target/achieved ignition and escape diagnostics, mean/median size, and FRI
+  comparison.
+
+- P187.3: added exact scfm toy-regime and toy-diagnostics reference tests. The layer is
+  distributional, not event-perimeter validation. Dashboard: **GREEN**.
+
+- P187.4: verified and closed P187. Full dashboard **OVERALL: GREEN**. The scfm toy-regime
+  and toy-diagnostics values match. The layer is distributional, not spatial growth or event
+  perimeter validation. Report: `notes/reports/p187-closeout.md`. Design:
+  `notes/design/ws4-fire-regime-benchmarks.md`. PR: #1112.
