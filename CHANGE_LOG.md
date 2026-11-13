@@ -5336,3 +5336,8 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 
 - P182.3: added `--risk-validation-fraction` and the incumbent train/validation report,
   including skipped status for one-scenario ensembles. Dashboard: **GREEN**.
+
+- P182.4: verified and closed P182. Full dashboard **OVERALL: GREEN**. Scenario runs record the
+  search-versus-final risk gap and optional train/validation artifacts. Both fidelities remain
+  account overlays. Report: `notes/reports/p182-closeout.md`. Design:
+  `notes/design/ws4-risk-validation.md`. PR: #1079.
