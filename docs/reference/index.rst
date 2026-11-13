@@ -76,6 +76,8 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
      - Schedule-to-cohort harvest bridge for process-conditioned landscapes.
    * - :doc:`ecosystem-evaluation`
      - Process-conditioned evaluation of a block-level harvest schedule.
+   * - :doc:`process-search`
+     - Deterministic candidate ranking over process-conditioned schedules.
    * - :doc:`ecosystem-landis`
      - LANDIS-II-compatible succession kernel and exact reference tests.
    * - :doc:`fire-regime`
@@ -155,6 +157,7 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
    ecosystem-ensemble
    ecosystem-management
    ecosystem-evaluation
+   process-search
    ecosystem-landis
    fire-regime
    fire-risk

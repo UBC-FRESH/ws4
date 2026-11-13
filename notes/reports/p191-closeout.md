@@ -45,4 +45,4 @@ landscape output.
 
 ## Pull request
 
-PR: #1134 is queued for maintainer approval. Do not merge without approval.
+Merged as `c7e4649` (PR #1134); branch deleted.
