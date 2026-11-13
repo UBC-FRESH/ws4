@@ -59,6 +59,8 @@ class ProcessEnsembleConfig:
         Provisional volume bridge parameters.
     management : DecisionSource or None, optional
         A controlled management source, such as a schedule harvest source.
+    succession_process : Process or None, optional
+        Override the default logistic succession source, e.g. with a LANDIS process.
     """
 
     horizon_years: int
@@ -67,6 +69,7 @@ class ProcessEnsembleConfig:
     regeneration: RegenerationConfig = field(default_factory=RegenerationConfig)
     bridge: VolumeBridgeConfig = field(default_factory=VolumeBridgeConfig)
     management: DecisionSource | None = None
+    succession_process: Process | None = None
 
     def __post_init__(self) -> None:
         """Validate the horizon."""
@@ -219,10 +222,8 @@ def run_process_scenario(
     fire = FireProcess(config.fire, edges, tape, scenario_id=scenario_id)
     salvage = SalvageSource(config.fire, scenario_id=scenario_id)
     regeneration = RegenerationProcess(config.regeneration, tape, scenario_id=scenario_id)
-    sources: list[Process | DecisionSource] = [
-        FireProcessSource(fire),
-        SuccessionProcess(config.succession),
-    ]
+    succession = config.succession_process or SuccessionProcess(config.succession)
+    sources: list[Process | DecisionSource] = [FireProcessSource(fire), succession]
     if config.management is not None:
         sources.append(config.management)
     sources.extend((SalvageProcessSource(salvage), regeneration))

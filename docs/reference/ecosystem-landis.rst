@@ -17,6 +17,14 @@ Functions
 - ``calculate_growth_mortality`` — developmental mortality;
 - ``calculate_age_mortality`` — age-related mortality.
 
+Process
+-------
+
+``LandisSuccessionProcess`` runs in the ``growth`` phase and applies the kernel to each
+fragment. ``LandisSuccessionConfig`` supplies per-species traits and a default. The process
+can replace the default logistic succession source through
+``ProcessEnsembleConfig.succession_process``.
+
 Tests
 -----
 
@@ -27,6 +35,8 @@ young-cohort regression case.
 Limits
 ------
 
-- The kernel is not yet wired into the P180 succession process.
+- The process is a single-cohort-table transition, not a full landscape LBSE integration.
+- Seed dispersal, serotiny, resprouting, and light competition beyond the kernel are not yet
+  implemented.
 - Reference values are numeric facts; no third-party implementation or prose is copied.
 - The source modules are reference-only and mostly have no explicit licence file.

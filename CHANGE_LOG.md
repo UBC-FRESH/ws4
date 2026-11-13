@@ -5395,3 +5395,19 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   kernel tests pass; the registry separates exact, model-to-model, distributional, and
   observed-data layers. Report: `notes/reports/p185-closeout.md`. Design:
   `notes/design/ws4-predictive-ecology-benchmarks.md`. PR: #1099.
+
+- P186.1: added `LandisSpeciesTraits` and `LandisSuccessionConfig` with validated species
+  traits, default traits, succession time step, and stage.
+
+- P186.2: added `LandisSuccessionProcess`, which applies sumB, competition, ANPP, growth and
+  age mortality to a fragment's cohorts, then updates biomass, age, fuel, and snags without
+  changing area fractions.
+
+- P186.3: `ProcessEnsembleConfig.succession_process` can replace the default logistic
+  succession source. A two-year LANDIS trajectory and ensemble run are tested. Dashboard:
+  **GREEN**.
+
+- P186.4: verified and closed P186. Full dashboard **OVERALL: GREEN**. The LANDIS process is
+  a single-cohort-table transition, not a full landscape LBSE integration. Report:
+  `notes/reports/p186-closeout.md`. Design: `notes/design/ws4-landis-succession-process.md`.
+  PR: #1105.
