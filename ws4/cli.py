@@ -754,6 +754,11 @@ def optimize(
         exists=True,
         help="Scenario ensemble for risk targets (account-multiplier overlay)",
     ),
+    risk_validation_fraction: float | None = typer.Option(
+        None,
+        "--risk-validation-fraction",
+        help="Train/validation split fraction for the incumbent risk report",
+    ),
     initial_schedule: Path | None = typer.Option(
         None,
         "--initial-schedule",
@@ -955,6 +960,8 @@ def optimize(
     ),
 ) -> None:
     """Search for a schedule that satisfies the targets and write a summary."""
+    if risk_validation_fraction is not None and scenario_file is None:
+        raise typer.BadParameter("--risk-validation-fraction needs --scenario-file")
     if scenario_file is not None:
         loaded_targets = load_targets(targets)
         if any(target.active and target.aggregation == "single" for target in loaded_targets):
@@ -981,6 +988,7 @@ def optimize(
         episodes=episodes,
         targets_path=str(targets),
         scenario_path=str(scenario_file) if scenario_file is not None else "",
+        risk_validation_fraction=risk_validation_fraction,
         initial_schedule_path=(str(initial_schedule) if initial_schedule is not None else ""),
         weights_path=str(weights) if weights is not None else "",
         topology_path=str(topology) if topology is not None else "",

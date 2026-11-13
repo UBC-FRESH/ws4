@@ -178,6 +178,7 @@ exists and the maintainer approves it.
 | P179 Generic process executor | #1056 | `feature/p179-process-executor` | pr-open |
 | P180 Succession, regeneration, and yield bridge | #1062 | `feature/p180-succession-yield` | pr-open |
 | P181 Scenario and risk evaluation in the optimizer | #1068 | `feature/p181-risk-optimizer` | pr-open |
+| P182 Multi-fidelity risk validation | #1074 | `feature/p182-risk-validation` | active |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -5316,4 +5317,28 @@ Acceptance:
 - The optimizer objective uses the risk-aggregated values.
 - Per-move incremental evaluation is bypassed when scenarios are active.
 - The report names the account-overlay limitation.
+- `python scripts/dashboard.py` is green.
+
+
+## Phase 182: Multi-fidelity risk validation
+
+Parent issue: #1074
+Branch: `feature/p182-risk-validation`
+Status: active
+Design note: `notes/design/ws4-risk-validation.md`
+
+Goal: compare the search risk objective with the final full-simulation risk objective and add
+an out-of-sample train/validation risk report.
+
+- [x] P182.1 Add the train/validation risk report (#1075)
+- [x] P182.2 Verify search risk against full simulation (#1076)
+- [x] P182.3 Expose multi-fidelity risk validation in the CLI (#1077)
+- [ ] P182.4 Verify and close out risk validation (#1078)
+
+Acceptance:
+
+- A scenario run records the search-versus-final risk gap.
+- A run with at least two scenarios writes train/validation risk artifacts.
+- A one-scenario set skips the split with a clear reason.
+- Tests cover the gap and split.
 - `python scripts/dashboard.py` is green.
