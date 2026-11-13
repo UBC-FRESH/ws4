@@ -175,10 +175,10 @@ exists and the maintainer approves it.
 | P175 ROS-scale sensitivity | #1036 | `feature/p175-ros-scale` | complete |
 | P176 Burnable-basin and stopping diagnosis | #1041 | `feature/p176-burnable-basin` | complete |
 | P177 Containment contract and validation protocol | #1046 | `feature/p177-containment-protocol` | pr-open |
-| P179 Generic process executor | #1056 | `feature/p179-process-executor` | pr-open |
-| P180 Succession, regeneration, and yield bridge | #1062 | `feature/p180-succession-yield` | pr-open |
-| P181 Scenario and risk evaluation in the optimizer | #1068 | `feature/p181-risk-optimizer` | pr-open |
-| P182 Multi-fidelity risk validation | #1074 | `feature/p182-risk-validation` | pr-open |
+| P179 Generic process executor | #1056 | `feature/p179-process-executor` | complete |
+| P180 Succession, regeneration, and yield bridge | #1062 | `feature/p180-succession-yield` | complete |
+| P181 Scenario and risk evaluation in the optimizer | #1068 | `feature/p181-risk-optimizer` | complete |
+| P182 Multi-fidelity risk validation | #1074 | `feature/p182-risk-validation` | complete |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -5241,7 +5241,8 @@ Acceptance:
 
 Parent issue: #1056
 Branch: `feature/p179-process-executor`
-Status: pr-open
+Status: complete
+Merge commit: `04bcb28`
 Design note: `notes/design/ws4-process-executor.md`
 Report: `notes/reports/p179-closeout.md`
 PR: #1061
@@ -5269,7 +5270,8 @@ Acceptance:
 
 Parent issue: #1062
 Branch: `feature/p180-succession-yield`
-Status: pr-open
+Status: complete
+Merge commit: `880c49d`
 Design note: `notes/design/ws4-succession-yield.md`
 Report: `notes/reports/p180-closeout.md`
 PR: #1067
@@ -5297,7 +5299,8 @@ Acceptance:
 
 Parent issue: #1068
 Branch: `feature/p181-risk-optimizer`
-Status: pr-open
+Status: complete
+Merge commit: `4bac755`
 Design note: `notes/design/ws4-risk-optimization.md`
 Report: `notes/reports/p181-closeout.md`
 PR: #1073
@@ -5324,7 +5327,8 @@ Acceptance:
 
 Parent issue: #1074
 Branch: `feature/p182-risk-validation`
-Status: pr-open
+Status: complete
+Merge commit: `6a8d45a`
 Design note: `notes/design/ws4-risk-validation.md`
 Report: `notes/reports/p182-closeout.md`
 PR: #1079

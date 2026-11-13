@@ -45,4 +45,4 @@ documented high-fidelity elite pass.
 
 ## Pull request
 
-PR: #1079 is queued for maintainer approval. Do not merge without approval.
+Merged as `6a8d45a` (PR #1079); branch deleted.

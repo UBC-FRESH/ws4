@@ -58,4 +58,4 @@ outside the inner loop, then revisit decision-grade risk validation.
 
 ## Pull request
 
-PR: #1073 is queued for maintainer approval. Do not merge without approval.
+Merged as `4bac755` (PR #1073); branch deleted.
