@@ -5341,3 +5341,8 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   search-versus-final risk gap and optional train/validation artifacts. Both fidelities remain
   account overlays. Report: `notes/reports/p182-closeout.md`. Design:
   `notes/design/ws4-risk-validation.md`. PR: #1079.
+
+- P179–P182 merged: the generic process executor, succession/regeneration and provisional
+  yield bridge, scenario/risk optimizer overlay, and multi-fidelity risk validation are on
+  `main` as `04bcb28`, `880c49d`, `4bac755`, and `6a8d45a`. Branches deleted; no tag, release,
+  or settings change.

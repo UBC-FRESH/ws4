@@ -52,4 +52,4 @@ prerequisite.
 
 ## Pull request
 
-PR: #1061 is queued for maintainer approval. Do not merge without approval.
+Merged as `04bcb28` (PR #1061); branch deleted.

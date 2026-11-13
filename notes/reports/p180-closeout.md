@@ -55,4 +55,4 @@ P181: wire scenario/risk evaluation into the estate optimizer. P179 and P180 mus
 
 ## Pull request
 
-PR: #1067 is queued for maintainer approval. Do not merge without approval.
+Merged as `880c49d` (PR #1067); branch deleted.
