@@ -5476,3 +5476,17 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   harvests the mapped fragments, conserves area, and reproduces its summary and replay token.
   Report: `notes/reports/p190-closeout.md`. Design:
   `notes/design/ws4-process-schedule-evaluation.md`. PR: #1129.
+
+- P190 merged: process-conditioned schedule evaluation is on `main` as `f9f1dbe`. Branch
+  deleted; no tag, release, or settings change.
+
+- P191.1: added the final-account objective adapter to the process schedule evaluator, with
+  explicit rejection of flow, risk-aggregated, snapshot, accumulating, unknown-account, and
+  non-final-period targets.
+
+- P191.2: exposed the objective, per-target terms, and target account labels in the evaluation
+  summary and JSON artifact. Dashboard: pending full run.
+
+- P191.3: verified and closed P191. Full dashboard **OVERALL: GREEN**. The exact penalty,
+  zero-penalty, and rejected-target cases pass. Report: `notes/reports/p191-closeout.md`.
+  Design: `notes/design/ws4-process-objective.md`. PR: #1134.

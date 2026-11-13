@@ -33,6 +33,16 @@ accounts, and a JSON summary. ``write`` emits:
 Final accounts include state totals, provisional volume, fire totals, harvest counts and
 distinct treated area, salvage counts, and regeneration counts.
 
+Objective adapter
+-----------------
+
+``evaluate_process_schedule`` accepts ``Target`` values and prices the final accounts with the
+existing weighted-goal objective. A target is accepted only when it is a level target, uses
+``single`` aggregation, is not a snapshot, is not an accumulating ``product.`` account, names
+an existing final account, and ends at the final offset. Unsupported forms fail loudly.
+
+The evaluation summary includes ``objective``, ``target_terms``, and ``target_accounts``.
+
 Reference case
 --------------
 
@@ -46,5 +56,7 @@ Limits
 - The final account table is a reporting view; the compiled management dataset remains
   authoritative.
 - The volume bridge is provisional and uncalibrated.
-- The evaluator does not search schedules or feed the optimizer objective yet.
+- The evaluator does not search schedules or replace the optimizer's account overlay.
+- Objective support is limited to final-account level targets; flow and multi-period targets
+  are not supported.
 - Harvest is a simplified clearcut-like bridge.

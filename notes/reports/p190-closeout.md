@@ -53,4 +53,4 @@ blocked without an R/SpaDES reference run or published numeric landscape output.
 
 ## Pull request
 
-PR: #1129 is queued for maintainer approval. Do not merge without approval.
+Merged as `f9f1dbe` (PR #1129); branch deleted.
