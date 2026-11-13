@@ -39,10 +39,22 @@ On a 3 × 3 grid with a 20 ha harvest target:
 
 Ranking: full, one, none.
 
+Bounded neighbourhood search
+----------------------------
+
+``search_process_neighbourhood`` adds a deterministic strict-improvement loop. The caller
+supplies a neighbour function; the search evaluates unseen neighbours through the P192 ranking,
+keeps only strict improvements, and stops at ``max_iterations`` or a non-improving round.
+
+Seen candidates are skipped, duplicate ids within one round are rejected, and ties do not move
+the incumbent. The result records one history step per completed round and can write a history
+CSV plus a JSON summary.
+
 Limits
 ------
 
-- Exhaustive candidate evaluation only; no neighbourhood or population search.
+- The caller supplies the neighbour function; no schedule mutation grammar is built in.
+- Strict hill-climb only; no annealing or population search.
 - The existing optimizer's account overlay is unchanged.
 - Final-account level targets only.
 - Harvest and volume semantics remain provisional.
