@@ -66,6 +66,8 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
      - The optional state schema, cohort fractions, null bridge, and dataset join.
    * - :doc:`ecosystem-process`
      - The generic annual executor, process protocol, ownership, ordering, and fire migration.
+   * - :doc:`ecosystem-succession`
+     - Succession, regeneration, and the provisional biomass-to-volume bridge.
    * - :doc:`ecosystem-fire`
      - The first stochastic process: Poisson ignition, graph spread, mortality, salvage,
        and disturbance accounts.
@@ -134,6 +136,7 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
    event-log
    ecosystem-package
    ecosystem-process
+   ecosystem-succession
    ecosystem-fire
    ecosystem-scenarios
    fire-behaviour

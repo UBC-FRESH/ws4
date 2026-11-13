@@ -8,6 +8,7 @@ dataset remains the contract; this package is the optional ecological layer over
 
 from __future__ import annotations
 
+from .bridge import BRIDGE_VERSION, BridgeError, SpeciesVolumeBridge, VolumeBridgeConfig
 from .events import EVENT_PHASES, EVENT_SCHEMA_VERSION, Event, EventError
 from .executor import ExecutionResult, Executor
 from .fire import (
@@ -50,6 +51,7 @@ from .process import (
     validate_process,
     validate_sources,
 )
+from .regeneration import RegenerationConfig, RegenerationError, RegenerationProcess
 from .scenarios import (
     RISK_AGGREGATIONS,
     SCENARIO_SCHEMA_VERSION,
@@ -73,15 +75,25 @@ from .state import (
     StateSchema,
     StateVariable,
 )
+from .succession import (
+    SUCCESSION_PROCESS_ID,
+    SpeciesGrowth,
+    SuccessionConfig,
+    SuccessionError,
+    SuccessionProcess,
+)
 from .tape import TAPE_ALGORITHM, DrawKey, RandomTape, TapeError
 
 __all__ = [
+    "BRIDGE_VERSION",
     "EVENT_LOG_SCHEMA_VERSION",
     "EVENT_PHASES",
     "EVENT_SCHEMA_VERSION",
     "RISK_AGGREGATIONS",
     "SCENARIO_SCHEMA_VERSION",
+    "SUCCESSION_PROCESS_ID",
     "TAPE_ALGORITHM",
+    "BridgeError",
     "BridgeSpec",
     "CohortState",
     "CohortStateError",
@@ -112,6 +124,9 @@ __all__ = [
     "ProcessContext",
     "ProcessError",
     "RandomTape",
+    "RegenerationConfig",
+    "RegenerationError",
+    "RegenerationProcess",
     "ReplayError",
     "ReplayRunner",
     "SalvageSource",
@@ -121,10 +136,16 @@ __all__ = [
     "ScenarioEvaluation",
     "ScenarioEvaluator",
     "ScenarioSet",
+    "SpeciesGrowth",
+    "SpeciesVolumeBridge",
     "StateError",
     "StateSchema",
     "StateVariable",
+    "SuccessionConfig",
+    "SuccessionError",
+    "SuccessionProcess",
     "TapeError",
+    "VolumeBridgeConfig",
     "find_ecosystem_package",
     "fire_evaluator",
     "load_dataset_ecosystem",

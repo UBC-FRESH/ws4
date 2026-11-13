@@ -5288,3 +5288,23 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   The existing fire event log and account tests pass through the executor; the synthetic
   mutating process shares the run with fire and salvage. Report:
   `notes/reports/p179-closeout.md`. Design: `notes/design/ws4-process-executor.md`. PR: #1061.
+
+- P180.1: added `ws4/ecosystem/succession.py`. A deterministic succession process advances
+  cohort age, grows biomass toward a species maximum, accumulates fuel, and decays snags. The
+  species parameters are explicit and provisional. Tests cover growth, the biomass cap,
+  area conservation, and replay.
+
+- P180.2: added `ws4/ecosystem/regeneration.py`. A tape-seeded regeneration process finds
+  juvenile cohorts and establishes biomass/fuel without changing area fractions. Tests cover
+  establishment, zero probability, mature-cohort rejection, and replay.
+
+- P180.3: added `ws4/ecosystem/bridge.py`. `SpeciesVolumeBridge` maps cohort biomass to
+  merchantable volume with explicit species rates, a default rate, a merchantable fraction,
+  and a versioned parameter table. The bridge records `calibration_status: provisional` and
+  does not modify the compiled dataset. Tests cover arithmetic, unknown species, zero
+  biomass, management attachment, and parameter persistence.
+
+- P180.4: integrated fire, succession, salvage, regeneration, and the bridge through one
+  executor and closed P180. Full dashboard **OVERALL: GREEN**. The bridge is explicitly
+  provisional, not calibrated. Report: `notes/reports/p180-closeout.md`. Design:
+  `notes/design/ws4-succession-yield.md`. PR: #1067.
