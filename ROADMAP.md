@@ -5555,7 +5555,7 @@ Branch: `feature/p190-process-schedule-evaluation`
 Status: pr-open
 Design note: `notes/design/ws4-process-schedule-evaluation.md`
 Report: `notes/reports/p190-closeout.md`
-PR: #TBD
+PR: #1129
 
 Goal: evaluate a block-level harvest schedule through the process engine and return a
 process-conditioned state, event log, and account summary.

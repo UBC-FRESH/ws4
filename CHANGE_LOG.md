@@ -5475,4 +5475,4 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P190.3: verified and closed P190. Full dashboard **OVERALL: GREEN**. The schedule evaluation
   harvests the mapped fragments, conserves area, and reproduces its summary and replay token.
   Report: `notes/reports/p190-closeout.md`. Design:
-  `notes/design/ws4-process-schedule-evaluation.md`. PR: #TBD.
+  `notes/design/ws4-process-schedule-evaluation.md`. PR: #1129.
