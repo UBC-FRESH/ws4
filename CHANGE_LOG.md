@@ -5378,3 +5378,15 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P183–P184 merged: the process-driven scenario ensemble and schedule-to-ecosystem management
   bridge are on `main` as `4419743` and `86a38b2`. Branches deleted; no tag, release, or
   settings change.
+
+- P185.1: added the Predictive Ecology benchmark registry and design note. Sources, commits,
+  licence caveats, exact test files, distributional tests, and observed-data protocols are
+  recorded; no third-party code or prose is copied.
+
+- P185.2: added `ws4/ecosystem/landis.py`, an original implementation of the LANDIS-II
+  Biomass Succession equations for sumB, competition, ANPP, developmental mortality, and age
+  mortality.
+
+- P185.3: added exact reference tests from the public `Biomass_core` tests for ANPP,
+  growth/mortality, competition, and sumB, including spinup/non-spinup and the young-cohort
+  boundary. Dashboard: **GREEN**.
