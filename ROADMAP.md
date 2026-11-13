@@ -182,7 +182,7 @@ exists and the maintainer approves it.
 | P183 Process-driven scenario ensemble | #1081 | `feature/p183-process-ensemble` | complete |
 | P184 Schedule-to-ecosystem management bridge | #1087 | `feature/p184-management-bridge` | complete |
 | P185 Predictive Ecology benchmarks and LANDIS kernel | #1094 | `feature/p185-landis-benchmarks` | pr-open |
-| P186 LANDIS succession process | #1100 | `feature/p186-landis-process` | active |
+| P186 LANDIS succession process | #1100 | `feature/p186-landis-process` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -5441,8 +5441,10 @@ Acceptance:
 
 Parent issue: #1100
 Branch: `feature/p186-landis-process`
-Status: active
+Status: pr-open
 Design note: `notes/design/ws4-landis-succession-process.md`
+Report: `notes/reports/p186-closeout.md`
+PR: #TBD
 
 Goal: wire the P185 LANDIS kernel into a cohort-state succession process and run it through
 the process ensemble.
@@ -5450,7 +5452,7 @@ the process ensemble.
 - [x] P186.1 Add LANDIS species traits and process configuration (#1101)
 - [x] P186.2 Implement the LANDIS cohort transition (#1102)
 - [x] P186.3 Integrate the process with the ensemble (#1103)
-- [ ] P186.4 Verify and close out the LANDIS process (#1104)
+- [x] P186.4 Verify and close out the LANDIS process (#1104)
 
 Acceptance:
 
