@@ -5269,3 +5269,22 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   cases remain the ROS set. Containment is a management scenario input, not calibration.
 - P177.3: closed P177. Reports: `notes/reports/p177-containment-protocol.md` and
   `notes/reports/p177-closeout.md`. Dashboard: **GREEN**.
+
+- P179.1: added `ws4/ecosystem/process.py` with the `Process` and `DecisionSource` protocols,
+  `ProcessContext`, declaration validation, and duplicate-id checks. The contract carries the
+  process id, phases, state reads/writes, event batch, and state transition.
+
+- P179.2: added `ws4/ecosystem/executor.py`. One annual executor walks `EVENT_PHASES`, asks
+  participating sources for batches, enforces event ownership/year/phase/scenario, sorts by the
+  canonical event key, applies each event through its owner, and repeats until empty. It
+  writes the existing event log and supports event/year observers.
+
+- P179.3: migrated `FireRun` to the generic executor through `FireProcessSource` and
+  `SalvageProcessSource`; the public `FireResult`, event log, and account behavior remain
+  unchanged. Added a synthetic mutating process and a test that runs fire, synthetic, and
+  salvage sources in one execution. Dashboard: **GREEN**.
+
+- P179.4: verified the generic executor and closed P179. Full dashboard **OVERALL: GREEN**.
+  The existing fire event log and account tests pass through the executor; the synthetic
+  mutating process shares the run with fire and salvage. Report:
+  `notes/reports/p179-closeout.md`. Design: `notes/design/ws4-process-executor.md`. PR: #1061.
