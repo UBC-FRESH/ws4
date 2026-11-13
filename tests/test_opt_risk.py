@@ -172,6 +172,7 @@ def test_optimizer_writes_risk_artifacts(tmp_path: Path) -> None:
             years=1,
             iterations=1,
             scenario_path=str(scenario_file),
+            risk_validation_fraction=0.5,
         ),
     )
     summary = optimizer.run(tmp_path / "run")
@@ -180,3 +181,41 @@ def test_optimizer_writes_risk_artifacts(tmp_path: Path) -> None:
     assert (tmp_path / "run" / "risk_values.csv").is_file()
     assert (tmp_path / "run" / "risk_aggregated.csv").is_file()
     assert (tmp_path / "run" / "risk_summary.json").is_file()
+    assert (tmp_path / "run" / "risk_verification.json").is_file()
+    assert (tmp_path / "run" / "risk_validation.json").is_file()
+    assert (tmp_path / "run" / "risk_train_values.csv").is_file()
+    assert (tmp_path / "run" / "risk_validation_values.csv").is_file()
+    assert summary["risk"]["verification"]["gap"] == pytest.approx(0.0)
+    assert summary["risk"]["validation"]["train_scenarios"] == 1
+
+
+def test_risk_validation_split_and_write(tmp_path: Path) -> None:
+    from ws4.opt.risk import evaluate_risk_validation
+
+    scenarios = ScenarioSet(
+        (
+            Scenario("s1", 1, overrides={"account_multipliers": {"feature.Volume": 0.8}}),
+            Scenario("s2", 2, overrides={"account_multipliers": {"feature.Volume": 0.9}}),
+            Scenario("s3", 3, overrides={"account_multipliers": {"feature.Volume": 1.1}}),
+            Scenario("s4", 4, overrides={"account_multipliers": {"feature.Volume": 1.2}}),
+        )
+    )
+    targets = (Target(account="feature.Volume", period=1, minimum=90.0, aggregation="mean"),)
+
+    report = evaluate_risk_validation(_values(), targets, scenarios, 0.5)
+    report.write(tmp_path / "validation")
+
+    assert report.gap == pytest.approx(report.validation.objective - report.train.objective)
+    assert (tmp_path / "validation" / "risk_validation.json").is_file()
+    assert (tmp_path / "validation" / "risk_train_values.csv").is_file()
+    assert (tmp_path / "validation" / "risk_validation_aggregated.csv").is_file()
+
+
+def test_risk_validation_needs_two_scenarios() -> None:
+    from ws4.opt.risk import evaluate_risk_validation
+
+    scenarios = ScenarioSet((Scenario("only", 1),))
+    targets = (Target(account="feature.Volume", period=1, minimum=90.0, aggregation="mean"),)
+
+    with pytest.raises(RiskEvaluationError, match="at least two"):
+        evaluate_risk_validation(_values(), targets, scenarios)

@@ -60,3 +60,18 @@ Limits
 - Scenario seeds do not drive process draws in this path.
 - The spatial penalty is applied after the risk objective.
 - Full process-driven stochastic search and multi-fidelity evaluation are later work.
+
+
+Multi-fidelity verification
+---------------------------
+
+When scenarios are active, the optimizer writes ``risk_verification.json`` comparing the best
+search objective with the final full-simulation risk objective. A non-zero gap is visible, not
+silently corrected.
+
+``--risk-validation-fraction`` splits the scenario ensemble into ordered training and
+validation subsets and writes per-scenario and aggregated risk files plus a
+``risk_validation.json`` summary. The generalization gap is the validation objective minus the
+training objective. A one-scenario ensemble writes a ``skipped`` report with the reason.
+
+The split is ordered, not random. Keep the scenario order intentional.

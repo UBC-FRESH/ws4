@@ -75,7 +75,11 @@ from .operators import (
 from .patch import PatchModel
 from .prescreen import feature_goal_blocks
 from .repro import write_reproducibility
-from .risk import RiskAccountEvaluator, RiskEvaluation
+from .risk import (
+    RiskAccountEvaluator,
+    RiskEvaluation,
+    evaluate_risk_validation,
+)
 from .seeding import greedy_schedule
 from .solvers import (
     expired,
@@ -348,6 +352,9 @@ class OptimizeConfig:
         An optional scenario YAML/JSON file. When set, the optimizer evaluates risk
         targets through a fast account-multiplier overlay. Risk targets require non-single
         aggregation. Empty keeps the deterministic objective.
+    risk_validation_fraction : float or None
+        When set with a scenario file, split the ensemble and write a train/validation risk
+        report for the incumbent. None skips the split.
     """
 
     threads: int = 1
@@ -416,6 +423,7 @@ class OptimizeConfig:
     flow_repair_trials: int = 0
     flow_repair_chains: int = 4
     scenario_path: str = ""
+    risk_validation_fraction: float | None = None
 
     def __post_init__(self) -> None:
         """Reject an unknown temperature schedule before the search starts."""
@@ -443,6 +451,11 @@ class OptimizeConfig:
             raise ValueError("flow_repair_chains must be positive")
         if self.seed_candidates < 1:
             raise ValueError("seed_candidates must be positive")
+        if self.risk_validation_fraction is not None:
+            if not 0.0 < self.risk_validation_fraction < 1.0:
+                raise ValueError("risk_validation_fraction must be between 0 and 1")
+            if not self.scenario_path:
+                raise ValueError("risk_validation_fraction needs scenario_path")
 
 
 #: The route-account kinds that are charged per segment per period rather than per block, so a
@@ -2050,11 +2063,40 @@ class Optimizer:
             self._last_risk = risk
             risk.values.to_csv(out_dir / "risk_values.csv", index=False)
             risk.aggregated.to_csv(out_dir / "risk_aggregated.csv", index=False)
+            verification = {
+                "search_objective": best_obj,
+                "full_objective": risk.objective,
+                "gap": risk.objective - best_obj,
+            }
             risk_summary = {
                 "scenarios": list(self.scenarios.scenario_ids),
                 "objective": risk.objective,
                 "targets": [target.account for target in risk.targets],
+                "verification": verification,
             }
+            (out_dir / "risk_verification.json").write_text(
+                json.dumps(verification, indent=2, sort_keys=True), encoding="utf-8"
+            )
+            if self.cfg.risk_validation_fraction is not None:
+                validation: dict[str, object]
+                if len(self.scenarios.scenarios) < 2:
+                    validation = {
+                        "status": "skipped",
+                        "reason": "a train/validation split needs at least two scenarios",
+                    }
+                    (out_dir / "risk_validation.json").write_text(
+                        json.dumps(validation, indent=2, sort_keys=True), encoding="utf-8"
+                    )
+                else:
+                    report = evaluate_risk_validation(
+                        values,
+                        targets,
+                        self.scenarios,
+                        self.cfg.risk_validation_fraction,
+                    )
+                    report.write(out_dir)
+                    validation = report.summary()
+                risk_summary["validation"] = validation
             (out_dir / "risk_summary.json").write_text(
                 json.dumps(risk_summary, indent=2, sort_keys=True), encoding="utf-8"
             )

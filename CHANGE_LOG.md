@@ -5326,3 +5326,18 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   path is unchanged. The phase is explicitly an account-overlay model, not process-driven
   stochastic simulation. Report: `notes/reports/p181-closeout.md`. Design:
   `notes/design/ws4-risk-optimization.md`. PR: #1073.
+
+- P182.1: added `RiskValidationReport`, `split_scenarios`, and `evaluate_risk_validation`.
+  The report writes per-scenario and aggregated train/validation frames, objectives, and the
+  generalization gap; one-scenario splits fail clearly.
+
+- P182.2: the optimizer now writes `risk_verification.json` comparing the search objective
+  with the final full-simulation risk objective. A non-zero gap is reported, not hidden.
+
+- P182.3: added `--risk-validation-fraction` and the incumbent train/validation report,
+  including skipped status for one-scenario ensembles. Dashboard: **GREEN**.
+
+- P182.4: verified and closed P182. Full dashboard **OVERALL: GREEN**. Scenario runs record the
+  search-versus-final risk gap and optional train/validation artifacts. Both fidelities remain
+  account overlays. Report: `notes/reports/p182-closeout.md`. Design:
+  `notes/design/ws4-risk-validation.md`. PR: #1079.
