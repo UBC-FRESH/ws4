@@ -46,4 +46,4 @@ distributional benchmarks as a separate layer.
 
 ## Pull request
 
-PR: #1105 is queued for maintainer approval. Do not merge without approval.
+Merged as `296e26a` (PR #1105); branch deleted.

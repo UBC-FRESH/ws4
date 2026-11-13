@@ -5411,3 +5411,7 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   a single-cohort-table transition, not a full landscape LBSE integration. Report:
   `notes/reports/p186-closeout.md`. Design: `notes/design/ws4-landis-succession-process.md`.
   PR: #1105.
+
+- P185–P186 merged: the Predictive Ecology benchmark registry/LANDIS kernel and the LANDIS
+  succession process are on `main` as `b4986fe` and `296e26a`. Branches deleted; no tag,
+  release, or settings change.

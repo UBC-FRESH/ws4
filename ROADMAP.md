@@ -181,8 +181,8 @@ exists and the maintainer approves it.
 | P182 Multi-fidelity risk validation | #1074 | `feature/p182-risk-validation` | complete |
 | P183 Process-driven scenario ensemble | #1081 | `feature/p183-process-ensemble` | complete |
 | P184 Schedule-to-ecosystem management bridge | #1087 | `feature/p184-management-bridge` | complete |
-| P185 Predictive Ecology benchmarks and LANDIS kernel | #1094 | `feature/p185-landis-benchmarks` | pr-open |
-| P186 LANDIS succession process | #1100 | `feature/p186-landis-process` | pr-open |
+| P185 Predictive Ecology benchmarks and LANDIS kernel | #1094 | `feature/p185-landis-benchmarks` | complete |
+| P186 LANDIS succession process | #1100 | `feature/p186-landis-process` | complete |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -5414,7 +5414,8 @@ Acceptance:
 
 Parent issue: #1094
 Branch: `feature/p185-landis-benchmarks`
-Status: pr-open
+Status: complete
+Merge commit: `b4986fe`
 Design note: `notes/design/ws4-predictive-ecology-benchmarks.md`
 Report: `notes/reports/p185-closeout.md`
 PR: #1099
@@ -5441,7 +5442,8 @@ Acceptance:
 
 Parent issue: #1100
 Branch: `feature/p186-landis-process`
-Status: pr-open
+Status: complete
+Merge commit: `296e26a`
 Design note: `notes/design/ws4-landis-succession-process.md`
 Report: `notes/reports/p186-closeout.md`
 PR: #1105
