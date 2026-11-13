@@ -49,4 +49,4 @@ fire-regime distributions to scenario risk summaries.
 
 ## Pull request
 
-PR: #TBD is queued for maintainer approval. Do not merge without approval.
+PR: #1112 is queued for maintainer approval. Do not merge without approval.

@@ -5473,7 +5473,7 @@ Branch: `feature/p187-fire-regime-benchmarks`
 Status: pr-open
 Design note: `notes/design/ws4-fire-regime-benchmarks.md`
 Report: `notes/reports/p187-closeout.md`
-PR: #TBD
+PR: #1112
 
 Goal: implement the scfm fire-regime parameter and diagnostic formulas as exact Python
 benchmarks, separate from event-perimeter validation.
