@@ -5355,3 +5355,8 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 
 - P183.3: exposed the ensemble through the `ws4.ecosystem` API and documented the missing
   management/state bridge. Dashboard: **GREEN**.
+
+- P183.4: verified and closed P183. Full dashboard **OVERALL: GREEN**. The process ensemble
+  produces per-scenario metrics and risk rows with replay and CRN evidence. It is not yet
+  schedule-conditioned; the management/state bridge remains the next step. Report:
+  `notes/reports/p183-closeout.md`. Design: `notes/design/ws4-process-ensemble.md`. PR: #1086.
