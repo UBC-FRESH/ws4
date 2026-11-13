@@ -57,4 +57,4 @@ diagnostics as a separate fire-regime benchmark.
 
 ## Pull request
 
-PR: #1099 is queued for maintainer approval. Do not merge without approval.
+Merged as `b4986fe` (PR #1099); branch deleted.
