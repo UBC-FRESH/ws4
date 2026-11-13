@@ -53,4 +53,4 @@ bridge or a high-fidelity elite evaluation that uses it, not another account ove
 
 ## Pull request
 
-PR: #1086 is queued for maintainer approval. Do not merge without approval.
+Merged as `4419743` (PR #1086); branch deleted.

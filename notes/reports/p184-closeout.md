@@ -53,4 +53,4 @@ estate-state adapter. The compiled treatment semantics remain the reference.
 
 ## Pull request
 
-PR: #1092 is queued for maintainer approval. Do not merge without approval.
+Merged as `86a38b2` (PR #1092); branch deleted.

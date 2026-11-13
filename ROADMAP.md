@@ -179,8 +179,8 @@ exists and the maintainer approves it.
 | P180 Succession, regeneration, and yield bridge | #1062 | `feature/p180-succession-yield` | complete |
 | P181 Scenario and risk evaluation in the optimizer | #1068 | `feature/p181-risk-optimizer` | complete |
 | P182 Multi-fidelity risk validation | #1074 | `feature/p182-risk-validation` | complete |
-| P183 Process-driven scenario ensemble | #1081 | `feature/p183-process-ensemble` | pr-open |
-| P184 Schedule-to-ecosystem management bridge | #1087 | `feature/p184-management-bridge` | pr-open |
+| P183 Process-driven scenario ensemble | #1081 | `feature/p183-process-ensemble` | complete |
+| P184 Schedule-to-ecosystem management bridge | #1087 | `feature/p184-management-bridge` | complete |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -5356,7 +5356,8 @@ Acceptance:
 
 Parent issue: #1081
 Branch: `feature/p183-process-ensemble`
-Status: pr-open
+Status: complete
+Merge commit: `4419743`
 Design note: `notes/design/ws4-process-ensemble.md`
 Report: `notes/reports/p183-closeout.md`
 PR: #1086
@@ -5383,7 +5384,8 @@ Acceptance:
 
 Parent issue: #1087
 Branch: `feature/p184-management-bridge`
-Status: pr-open
+Status: complete
+Merge commit: `86a38b2`
 Design note: `notes/design/ws4-management-bridge.md`
 Report: `notes/reports/p184-closeout.md`
 PR: #1092
