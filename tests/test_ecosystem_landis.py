@@ -328,3 +328,47 @@ def test_bad_stage_and_missing_columns_fail() -> None:
         calculate_anpp(pd.DataFrame(), stage="bad")
     with pytest.raises(LandisError, match="missing"):
         calculate_competition(pd.DataFrame({"age": [1]}))
+
+
+def test_landis_process_updates_cohorts_and_preserves_area() -> None:
+    from ws4.ecosystem.ensemble import ProcessEnsembleConfig, run_process_scenario
+    from ws4.ecosystem.fire import FireConfig, synthetic_grid
+    from ws4.ecosystem.landis import (
+        LandisSpeciesTraits,
+        LandisSuccessionConfig,
+        LandisSuccessionProcess,
+    )
+
+    traits = LandisSpeciesTraits(
+        max_b=120.0,
+        max_anpp=50.0,
+        growthcurve=0.25,
+        mortalityshape=2.0,
+        longevity=100.0,
+    )
+    config = LandisSuccessionConfig(default=traits)
+    _schema, state, edges = synthetic_grid(3, 3)
+    source = LandisSuccessionProcess(config)
+    ensemble_config = ProcessEnsembleConfig(
+        horizon_years=2,
+        fire=FireConfig(ignition_rate_per_fragment_year=0.0),
+        succession_process=source,
+    )
+    result = run_process_scenario(state, edges, ensemble_config, scenario_id="landis", seed=1)
+
+    result.state.check_area_conservation()
+    assert float(result.state.cohorts["age"].min()) >= 0.0
+    assert float(result.state.cohorts["age"].mean()) == pytest.approx(62.0)
+    assert float(result.state.cohorts["biomass_t_ha"].max()) <= 120.0 + 1e-9
+    assert any(event.event_type == "landis_succession" for event in result.log.events)
+
+
+def test_landis_config_rejects_bad_traits() -> None:
+    from ws4.ecosystem.landis import LandisSpeciesTraits, LandisSuccessionConfig
+
+    with pytest.raises(LandisError, match="max_b"):
+        LandisSpeciesTraits(max_b=0.0)
+    with pytest.raises(LandisError, match="succession_timestep"):
+        LandisSuccessionConfig(succession_timestep=0)
+    with pytest.raises(LandisError, match="stage"):
+        LandisSuccessionConfig(stage="bad")
