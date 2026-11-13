@@ -5502,4 +5502,4 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 
 - P192.3: verified and closed P192. Full dashboard **OVERALL: GREEN**. The exact ranking,
   tie-break, determinism, and artifact tests pass. Report: `notes/reports/p192-closeout.md`.
-  Design: `notes/design/ws4-process-candidate-search.md`. PR: #TBD.
+  Design: `notes/design/ws4-process-candidate-search.md`. PR: #1139.

@@ -5607,7 +5607,7 @@ Branch: `feature/p192-process-candidate-search`
 Status: pr-open
 Design note: `notes/design/ws4-process-candidate-search.md`
 Report: `notes/reports/p192-closeout.md`
-PR: #TBD
+PR: #1139
 
 Goal: evaluate a supplied set of candidate schedules through the process evaluator and rank them
 by the weighted objective.
