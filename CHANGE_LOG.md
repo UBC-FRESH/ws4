@@ -5432,3 +5432,18 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 
 - P187 merged: the scfm fire-regime distribution benchmarks are on `main` as `883c56e`.
   Branch deleted; no tag, release, or settings change.
+
+- P188.1: added `ws4/fire/risk.py` with annual fire-regime risk metrics: burned-area
+  distribution, burn probability, fire return interval, escaped-fire frequency, and size
+  quantiles.
+
+- P188.2: connected the summary to event-log-like records and reused the P187 target
+  diagnostics. The fire package does not import the ecosystem package.
+
+- P188.3: added exact synthetic event-log tests, including the target diagnostics and
+  invalid-input failures. Dashboard: pending full run.
+
+- P188.4: verified and closed P188. Full dashboard **OVERALL: GREEN**. The synthetic event-log
+  summary matches the exact values, and the P187 target diagnostics are attached when a target
+  and historical sample are supplied. Report: `notes/reports/p188-closeout.md`. Design:
+  `notes/design/ws4-fire-regime-risk.md`. PR: #TBD.
