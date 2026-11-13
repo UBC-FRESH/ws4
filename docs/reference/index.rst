@@ -78,6 +78,8 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
      - LANDIS-II-compatible succession kernel and exact reference tests.
    * - :doc:`fire-regime`
      - scfm fire-regime parameters and distributional diagnostics.
+   * - :doc:`fire-risk`
+     - Annual fire-regime risk summaries over process event logs.
    * - :doc:`ecosystem-fire`
      - The first stochastic process: Poisson ignition, graph spread, mortality, salvage,
        and disturbance accounts.
@@ -152,6 +154,7 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
    ecosystem-management
    ecosystem-landis
    fire-regime
+   fire-risk
    ecosystem-fire
    ecosystem-scenarios
    fire-behaviour

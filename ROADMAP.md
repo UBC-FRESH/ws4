@@ -184,6 +184,7 @@ exists and the maintainer approves it.
 | P185 Predictive Ecology benchmarks and LANDIS kernel | #1094 | `feature/p185-landis-benchmarks` | complete |
 | P186 LANDIS succession process | #1100 | `feature/p186-landis-process` | complete |
 | P187 scfm fire-regime distribution benchmarks | #1107 | `feature/p187-fire-regime-benchmarks` | complete |
+| P188 fire-regime risk summaries | #1114 | `feature/p188-fire-regime-risk` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -5490,4 +5491,30 @@ Acceptance:
 - Tests fail if a formula changes.
 - The benchmark layer is separate from event-perimeter validation.
 - The registry records what is implemented and what remains.
+- `python scripts/dashboard.py` is green.
+
+
+## Phase 188: fire-regime risk summaries
+
+Parent issue: #1114
+Branch: `feature/p188-fire-regime-risk`
+Status: pr-open
+Design note: `notes/design/ws4-fire-regime-risk.md`
+Report: `notes/reports/p188-closeout.md`
+PR: #1119
+
+Goal: turn the P187 distributional fire-regime benchmark into a reusable risk summary over
+process-driven event logs.
+
+- [x] P188.1 Implement the annual fire-regime summary (#1115)
+- [x] P188.2 Connect the summary to process event logs (#1116)
+- [x] P188.3 Add exact event-log risk tests (#1117)
+- [x] P188.4 Verify and close out fire-regime risk summaries (#1118)
+
+Acceptance:
+
+- Event-log summaries are deterministic and tested.
+- Annual aggregation and quantiles are exact for a synthetic event log.
+- Missing/zero burnable area and invalid events fail loudly.
+- The summary is separate from event-perimeter validation.
 - `python scripts/dashboard.py` is green.
