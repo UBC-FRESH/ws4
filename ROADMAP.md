@@ -181,6 +181,7 @@ exists and the maintainer approves it.
 | P182 Multi-fidelity risk validation | #1074 | `feature/p182-risk-validation` | complete |
 | P183 Process-driven scenario ensemble | #1081 | `feature/p183-process-ensemble` | complete |
 | P184 Schedule-to-ecosystem management bridge | #1087 | `feature/p184-management-bridge` | complete |
+| P185 Predictive Ecology benchmarks and LANDIS kernel | #1094 | `feature/p185-landis-benchmarks` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -5405,4 +5406,31 @@ Acceptance:
 - A harvested landscape differs from an unharvested landscape in fuel/biomass and process metrics.
 - The process ensemble accepts the management source.
 - The report states what treatment semantics are simplified.
+- `python scripts/dashboard.py` is green.
+
+
+## Phase 185: Predictive Ecology benchmarks and LANDIS kernel
+
+Parent issue: #1094
+Branch: `feature/p185-landis-benchmarks`
+Status: pr-open
+Design note: `notes/design/ws4-predictive-ecology-benchmarks.md`
+Report: `notes/reports/p185-closeout.md`
+PR: #TBD
+Registry: `notes/reports/p185-benchmark-registry.json`
+
+Goal: build a provenance-complete Predictive Ecology benchmark registry and an original
+LANDIS-II-compatible succession kernel with exact reference tests.
+
+- [x] P185.1 Add the Predictive Ecology benchmark registry (#1095)
+- [x] P185.2 Implement the LANDIS succession kernel (#1096)
+- [x] P185.3 Add exact LANDIS reference tests (#1097)
+- [x] P185.4 Verify and close out the Predictive Ecology benchmarks (#1098)
+
+Acceptance:
+
+- A registry records source URLs, commits, licence status, and benchmark types.
+- The LANDIS kernel reproduces the published reference values.
+- Tests fail if a formula or boundary changes.
+- The report separates exact, model-to-model, distributional, and observed-data benchmarks.
 - `python scripts/dashboard.py` is green.

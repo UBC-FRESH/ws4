@@ -5390,3 +5390,8 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P185.3: added exact reference tests from the public `Biomass_core` tests for ANPP,
   growth/mortality, competition, and sumB, including spinup/non-spinup and the young-cohort
   boundary. Dashboard: **GREEN**.
+
+- P185.4: verified and closed P185. Full dashboard **OVERALL: GREEN**. The exact LANDIS
+  kernel tests pass; the registry separates exact, model-to-model, distributional, and
+  observed-data layers. Report: `notes/reports/p185-closeout.md`. Design:
+  `notes/design/ws4-predictive-ecology-benchmarks.md`. PR: #TBD.
