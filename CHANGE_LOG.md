@@ -5446,4 +5446,4 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P188.4: verified and closed P188. Full dashboard **OVERALL: GREEN**. The synthetic event-log
   summary matches the exact values, and the P187 target diagnostics are attached when a target
   and historical sample are supplied. Report: `notes/reports/p188-closeout.md`. Design:
-  `notes/design/ws4-fire-regime-risk.md`. PR: #TBD.
+  `notes/design/ws4-fire-regime-risk.md`. PR: #1119.

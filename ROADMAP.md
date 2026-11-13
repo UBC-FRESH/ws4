@@ -5501,7 +5501,7 @@ Branch: `feature/p188-fire-regime-risk`
 Status: pr-open
 Design note: `notes/design/ws4-fire-regime-risk.md`
 Report: `notes/reports/p188-closeout.md`
-PR: #TBD
+PR: #1119
 
 Goal: turn the P187 distributional fire-regime benchmark into a reusable risk summary over
 process-driven event logs.
