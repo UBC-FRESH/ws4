@@ -80,6 +80,14 @@ from .growth import (
     grow_fire,
     length_to_breadth,
 )
+from .regime import (
+    REGIME_MODEL_VERSION,
+    FireRegimeDiagnostics,
+    FireRegimeError,
+    FireRegimeParameters,
+    fire_regime_diagnostics,
+    fire_regime_parameters,
+)
 from .rothermel import (
     DEFAULT_CONSUMPTION_FRACTION,
     DEFAULT_HEAT_YIELD_KJ_KG,
@@ -121,6 +129,7 @@ __all__ = [
     "GROWTH_MODEL_VERSION",
     "KERNEL_VERSION",
     "MOISTURE_SCENARIOS",
+    "REGIME_MODEL_VERSION",
     "VRI_FBP_VERSION",
     "BurningConditions",
     "CrownFireResult",
@@ -135,6 +144,9 @@ __all__ = [
     "FireBehaviourTransition",
     "FireEnvironment",
     "FireFuelError",
+    "FireRegimeDiagnostics",
+    "FireRegimeError",
+    "FireRegimeParameters",
     "FragmentIgnition",
     "FuelClass",
     "FuelModel",
@@ -166,6 +178,8 @@ __all__ = [
     "fbp_crown_fire",
     "fbp_surface_fire",
     "fine_fuel_moisture_code",
+    "fire_regime_diagnostics",
+    "fire_regime_parameters",
     "fire_weather_index",
     "foliar_moisture_content",
     "fragment_ignition_events",
