@@ -5320,3 +5320,9 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P181.3: added `ws4 optimize --scenario-file`, target-aggregation validation, and risk
   artifacts (`risk_values.csv`, `risk_aggregated.csv`, `risk_summary.json`) plus a summary
   `risk` block. Dashboard: **GREEN**.
+
+- P181.4: verified risk-aware optimization and closed P181. Full dashboard **OVERALL: GREEN**.
+  Scenario runs write risk values, aggregated risk rows, and a risk summary; the deterministic
+  path is unchanged. The phase is explicitly an account-overlay model, not process-driven
+  stochastic simulation. Report: `notes/reports/p181-closeout.md`. Design:
+  `notes/design/ws4-risk-optimization.md`. PR: #1073.
