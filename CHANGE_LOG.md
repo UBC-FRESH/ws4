@@ -5429,3 +5429,6 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   and toy-diagnostics values match. The layer is distributional, not spatial growth or event
   perimeter validation. Report: `notes/reports/p187-closeout.md`. Design:
   `notes/design/ws4-fire-regime-benchmarks.md`. PR: #1112.
+
+- P187 merged: the scfm fire-regime distribution benchmarks are on `main` as `883c56e`.
+  Branch deleted; no tag, release, or settings change.
