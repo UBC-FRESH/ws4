@@ -1,0 +1,96 @@
+{
+  "schema_version": "ws4.predictive-ecology-benchmarks.v1",
+  "generated_utc": "2026-11-13",
+  "rules": {
+    "usage": "Reference oracle only; no third-party code or documentation is copied.",
+    "licence": "Most modules have no explicit licence file; treat as reference-only."
+  },
+  "sources": [
+    {
+      "repo": "Biomass_core",
+      "url": "https://github.com/PredictiveEcology/Biomass_core",
+      "commit": "21b3392324c2787a47751be808cbf9e595f308c0",
+      "licence_status": "NOASSERTION",
+      "benchmark_type": ["exact_unit", "model_to_model"],
+      "reference_files": [
+        "tests/testthat/test-calculateANPP.R",
+        "tests/testthat/test-calculateGrowthMortality.R",
+        "tests/testthat/test-calculateCompetition.R",
+        "tests/testthat/test-calculateSumB.R",
+        "Biomass_core.Rmd"
+      ],
+      "use": "LANDIS-II Biomass Succession equations and LBSE comparison",
+      "limits": "Numeric reference facts and equations only; no code copied."
+    },
+    {
+      "repo": "Biomass_regeneration",
+      "url": "https://github.com/PredictiveEcology/Biomass_regeneration",
+      "commit": "56c138dd9a2dfac92b5aeb0a64e459a35248c5e2",
+      "licence_status": "NOASSERTION",
+      "benchmark_type": ["logic"],
+      "reference_files": ["Biomass_regeneration.Rmd"],
+      "use": "Post-fire serotiny/resprouting logic and trait precedence",
+      "limits": "No exact numeric reference values in the reviewed tests."
+    },
+    {
+      "repo": "Biomass_fuels",
+      "url": "https://github.com/PredictiveEcology/Biomass_fuels",
+      "commit": "fe383b6ae58519da156defe8584c67bae455000c",
+      "licence_status": "NOASSERTION",
+      "benchmark_type": ["logic"],
+      "reference_files": ["Biomass_fuels.Rmd"],
+      "use": "Dynamic Biomass Fuels concepts",
+      "limits": "Thin docs and mostly metadata tests."
+    },
+    {
+      "repo": "scfm",
+      "url": "https://github.com/PredictiveEcology/scfm",
+      "commit": "1a4c58e8bccf4b336cacb921ee8705bb8a746385",
+      "licence_status": "no licence field",
+      "benchmark_type": ["exact_unit", "distributional"],
+      "reference_files": [
+        "modules/scfmDataPrep/tests/testthat/test-regime.R",
+        "modules/scfmDiagnostics/tests/testthat/test-diagnostics.R",
+        "modules/scfmDriver/data/spread_firesize_curves.csv"
+      ],
+      "use": "Ignition, escape, mean fire size, FRI diagnostics",
+      "limits": "Regime distributions only, not event perimeters."
+    },
+    {
+      "repo": "LandMine",
+      "url": "https://github.com/PredictiveEcology/LandMine",
+      "commit": "40434a17f73731609e5a362560fbeb95e262a1da",
+      "licence_status": "NOASSERTION",
+      "benchmark_type": ["invariant", "distributional"],
+      "reference_files": [
+        "tests/testthat/test-fri-diagnostics.R",
+        "tests/testthat/test-reburn.R",
+        "tests/testthat/test-fireSizes.R",
+        "tests/testthat/test-run.R",
+        "data/LandMine_DEoptim_params.csv"
+      ],
+      "use": "FRI, fire size, reburn, event timing",
+      "limits": "Authors state it is not fully compared with the original LandMine."
+    },
+    {
+      "repo": "Biomass_validationKNN",
+      "url": "https://github.com/PredictiveEcology/Biomass_validationKNN",
+      "commit": "e640e830206f7856a4dbe84c44a91f6ba7cf5864",
+      "licence_status": "NOASSERTION",
+      "benchmark_type": ["observed_protocol"],
+      "reference_files": ["Biomass_validationKNN.Rmd"],
+      "use": "MAD and sum of negative log-likelihood validation protocol",
+      "limits": "Requires matching observed kNN data."
+    },
+    {
+      "repo": "fireProperties",
+      "url": "https://github.com/PredictiveEcology/fireProperties",
+      "commit": "304442b247f36aa53eca4909bd37de5729eab78e",
+      "licence_status": "NOASSERTION",
+      "benchmark_type": ["logic"],
+      "reference_files": ["Biomass_fireProperties.Rmd"],
+      "use": "FBP fire-properties interface concepts",
+      "limits": "Docs are a module template; tests are template tests."
+    }
+  ]
+}

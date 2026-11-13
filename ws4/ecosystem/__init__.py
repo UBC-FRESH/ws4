@@ -32,6 +32,15 @@ from .fire import (
     run_fire_demo,
     synthetic_grid,
 )
+from .landis import (
+    LANDIS_KERNEL_VERSION,
+    LandisError,
+    calculate_age_mortality,
+    calculate_anpp,
+    calculate_competition,
+    calculate_growth_mortality,
+    calculate_sum_b,
+)
 from .log import (
     EVENT_LOG_SCHEMA_VERSION,
     EventLog,
@@ -105,6 +114,7 @@ __all__ = [
     "EVENT_LOG_SCHEMA_VERSION",
     "EVENT_PHASES",
     "EVENT_SCHEMA_VERSION",
+    "LANDIS_KERNEL_VERSION",
     "MANAGEMENT_PROCESS_ID",
     "PROCESS_ENSEMBLE_VERSION",
     "RISK_AGGREGATIONS",
@@ -136,6 +146,7 @@ __all__ = [
     "FireProcess",
     "FireResult",
     "FireRun",
+    "LandisError",
     "ManagementError",
     "NullBridge",
     "OutOfSampleReport",
@@ -170,6 +181,11 @@ __all__ = [
     "SuccessionProcess",
     "TapeError",
     "VolumeBridgeConfig",
+    "calculate_age_mortality",
+    "calculate_anpp",
+    "calculate_competition",
+    "calculate_growth_mortality",
+    "calculate_sum_b",
     "find_ecosystem_package",
     "fire_evaluator",
     "load_block_fragments",
