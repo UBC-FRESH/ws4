@@ -18,6 +18,12 @@ from .ensemble import (
     run_process_ensemble,
     run_process_scenario,
 )
+from .evaluation import (
+    PROCESS_EVALUATION_VERSION,
+    ProcessEvaluationError,
+    ProcessScheduleEvaluation,
+    evaluate_process_schedule,
+)
 from .events import EVENT_PHASES, EVENT_SCHEMA_VERSION, Event, EventError
 from .executor import ExecutionResult, Executor
 from .fire import (
@@ -123,6 +129,7 @@ __all__ = [
     "LANDIS_REFERENCE_TRAITS",
     "MANAGEMENT_PROCESS_ID",
     "PROCESS_ENSEMBLE_VERSION",
+    "PROCESS_EVALUATION_VERSION",
     "RISK_AGGREGATIONS",
     "SCENARIO_SCHEMA_VERSION",
     "SUCCESSION_PROCESS_ID",
@@ -165,7 +172,9 @@ __all__ = [
     "ProcessEnsembleError",
     "ProcessEnsembleResult",
     "ProcessError",
+    "ProcessEvaluationError",
     "ProcessScenarioResult",
+    "ProcessScheduleEvaluation",
     "RandomTape",
     "RegenerationConfig",
     "RegenerationError",
@@ -195,6 +204,7 @@ __all__ = [
     "calculate_competition",
     "calculate_growth_mortality",
     "calculate_sum_b",
+    "evaluate_process_schedule",
     "find_ecosystem_package",
     "fire_evaluator",
     "landis_reference_config",
