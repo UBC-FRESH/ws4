@@ -187,7 +187,8 @@ exists and the maintainer approves it.
 | P188 fire-regime risk summaries | #1114 | `feature/p188-fire-regime-risk` | complete |
 | P189 LANDIS reference traits and exact age mortality | #1120 | `feature/p189-landis-reference-traits` | complete |
 | P190 process-conditioned schedule evaluation | #1125 | `feature/p190-process-schedule-evaluation` | complete |
-| P191 process schedule objective adapter | #1130 | `feature/p191-process-objective` | pr-open |
+| P191 process schedule objective adapter | #1130 | `feature/p191-process-objective` | complete |
+| P192 process candidate search | #1135 | `feature/p192-process-candidate-search` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -5579,7 +5580,8 @@ Acceptance:
 
 Parent issue: #1130
 Branch: `feature/p191-process-objective`
-Status: pr-open
+Status: complete
+Merge commit: `c7e4649`
 Design note: `notes/design/ws4-process-objective.md`
 Report: `notes/reports/p191-closeout.md`
 PR: #1134
@@ -5595,4 +5597,29 @@ Acceptance:
 - A satisfied target has zero penalty and a violated target has the expected exact penalty.
 - Unsupported target forms fail loudly.
 - The objective and terms are stable in the JSON summary.
+- Dashboard green.
+
+
+## Phase 192: process candidate search
+
+Parent issue: #1135
+Branch: `feature/p192-process-candidate-search`
+Status: pr-open
+Design note: `notes/design/ws4-process-candidate-search.md`
+Report: `notes/reports/p192-closeout.md`
+PR: #TBD
+
+Goal: evaluate a supplied set of candidate schedules through the process evaluator and rank them
+by the weighted objective.
+
+- [x] P192.1 Implement process candidate search (#1136)
+- [x] P192.2 Add the ranking artifact (#1137)
+- [x] P192.3 Test and close out process candidate search (#1138)
+
+Acceptance:
+
+- Three candidates rank in the expected order with exact objectives.
+- The best candidate is stable and reproducible.
+- Empty, duplicate, and target-free searches fail loudly.
+- The ranking artifact is stable and tested.
 - Dashboard green.

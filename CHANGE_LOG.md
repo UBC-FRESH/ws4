@@ -5490,3 +5490,16 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P191.3: verified and closed P191. Full dashboard **OVERALL: GREEN**. The exact penalty,
   zero-penalty, and rejected-target cases pass. Report: `notes/reports/p191-closeout.md`.
   Design: `notes/design/ws4-process-objective.md`. PR: #1134.
+
+- P191 merged: the process schedule objective adapter is on `main` as `c7e4649`. Branch
+  deleted; no tag, release, or settings change.
+
+- P192.1: added deterministic candidate search over process-conditioned schedules with a shared
+  seed, exact objective ranking, and tie-breaking by candidate id.
+
+- P192.2: added the candidate ranking CSV and JSON summary with objectives, terms, harvest area,
+  and final biomass. Dashboard: pending full run.
+
+- P192.3: verified and closed P192. Full dashboard **OVERALL: GREEN**. The exact ranking,
+  tie-break, determinism, and artifact tests pass. Report: `notes/reports/p192-closeout.md`.
+  Design: `notes/design/ws4-process-candidate-search.md`. PR: #TBD.
