@@ -179,6 +179,7 @@ exists and the maintainer approves it.
 | P180 Succession, regeneration, and yield bridge | #1062 | `feature/p180-succession-yield` | complete |
 | P181 Scenario and risk evaluation in the optimizer | #1068 | `feature/p181-risk-optimizer` | complete |
 | P182 Multi-fidelity risk validation | #1074 | `feature/p182-risk-validation` | complete |
+| P183 Process-driven scenario ensemble | #1081 | `feature/p183-process-ensemble` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -5347,4 +5348,31 @@ Acceptance:
 - A run with at least two scenarios writes train/validation risk artifacts.
 - A one-scenario set skips the split with a clear reason.
 - Tests cover the gap and split.
+- `python scripts/dashboard.py` is green.
+
+
+## Phase 183: Process-driven scenario ensemble
+
+Parent issue: #1081
+Branch: `feature/p183-process-ensemble`
+Status: pr-open
+Design note: `notes/design/ws4-process-ensemble.md`
+Report: `notes/reports/p183-closeout.md`
+PR: #1086
+
+Goal: run fire, succession, salvage, and regeneration as a process-driven scenario ensemble
+outside the optimizer's inner loop, with account-like metrics and risk aggregation.
+
+- [x] P183.1 Add process account observation (#1082)
+- [x] P183.2 Run the process scenario ensemble (#1083)
+- [x] P183.3 Expose the process ensemble (#1084)
+- [x] P183.4 Verify and close out the process ensemble (#1085)
+
+Acceptance:
+
+- Each scenario produces a per-year process account table.
+- Replaying a scenario seed reproduces the same event log and metrics.
+- Common random numbers hold across two configurations.
+- Risk aggregation works over the process metrics.
+- The report states the missing management bridge.
 - `python scripts/dashboard.py` is green.

@@ -5346,3 +5346,17 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   yield bridge, scenario/risk optimizer overlay, and multi-fidelity risk validation are on
   `main` as `04bcb28`, `880c49d`, `4bac755`, and `6a8d45a`. Branches deleted; no tag, release,
   or settings change.
+
+- P183.1: added `ws4/ecosystem/ensemble.py` with per-year process metrics for fire, succession,
+  salvage, regeneration, state totals, and bridge volume.
+
+- P183.2: added `run_process_scenario` and `run_process_ensemble`, one executor per scenario
+  seed, with optional risk aggregation. Replay and common-random-numbers tests pass.
+
+- P183.3: exposed the ensemble through the `ws4.ecosystem` API and documented the missing
+  management/state bridge. Dashboard: **GREEN**.
+
+- P183.4: verified and closed P183. Full dashboard **OVERALL: GREEN**. The process ensemble
+  produces per-scenario metrics and risk rows with replay and CRN evidence. It is not yet
+  schedule-conditioned; the management/state bridge remains the next step. Report:
+  `notes/reports/p183-closeout.md`. Design: `notes/design/ws4-process-ensemble.md`. PR: #1086.
