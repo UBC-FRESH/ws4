@@ -184,7 +184,8 @@ exists and the maintainer approves it.
 | P185 Predictive Ecology benchmarks and LANDIS kernel | #1094 | `feature/p185-landis-benchmarks` | complete |
 | P186 LANDIS succession process | #1100 | `feature/p186-landis-process` | complete |
 | P187 scfm fire-regime distribution benchmarks | #1107 | `feature/p187-fire-regime-benchmarks` | complete |
-| P188 fire-regime risk summaries | #1114 | `feature/p188-fire-regime-risk` | pr-open |
+| P188 fire-regime risk summaries | #1114 | `feature/p188-fire-regime-risk` | complete |
+| P189 LANDIS reference traits and exact age mortality | #1120 | `feature/p189-landis-reference-traits` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -5498,7 +5499,8 @@ Acceptance:
 
 Parent issue: #1114
 Branch: `feature/p188-fire-regime-risk`
-Status: pr-open
+Status: complete
+Merge commit: `80ffe40`
 Design note: `notes/design/ws4-fire-regime-risk.md`
 Report: `notes/reports/p188-closeout.md`
 PR: #1119
@@ -5518,3 +5520,27 @@ Acceptance:
 - Missing/zero burnable area and invalid events fail loudly.
 - The summary is separate from event-perimeter validation.
 - `python scripts/dashboard.py` is green.
+
+
+## Phase 189: LANDIS reference traits and exact age mortality
+
+Parent issue: #1120
+Branch: `feature/p189-landis-reference-traits`
+Status: pr-open
+Design note: `notes/design/ws4-landis-reference-traits.md`
+Report: `notes/reports/p189-closeout.md`
+PR: #1124
+
+Goal: close the remaining LANDIS kernel reference gap and replace the provisional species traits
+with the published Biomass_core appendix values where they exist.
+
+- [x] P189.1 Add the published LANDIS reference trait table (#1121)
+- [x] P189.2 Add exact age-mortality reference tests (#1122)
+- [x] P189.3 Document trait provenance and verify (#1123)
+
+Acceptance:
+
+- Exact age-mortality values match the published reference table.
+- Reference traits are available through the public API and validated.
+- Unknown species and invalid trait requests fail loudly.
+- Dashboard green.

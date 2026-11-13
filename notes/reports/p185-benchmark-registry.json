@@ -23,7 +23,21 @@
         "Biomass_core.Rmd"
       ],
       "use": "LANDIS-II Biomass Succession equations and LBSE comparison",
-      "limits": "Numeric reference facts and equations only; no code copied."
+      "limits": "Numeric reference facts and equations only; no code copied.",
+      "implemented_by": [
+        "ws4/ecosystem/landis.py"
+      ],
+      "implemented": [
+        "ANPP",
+        "growth and developmental mortality",
+        "competition",
+        "sumB",
+        "age mortality",
+        "reference species traits"
+      ],
+      "remaining": [
+        "full landscape LBSE trajectory comparison is not implemented"
+      ]
     },
     {
       "repo": "Biomass_regeneration",

@@ -5447,3 +5447,18 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   summary matches the exact values, and the P187 target diagnostics are attached when a target
   and historical sample are supplied. Report: `notes/reports/p188-closeout.md`. Design:
   `notes/design/ws4-fire-regime-risk.md`. PR: #1119.
+
+- P188 merged: fire-regime risk summaries are on `main` as `80ffe40`. Branch deleted; no
+  tag, release, or settings change.
+
+- P189.1: added `LANDIS_REFERENCE_TRAITS` for the 16 published Biomass_core appendix species
+  and `landis_reference_config`, with unknown-species validation. Fuel fraction and snag decay
+  remain provisional.
+
+- P189.2: added exact spin-up and non-spin-up age-mortality reference rows from the public
+  Biomass_core test table, plus reference-trait API tests. Dashboard: pending full run.
+
+- P189.3: verified and closed P189. Full dashboard **OVERALL: GREEN**. The 16-species reference
+  traits and exact age-mortality rows match the published appendix/test values. Report:
+  `notes/reports/p189-closeout.md`. Design: `notes/design/ws4-landis-reference-traits.md`.
+  PR: #1124.

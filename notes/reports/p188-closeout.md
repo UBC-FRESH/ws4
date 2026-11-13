@@ -65,4 +65,4 @@ comparison remains blocked without a reference run or published numeric landscap
 
 ## Pull request
 
-PR: #1119 is queued for maintainer approval. Do not merge without approval.
+Merged as `80ffe40` (PR #1119); branch deleted.
