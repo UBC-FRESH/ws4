@@ -5461,4 +5461,4 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P189.3: verified and closed P189. Full dashboard **OVERALL: GREEN**. The 16-species reference
   traits and exact age-mortality rows match the published appendix/test values. Report:
   `notes/reports/p189-closeout.md`. Design: `notes/design/ws4-landis-reference-traits.md`.
-  PR: #TBD.
+  PR: #1124.

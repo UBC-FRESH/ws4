@@ -5529,7 +5529,7 @@ Branch: `feature/p189-landis-reference-traits`
 Status: pr-open
 Design note: `notes/design/ws4-landis-reference-traits.md`
 Report: `notes/reports/p189-closeout.md`
-PR: #TBD
+PR: #1124
 
 Goal: close the remaining LANDIS kernel reference gap and replace the provisional species traits
 with the published Biomass_core appendix values where they exist.
