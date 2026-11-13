@@ -5634,7 +5634,7 @@ Branch: `feature/p193-process-neighbourhood`
 Status: pr-open
 Design note: `notes/design/ws4-process-neighbourhood.md`
 Report: `notes/reports/p193-closeout.md`
-PR: #TBD
+PR: #1144
 
 Goal: add a bounded, deterministic hill-climb over process candidate schedules with a
 caller-supplied neighbour function.
