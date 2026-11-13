@@ -180,7 +180,7 @@ exists and the maintainer approves it.
 | P181 Scenario and risk evaluation in the optimizer | #1068 | `feature/p181-risk-optimizer` | complete |
 | P182 Multi-fidelity risk validation | #1074 | `feature/p182-risk-validation` | complete |
 | P183 Process-driven scenario ensemble | #1081 | `feature/p183-process-ensemble` | pr-open |
-| P184 Schedule-to-ecosystem management bridge | #1087 | `feature/p184-management-bridge` | active |
+| P184 Schedule-to-ecosystem management bridge | #1087 | `feature/p184-management-bridge` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -5383,8 +5383,10 @@ Acceptance:
 
 Parent issue: #1087
 Branch: `feature/p184-management-bridge`
-Status: active
+Status: pr-open
 Design note: `notes/design/ws4-management-bridge.md`
+Report: `notes/reports/p184-closeout.md`
+PR: #1092
 
 Goal: apply a management schedule to the ecological cohort state so process runs are
 schedule-conditioned.
@@ -5392,7 +5394,7 @@ schedule-conditioned.
 - [x] P184.1 Add schedule and fragment mapping inputs (#1088)
 - [x] P184.2 Apply schedule harvests to the cohort state (#1089)
 - [x] P184.3 Integrate management into the process ensemble (#1090)
-- [ ] P184.4 Verify and close out the management bridge (#1091)
+- [x] P184.4 Verify and close out the management bridge (#1091)
 
 Acceptance:
 

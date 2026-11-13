@@ -5370,3 +5370,7 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P184.3: integrated an optional management source into `ProcessEnsembleConfig`. A harvested
   landscape now has lower biomass/fuel and different process metrics from the same initial
   state. Dashboard: **GREEN**.
+
+- P184.4: verified and closed P184. Full dashboard **OVERALL: GREEN**. The management bridge
+  is a simplified clearcut-like transition, not the compiled treatment semantics. Report:
+  `notes/reports/p184-closeout.md`. Design: `notes/design/ws4-management-bridge.md`. PR: #1092.
