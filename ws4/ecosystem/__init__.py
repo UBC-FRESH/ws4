@@ -9,6 +9,15 @@ dataset remains the contract; this package is the optional ecological layer over
 from __future__ import annotations
 
 from .bridge import BRIDGE_VERSION, BridgeError, SpeciesVolumeBridge, VolumeBridgeConfig
+from .ensemble import (
+    PROCESS_ENSEMBLE_VERSION,
+    ProcessEnsembleConfig,
+    ProcessEnsembleError,
+    ProcessEnsembleResult,
+    ProcessScenarioResult,
+    run_process_ensemble,
+    run_process_scenario,
+)
 from .events import EVENT_PHASES, EVENT_SCHEMA_VERSION, Event, EventError
 from .executor import ExecutionResult, Executor
 from .fire import (
@@ -89,6 +98,7 @@ __all__ = [
     "EVENT_LOG_SCHEMA_VERSION",
     "EVENT_PHASES",
     "EVENT_SCHEMA_VERSION",
+    "PROCESS_ENSEMBLE_VERSION",
     "RISK_AGGREGATIONS",
     "SCENARIO_SCHEMA_VERSION",
     "SUCCESSION_PROCESS_ID",
@@ -122,7 +132,11 @@ __all__ = [
     "OutOfSampleReport",
     "Process",
     "ProcessContext",
+    "ProcessEnsembleConfig",
+    "ProcessEnsembleError",
+    "ProcessEnsembleResult",
     "ProcessError",
+    "ProcessScenarioResult",
     "RandomTape",
     "RegenerationConfig",
     "RegenerationError",
@@ -154,6 +168,8 @@ __all__ = [
     "package_fingerprint",
     "risk_account_values",
     "run_fire_demo",
+    "run_process_ensemble",
+    "run_process_scenario",
     "synthetic_grid",
     "validate_ecosystem_package",
     "validate_process",
