@@ -9,8 +9,9 @@ by the published tests and by the WS4 cohort state.
 from __future__ import annotations
 
 import math
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
+from types import MappingProxyType
 from typing import Final
 
 import numpy as np
@@ -267,6 +268,41 @@ class LandisSpeciesTraits:
             object.__setattr__(self, name, value)
 
 
+_REFERENCE_TRAIT_ROWS: Final[tuple[tuple[str, float, float, float, float, float], ...]] = (
+    # species, longevity, maxANPP, growthcurve, mortalityshape, maxB
+    ("abiebals", 200.0, 886.0, 0.25, 10.0, 26580.0),
+    ("acerrubr", 150.0, 1175.0, 0.25, 10.0, 35250.0),
+    ("acersacc", 300.0, 1106.0, 0.25, 10.0, 33180.0),
+    ("betualle", 300.0, 1202.0, 0.25, 10.0, 36060.0),
+    ("betupapy", 100.0, 1202.0, 0.25, 10.0, 36060.0),
+    ("fraxamer", 300.0, 1202.0, 0.25, 10.0, 36060.0),
+    ("piceglau", 300.0, 969.0, 0.25, 10.0, 29070.0),
+    ("pinubank", 100.0, 1130.0, 0.25, 10.0, 33900.0),
+    ("pinuresi", 200.0, 1017.0, 0.25, 10.0, 30510.0),
+    ("pinustro", 400.0, 1090.0, 0.25, 10.0, 38150.0),
+    ("poputrem", 100.0, 1078.0, 0.25, 10.0, 32340.0),
+    ("querelli", 300.0, 1096.0, 0.25, 10.0, 32880.0),
+    ("querrubr", 250.0, 1017.0, 0.25, 10.0, 30510.0),
+    ("thujocci", 400.0, 1090.0, 0.25, 10.0, 32700.0),
+    ("tiliamer", 250.0, 1078.0, 0.25, 10.0, 32340.0),
+    ("tsugcana", 500.0, 1096.0, 0.25, 10.0, 32880.0),
+)
+
+#: Published Biomass_core appendix traits. Fuel fraction and snag decay remain provisional.
+LANDIS_REFERENCE_TRAITS: Final[Mapping[str, LandisSpeciesTraits]] = MappingProxyType(
+    {
+        name: LandisSpeciesTraits(
+            max_b=max_b,
+            max_anpp=max_anpp,
+            growthcurve=growthcurve,
+            mortalityshape=mortalityshape,
+            longevity=longevity,
+        )
+        for name, longevity, max_anpp, growthcurve, mortalityshape, max_b in _REFERENCE_TRAIT_ROWS
+    }
+)
+
+
 @dataclass(frozen=True)
 class LandisSuccessionConfig:
     """Configuration for the LANDIS succession process.
@@ -317,6 +353,47 @@ class LandisSuccessionConfig:
             Species-specific traits or the default.
         """
         return self.species.get(species, self.default)
+
+
+def landis_reference_config(
+    species: Sequence[str] | None = None, *, stage: str = "nonSpinup"
+) -> LandisSuccessionConfig:
+    """Return a configuration using the published Biomass_core traits.
+
+    Parameters
+    ----------
+    species : sequence of str or None, optional
+        Species names to include. None includes all 16 reference species.
+    stage : str, optional
+        ``nonSpinup`` (default) or ``spinup``.
+
+    Returns
+    -------
+    LandisSuccessionConfig
+        A configuration with the selected reference traits. The default traits remain
+        provisional for species outside the reference table.
+
+    Raises
+    ------
+    LandisError
+        If a species name is unknown or the input is not a sequence of names.
+    """
+    if species is None:
+        selected = tuple(LANDIS_REFERENCE_TRAITS)
+    elif isinstance(species, str):
+        raise LandisError("species must be a sequence of names, not a string")
+    else:
+        selected = tuple(species)
+        for name in selected:
+            if not isinstance(name, str):
+                raise LandisError("species names must be strings")
+    unknown = sorted(set(selected) - set(LANDIS_REFERENCE_TRAITS))
+    if unknown:
+        raise LandisError(f"unknown reference species: {', '.join(unknown)}")
+    return LandisSuccessionConfig(
+        species={name: LANDIS_REFERENCE_TRAITS[name] for name in selected},
+        stage=stage,
+    )
 
 
 class LandisSuccessionProcess:

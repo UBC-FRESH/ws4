@@ -34,6 +34,7 @@ from .fire import (
 )
 from .landis import (
     LANDIS_KERNEL_VERSION,
+    LANDIS_REFERENCE_TRAITS,
     LandisError,
     LandisSpeciesTraits,
     LandisSuccessionConfig,
@@ -43,6 +44,7 @@ from .landis import (
     calculate_competition,
     calculate_growth_mortality,
     calculate_sum_b,
+    landis_reference_config,
 )
 from .log import (
     EVENT_LOG_SCHEMA_VERSION,
@@ -118,6 +120,7 @@ __all__ = [
     "EVENT_PHASES",
     "EVENT_SCHEMA_VERSION",
     "LANDIS_KERNEL_VERSION",
+    "LANDIS_REFERENCE_TRAITS",
     "MANAGEMENT_PROCESS_ID",
     "PROCESS_ENSEMBLE_VERSION",
     "RISK_AGGREGATIONS",
@@ -194,6 +197,7 @@ __all__ = [
     "calculate_sum_b",
     "find_ecosystem_package",
     "fire_evaluator",
+    "landis_reference_config",
     "load_block_fragments",
     "load_dataset_ecosystem",
     "load_ecosystem_package",

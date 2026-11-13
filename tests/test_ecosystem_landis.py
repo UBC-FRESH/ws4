@@ -372,3 +372,125 @@ def test_landis_config_rejects_bad_traits() -> None:
         LandisSuccessionConfig(succession_timestep=0)
     with pytest.raises(LandisError, match="stage"):
         LandisSuccessionConfig(stage="bad")
+
+
+_AGE_MORTALITY_AGES = (2, 3, 4, 5, 10, 20, 50, 100, 200, 300, 400)
+_AGE_MORTALITY_SPINUP_B = (
+    1096.0,
+    1854.0,
+    2626.0,
+    3391.0,
+    6915.0,
+    12386.0,
+    21568.0,
+    27418.0,
+    28737.0,
+    20494.0,
+    3915.0,
+)
+_AGE_MORTALITY_SPINUP_MAGE = (
+    1.15,
+    1.94,
+    2.76,
+    3.56,
+    7.3,
+    13.22,
+    24.23,
+    36.62,
+    99.97,
+    395.85,
+    533.75,
+)
+_AGE_MORTALITY_NONSPINUP_B = (
+    1096.0,
+    1855.0,
+    2629.0,
+    3397.0,
+    6943.0,
+    12491.0,
+    22003.0,
+    28378.0,
+    30137.0,
+    21260.0,
+    3954.0,
+)
+_AGE_MORTALITY_NONSPINUP_MAGE = (
+    0.05,
+    0.09,
+    0.13,
+    0.17,
+    0.39,
+    0.85,
+    2.72,
+    9.52,
+    74.7,
+    389.39,
+    535.12,
+)
+
+
+def test_age_mortality_matches_the_published_reference_rows() -> None:
+    spinup = calculate_age_mortality(
+        pd.DataFrame(
+            {
+                "age": list(_AGE_MORTALITY_AGES),
+                "B": list(_AGE_MORTALITY_SPINUP_B),
+                "longevity": [500.0] * len(_AGE_MORTALITY_AGES),
+                "mortalityshape": [10.0] * len(_AGE_MORTALITY_AGES),
+            }
+        ),
+        stage="spinup",
+        spinup_mortality_fraction=0.001,
+    )
+    non_spinup = calculate_age_mortality(
+        pd.DataFrame(
+            {
+                "age": list(_AGE_MORTALITY_AGES),
+                "B": list(_AGE_MORTALITY_NONSPINUP_B),
+                "longevity": [500.0] * len(_AGE_MORTALITY_AGES),
+                "mortalityshape": [10.0] * len(_AGE_MORTALITY_AGES),
+            }
+        ),
+        stage="nonSpinup",
+        spinup_mortality_fraction=0.001,
+    )
+
+    np.testing.assert_allclose(spinup["mAge"].to_numpy(), _AGE_MORTALITY_SPINUP_MAGE, atol=0.01)
+    np.testing.assert_allclose(
+        non_spinup["mAge"].to_numpy(), _AGE_MORTALITY_NONSPINUP_MAGE, atol=0.01
+    )
+
+
+def test_reference_traits_match_the_published_appendix() -> None:
+    from ws4.ecosystem.landis import LANDIS_REFERENCE_TRAITS
+
+    assert len(LANDIS_REFERENCE_TRAITS) == 16
+    abiebals = LANDIS_REFERENCE_TRAITS["abiebals"]
+    assert (abiebals.max_b, abiebals.max_anpp) == (26580.0, 886.0)
+    assert (abiebals.longevity, abiebals.mortalityshape, abiebals.growthcurve) == (
+        200.0,
+        10.0,
+        0.25,
+    )
+    pinustro = LANDIS_REFERENCE_TRAITS["pinustro"]
+    assert (pinustro.max_b, pinustro.max_anpp, pinustro.longevity) == (38150.0, 1090.0, 400.0)
+    tsugcana = LANDIS_REFERENCE_TRAITS["tsugcana"]
+    assert (tsugcana.max_b, tsugcana.max_anpp, tsugcana.longevity) == (32880.0, 1096.0, 500.0)
+    assert all(traits.fuel_fraction == 0.15 for traits in LANDIS_REFERENCE_TRAITS.values())
+
+
+def test_reference_config_selects_and_validates_species() -> None:
+    from ws4.ecosystem.landis import landis_reference_config
+
+    config = landis_reference_config(["pinustro", "abiebals"], stage="spinup")
+    assert set(config.species) == {"pinustro", "abiebals"}
+    assert config.stage == "spinup"
+    assert config.traits("pinustro").max_b == 38150.0
+    assert config.traits("unknown").max_b == 300.0
+
+    with pytest.raises(LandisError, match="unknown reference species"):
+        landis_reference_config(["not-a-species"])
+    with pytest.raises(LandisError, match="sequence of names"):
+        landis_reference_config("abiebals")
+    with pytest.raises(LandisError, match="stage"):
+        landis_reference_config(stage="bad")
