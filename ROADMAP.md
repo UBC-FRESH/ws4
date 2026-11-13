@@ -183,7 +183,7 @@ exists and the maintainer approves it.
 | P184 Schedule-to-ecosystem management bridge | #1087 | `feature/p184-management-bridge` | complete |
 | P185 Predictive Ecology benchmarks and LANDIS kernel | #1094 | `feature/p185-landis-benchmarks` | complete |
 | P186 LANDIS succession process | #1100 | `feature/p186-landis-process` | complete |
-| P187 scfm fire-regime distribution benchmarks | #1107 | `feature/p187-fire-regime-benchmarks` | pr-open |
+| P187 scfm fire-regime distribution benchmarks | #1107 | `feature/p187-fire-regime-benchmarks` | complete |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -5470,7 +5470,8 @@ Acceptance:
 
 Parent issue: #1107
 Branch: `feature/p187-fire-regime-benchmarks`
-Status: pr-open
+Status: complete
+Merge commit: `883c56e`
 Design note: `notes/design/ws4-fire-regime-benchmarks.md`
 Report: `notes/reports/p187-closeout.md`
 PR: #1112

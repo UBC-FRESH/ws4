@@ -49,4 +49,4 @@ fire-regime distributions to scenario risk summaries.
 
 ## Pull request
 
-PR: #1112 is queued for maintainer approval. Do not merge without approval.
+Merged as `883c56e` (PR #1112); branch deleted.
