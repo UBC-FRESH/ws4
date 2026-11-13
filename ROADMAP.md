@@ -5444,7 +5444,7 @@ Branch: `feature/p186-landis-process`
 Status: pr-open
 Design note: `notes/design/ws4-landis-succession-process.md`
 Report: `notes/reports/p186-closeout.md`
-PR: #TBD
+PR: #1105
 
 Goal: wire the P185 LANDIS kernel into a cohort-state succession process and run it through
 the process ensemble.

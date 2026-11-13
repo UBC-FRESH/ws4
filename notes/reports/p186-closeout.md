@@ -46,4 +46,4 @@ distributional benchmarks as a separate layer.
 
 ## Pull request
 
-PR: #TBD is queued for maintainer approval. Do not merge without approval.
+PR: #1105 is queued for maintainer approval. Do not merge without approval.

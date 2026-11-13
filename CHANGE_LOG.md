@@ -5410,4 +5410,4 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P186.4: verified and closed P186. Full dashboard **OVERALL: GREEN**. The LANDIS process is
   a single-cohort-table transition, not a full landscape LBSE integration. Report:
   `notes/reports/p186-closeout.md`. Design: `notes/design/ws4-landis-succession-process.md`.
-  PR: #TBD.
+  PR: #1105.
