@@ -5424,3 +5424,8 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 
 - P187.3: added exact scfm toy-regime and toy-diagnostics reference tests. The layer is
   distributional, not event-perimeter validation. Dashboard: **GREEN**.
+
+- P187.4: verified and closed P187. Full dashboard **OVERALL: GREEN**. The scfm toy-regime
+  and toy-diagnostics values match. The layer is distributional, not spatial growth or event
+  perimeter validation. Report: `notes/reports/p187-closeout.md`. Design:
+  `notes/design/ws4-fire-regime-benchmarks.md`. PR: #TBD.

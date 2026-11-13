@@ -183,7 +183,7 @@ exists and the maintainer approves it.
 | P184 Schedule-to-ecosystem management bridge | #1087 | `feature/p184-management-bridge` | complete |
 | P185 Predictive Ecology benchmarks and LANDIS kernel | #1094 | `feature/p185-landis-benchmarks` | complete |
 | P186 LANDIS succession process | #1100 | `feature/p186-landis-process` | complete |
-| P187 scfm fire-regime distribution benchmarks | #1107 | `feature/p187-fire-regime-benchmarks` | active |
+| P187 scfm fire-regime distribution benchmarks | #1107 | `feature/p187-fire-regime-benchmarks` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -5470,8 +5470,10 @@ Acceptance:
 
 Parent issue: #1107
 Branch: `feature/p187-fire-regime-benchmarks`
-Status: active
+Status: pr-open
 Design note: `notes/design/ws4-fire-regime-benchmarks.md`
+Report: `notes/reports/p187-closeout.md`
+PR: #TBD
 
 Goal: implement the scfm fire-regime parameter and diagnostic formulas as exact Python
 benchmarks, separate from event-perimeter validation.
@@ -5479,7 +5481,7 @@ benchmarks, separate from event-perimeter validation.
 - [x] P187.1 Implement fire-regime parameter formulas (#1108)
 - [x] P187.2 Implement fire-regime diagnostics (#1109)
 - [x] P187.3 Add exact scfm reference tests (#1110)
-- [ ] P187.4 Verify and close out fire-regime benchmarks (#1111)
+- [x] P187.4 Verify and close out fire-regime benchmarks (#1111)
 
 Acceptance:
 
