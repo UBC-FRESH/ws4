@@ -5489,4 +5489,4 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 
 - P191.3: verified and closed P191. Full dashboard **OVERALL: GREEN**. The exact penalty,
   zero-penalty, and rejected-target cases pass. Report: `notes/reports/p191-closeout.md`.
-  Design: `notes/design/ws4-process-objective.md`. PR: #TBD.
+  Design: `notes/design/ws4-process-objective.md`. PR: #1134.
