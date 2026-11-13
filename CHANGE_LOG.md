@@ -5374,3 +5374,7 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P184.4: verified and closed P184. Full dashboard **OVERALL: GREEN**. The management bridge
   is a simplified clearcut-like transition, not the compiled treatment semantics. Report:
   `notes/reports/p184-closeout.md`. Design: `notes/design/ws4-management-bridge.md`. PR: #1092.
+
+- P183–P184 merged: the process-driven scenario ensemble and schedule-to-ecosystem management
+  bridge are on `main` as `4419743` and `86a38b2`. Branches deleted; no tag, release, or
+  settings change.
