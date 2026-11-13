@@ -186,7 +186,8 @@ exists and the maintainer approves it.
 | P187 scfm fire-regime distribution benchmarks | #1107 | `feature/p187-fire-regime-benchmarks` | complete |
 | P188 fire-regime risk summaries | #1114 | `feature/p188-fire-regime-risk` | complete |
 | P189 LANDIS reference traits and exact age mortality | #1120 | `feature/p189-landis-reference-traits` | complete |
-| P190 process-conditioned schedule evaluation | #1125 | `feature/p190-process-schedule-evaluation` | pr-open |
+| P190 process-conditioned schedule evaluation | #1125 | `feature/p190-process-schedule-evaluation` | complete |
+| P191 process schedule objective adapter | #1130 | `feature/p191-process-objective` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -5552,7 +5553,8 @@ Acceptance:
 
 Parent issue: #1125
 Branch: `feature/p190-process-schedule-evaluation`
-Status: pr-open
+Status: complete
+Merge commit: `f9f1dbe`
 Design note: `notes/design/ws4-process-schedule-evaluation.md`
 Report: `notes/reports/p190-closeout.md`
 PR: #1129
@@ -5571,3 +5573,26 @@ Acceptance:
 - Invalid schedules, horizons, seeds, and mappings fail loudly.
 - The account table and JSON summary are stable and tested.
 - `python scripts/dashboard.py` is green.
+
+
+## Phase 191: process schedule objective adapter
+
+Parent issue: #1130
+Branch: `feature/p191-process-objective`
+Status: pr-open
+Design note: `notes/design/ws4-process-objective.md`
+Report: `notes/reports/p191-closeout.md`
+PR: #TBD
+
+Goal: add a validated objective adapter over the P190 final evaluation accounts.
+
+- [x] P191.1 Add the final-account objective adapter (#1131)
+- [x] P191.2 Expose objective results in the artifact (#1132)
+- [x] P191.3 Test and close out the process objective adapter (#1133)
+
+Acceptance:
+
+- A satisfied target has zero penalty and a violated target has the expected exact penalty.
+- Unsupported target forms fail loudly.
+- The objective and terms are stable in the JSON summary.
+- Dashboard green.

@@ -121,6 +121,8 @@ def test_evaluation_is_deterministic() -> None:
 
 
 def test_evaluation_artifact_writes_json_and_csv(tmp_path: Path) -> None:
+    from ws4.opt.objective import Target
+
     _schema, state, edges = synthetic_grid(2, 2)
     evaluation = evaluate_process_schedule(
         state,
@@ -129,6 +131,7 @@ def test_evaluation_artifact_writes_json_and_csv(tmp_path: Path) -> None:
         {1: (1,)},
         horizon_years=1,
         fire=_fire(),
+        targets=(Target(account="harvest.area_ha_total", period=1, minimum=1.0),),
     )
     evaluation.write(tmp_path / "evaluation")
 
@@ -138,6 +141,8 @@ def test_evaluation_artifact_writes_json_and_csv(tmp_path: Path) -> None:
     accounts = summary["accounts"]
     assert isinstance(accounts, dict)
     assert accounts["harvest.count_total"] == 1.0
+    assert summary["objective"] == 0.0
+    assert summary["target_accounts"] == ["harvest.area_ha_total"]
     assert (tmp_path / "evaluation" / "process_evaluation_values.csv").is_file()
     assert (tmp_path / "evaluation" / "process_evaluation_accounts.csv").is_file()
 
@@ -176,3 +181,68 @@ def test_invalid_inputs_fail_loudly() -> None:
         evaluate_process_schedule(
             state, edges, {1: (("CC", 0),)}, {2: (1,)}, horizon_years=1, fire=_fire()
         )
+
+
+def test_objective_adapter_prices_final_accounts() -> None:
+    from ws4.opt.objective import Target
+
+    _schema, state, edges = synthetic_grid(3, 3)
+    evaluation = evaluate_process_schedule(
+        state,
+        edges,
+        {1: (("CC", 0),)},
+        {1: (1, 2)},
+        horizon_years=1,
+        fire=_fire(),
+        targets=(Target(account="harvest.area_ha_total", period=1, minimum=30.0),),
+    )
+
+    assert evaluation.objective == 10.0
+    assert evaluation.terms == (10.0,)
+    summary = evaluation.summary()
+    assert summary["objective"] == 10.0
+    assert summary["target_terms"] == [10.0]
+    assert summary["target_accounts"] == ["harvest.area_ha_total"]
+
+
+def test_satisfied_objective_target_has_zero_penalty() -> None:
+    from ws4.opt.objective import Target
+
+    _schema, state, edges = synthetic_grid(3, 3)
+    evaluation = evaluate_process_schedule(
+        state,
+        edges,
+        {1: (("CC", 0),)},
+        {1: (1, 2)},
+        horizon_years=1,
+        fire=_fire(),
+        targets=(Target(account="harvest.area_ha_total", period=1, minimum=20.0),),
+    )
+
+    assert evaluation.objective == 0.0
+    assert evaluation.terms == (0.0,)
+
+
+def test_unsupported_targets_fail_loudly() -> None:
+    from ws4.opt.objective import Target
+
+    _schema, state, edges = synthetic_grid(2, 2)
+    cases = (
+        Target(account="harvest.area_ha_total", period=2),
+        Target(account="harvest.area_ha_total", period=1, flow="even"),
+        Target(account="product.volume", period=1),
+        Target(account="harvest.area_ha_total", period=1, aggregation="mean"),
+        Target(account="harvest.area_ha_total", period=0),
+        Target(account="not.an.account", period=1),
+    )
+    for target in cases:
+        with pytest.raises(ProcessEvaluationError):
+            evaluate_process_schedule(
+                state,
+                edges,
+                {1: (("CC", 0),)},
+                {1: (1,)},
+                horizon_years=1,
+                fire=_fire(),
+                targets=(target,),
+            )

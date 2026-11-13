@@ -21,6 +21,7 @@ from typing import Final
 
 import pandas as pd
 
+from ..opt.objective import Target, accumulates, objective, objective_terms
 from .bridge import SpeciesVolumeBridge, VolumeBridgeConfig
 from .ensemble import ProcessEnsembleConfig, ProcessScenarioResult, run_process_scenario
 from .fire import FireConfig, FireEdge
@@ -86,6 +87,12 @@ class ProcessScheduleEvaluation:
         Per-year process metrics with ``offset``, ``account``, and ``value``.
     accounts : pandas.DataFrame
         Final evaluation accounts with ``offset``, ``account``, and ``value``.
+    targets : tuple of Target
+        Targets priced against the final accounts.
+    objective : float or None
+        Total weighted penalty, or None when no targets were supplied.
+    terms : tuple of float
+        One penalty per target, in target order.
     """
 
     scenario_id: str
@@ -95,6 +102,9 @@ class ProcessScheduleEvaluation:
     log: EventLog
     values: pd.DataFrame
     accounts: pd.DataFrame
+    targets: tuple[Target, ...] = ()
+    objective: float | None = None
+    terms: tuple[float, ...] = ()
 
     def summary(self) -> dict[str, object]:
         """Return a stable summary of the evaluation.
@@ -116,6 +126,9 @@ class ProcessScheduleEvaluation:
             "horizon_years": self.horizon_years,
             "final_offset": int(self.accounts["offset"].max()) if len(self.accounts) else 0,
             "accounts": dict(sorted(accounts.items())),
+            "objective": self.objective,
+            "target_terms": list(self.terms),
+            "target_accounts": [target.account for target in self.targets],
             "event_counts": dict(sorted(counts.items())),
         }
 
@@ -233,6 +246,57 @@ def _accounts(
     )
 
 
+def _validate_targets(
+    targets: Sequence[Target], *, horizon_years: int, accounts: pd.DataFrame
+) -> tuple[Target, ...]:
+    """Validate targets against the final-account view.
+
+    Parameters
+    ----------
+    targets : sequence of Target
+        Targets to validate.
+    horizon_years : int
+        Evaluation horizon.
+    accounts : pandas.DataFrame
+        Final evaluation accounts.
+
+    Returns
+    -------
+    tuple of Target
+        The validated targets.
+
+    Raises
+    ------
+    ProcessEvaluationError
+        If a target is a flow, risk-aggregated, snapshot, accumulating, unknown-account,
+        or non-final-period target.
+    """
+    known = {str(account) for account in accounts["account"]}
+    expected_offset = max(0, horizon_years - 1)
+    validated: list[Target] = []
+    for target in targets:
+        if not isinstance(target, Target):
+            raise ProcessEvaluationError("targets must contain Target values")
+        if target.flow:
+            raise ProcessEvaluationError("flow targets are not supported by final accounts")
+        if target.aggregation != "single":
+            raise ProcessEvaluationError(
+                "risk-aggregated targets are not supported by a single evaluation"
+            )
+        if target.period == 0:
+            raise ProcessEvaluationError("snapshot targets are not supported")
+        if accumulates(target.account):
+            raise ProcessEvaluationError(
+                "accumulating accounts are not supported by final accounts"
+            )
+        if target.account not in known:
+            raise ProcessEvaluationError(f"unknown evaluation account: {target.account!r}")
+        if target.end_offset() != expected_offset:
+            raise ProcessEvaluationError(f"target period must end at offset {expected_offset}")
+        validated.append(target)
+    return tuple(validated)
+
+
 def _positive_int(value: object, field: str) -> int:
     """Return a non-negative integer.
 
@@ -270,6 +334,7 @@ def evaluate_process_schedule(
     regeneration: RegenerationConfig | None = None,
     bridge: VolumeBridgeConfig | None = None,
     succession_process: Process | None = None,
+    targets: Sequence[Target] = (),
     harvest_fraction: float = 1.0,
     scenario_id: str = "process-schedule",
     seed: int = 0,
@@ -298,6 +363,9 @@ def evaluate_process_schedule(
         Provisional volume bridge parameters.
     succession_process : Process or None, optional
         Override the default succession source, e.g. a LANDIS process.
+    targets : sequence of Target, optional
+        Level targets priced against the final accounts. Flow, risk-aggregated, snapshot,
+        accumulating, unknown-account, and non-final-period targets are rejected.
     harvest_fraction : float, optional
         Fraction of each live cohort removed by a harvest (default 1.0).
     scenario_id : str, optional
@@ -338,6 +406,10 @@ def evaluate_process_schedule(
         succession_process=succession_process,
     )
     result = run_process_scenario(state, edges, config, scenario_id=scenario_id, seed=seed_value)
+    accounts = _accounts(result, bridge_config=bridge_config, horizon_years=horizon)
+    selected = _validate_targets(targets, horizon_years=horizon, accounts=accounts)
+    terms = tuple(objective_terms(accounts, selected)) if selected else ()
+    score = objective(accounts, selected) if selected else None
     return ProcessScheduleEvaluation(
         scenario_id=scenario_id,
         seed=seed_value,
@@ -345,5 +417,8 @@ def evaluate_process_schedule(
         state=result.state,
         log=result.log,
         values=result.values,
-        accounts=_accounts(result, bridge_config=bridge_config, horizon_years=horizon),
+        accounts=accounts,
+        targets=selected,
+        objective=score,
+        terms=terms,
     )
