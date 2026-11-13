@@ -5462,3 +5462,17 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   traits and exact age-mortality rows match the published appendix/test values. Report:
   `notes/reports/p189-closeout.md`. Design: `notes/design/ws4-landis-reference-traits.md`.
   PR: #1124.
+
+- P189 merged: LANDIS reference traits and exact age-mortality tests are on `main` as
+  `850ca42`. Branch deleted; no tag, release, or settings change.
+
+- P190.1: added `ws4/ecosystem/evaluation.py` with a process-conditioned schedule evaluator
+  that maps blocks to fragments and runs the annual process engine.
+
+- P190.2: added final evaluation accounts and a stable JSON/CSV artifact with state, volume,
+  fire, harvest, salvage, and regeneration summaries. Dashboard: pending full run.
+
+- P190.3: verified and closed P190. Full dashboard **OVERALL: GREEN**. The schedule evaluation
+  harvests the mapped fragments, conserves area, and reproduces its summary and replay token.
+  Report: `notes/reports/p190-closeout.md`. Design:
+  `notes/design/ws4-process-schedule-evaluation.md`. PR: #TBD.

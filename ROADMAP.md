@@ -185,7 +185,8 @@ exists and the maintainer approves it.
 | P186 LANDIS succession process | #1100 | `feature/p186-landis-process` | complete |
 | P187 scfm fire-regime distribution benchmarks | #1107 | `feature/p187-fire-regime-benchmarks` | complete |
 | P188 fire-regime risk summaries | #1114 | `feature/p188-fire-regime-risk` | complete |
-| P189 LANDIS reference traits and exact age mortality | #1120 | `feature/p189-landis-reference-traits` | pr-open |
+| P189 LANDIS reference traits and exact age mortality | #1120 | `feature/p189-landis-reference-traits` | complete |
+| P190 process-conditioned schedule evaluation | #1125 | `feature/p190-process-schedule-evaluation` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -5526,7 +5527,8 @@ Acceptance:
 
 Parent issue: #1120
 Branch: `feature/p189-landis-reference-traits`
-Status: pr-open
+Status: complete
+Merge commit: `850ca42`
 Design note: `notes/design/ws4-landis-reference-traits.md`
 Report: `notes/reports/p189-closeout.md`
 PR: #1124
@@ -5544,3 +5546,28 @@ Acceptance:
 - Reference traits are available through the public API and validated.
 - Unknown species and invalid trait requests fail loudly.
 - Dashboard green.
+
+
+## Phase 190: process-conditioned schedule evaluation
+
+Parent issue: #1125
+Branch: `feature/p190-process-schedule-evaluation`
+Status: pr-open
+Design note: `notes/design/ws4-process-schedule-evaluation.md`
+Report: `notes/reports/p190-closeout.md`
+PR: #TBD
+
+Goal: evaluate a block-level harvest schedule through the process engine and return a
+process-conditioned state, event log, and account summary.
+
+- [x] P190.1 Implement the process schedule evaluator (#1126)
+- [x] P190.2 Add the stable evaluation artifact (#1127)
+- [x] P190.3 Test and close out process schedule evaluation (#1128)
+
+Acceptance:
+
+- The evaluation is deterministic for a given schedule and seed.
+- Harvest reduces biomass and conserves area.
+- Invalid schedules, horizons, seeds, and mappings fail loudly.
+- The account table and JSON summary are stable and tested.
+- `python scripts/dashboard.py` is green.

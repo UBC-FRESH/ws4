@@ -74,6 +74,8 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
      - Process-driven fire/succession/regeneration scenario ensembles.
    * - :doc:`ecosystem-management`
      - Schedule-to-cohort harvest bridge for process-conditioned landscapes.
+   * - :doc:`ecosystem-evaluation`
+     - Process-conditioned evaluation of a block-level harvest schedule.
    * - :doc:`ecosystem-landis`
      - LANDIS-II-compatible succession kernel and exact reference tests.
    * - :doc:`fire-regime`
@@ -152,6 +154,7 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
    risk-optimization
    ecosystem-ensemble
    ecosystem-management
+   ecosystem-evaluation
    ecosystem-landis
    fire-regime
    fire-risk
