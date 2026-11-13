@@ -21,6 +21,7 @@ from typing import TYPE_CHECKING, Any
 
 import pandas as pd
 
+from ..ecosystem.scenarios import ScenarioSet, load_scenarios
 from ..model.schema import dataset_reference
 from ..patch.accounts import (
     PatchAccount,
@@ -74,6 +75,7 @@ from .operators import (
 from .patch import PatchModel
 from .prescreen import feature_goal_blocks
 from .repro import write_reproducibility
+from .risk import RiskAccountEvaluator, RiskEvaluation
 from .seeding import greedy_schedule
 from .solvers import (
     expired,
@@ -342,6 +344,10 @@ class OptimizeConfig:
         target into periods below it and accepts only exact improvements.
     flow_repair_chains : int
         The most directed candidate chains the repair pass prices for one block.
+    scenario_path : str
+        An optional scenario YAML/JSON file. When set, the optimizer evaluates risk
+        targets through a fast account-multiplier overlay. Risk targets require non-single
+        aggregation. Empty keeps the deterministic objective.
     """
 
     threads: int = 1
@@ -409,6 +415,7 @@ class OptimizeConfig:
     split_weight: float = 0.0
     flow_repair_trials: int = 0
     flow_repair_chains: int = 4
+    scenario_path: str = ""
 
     def __post_init__(self) -> None:
         """Reject an unknown temperature schedule before the search starts."""
@@ -464,6 +471,10 @@ class Optimizer:
         _apply_thread_limit(cfg.threads)
         self.dataset_dir = Path(dataset_dir)
         self.cfg = cfg
+        self.scenarios: ScenarioSet | None = (
+            load_scenarios(Path(cfg.scenario_path)) if cfg.scenario_path else None
+        )
+        self._last_risk: RiskEvaluation | None = None
         self._graph_cache: list[tuple[int, int, float]] | None = None
         # the wall-clock bound on the search, set when it starts and shared by every worker
         self._deadline: float | None = None
@@ -793,6 +804,12 @@ class Optimizer:
             if not flood_values.empty:
                 values = pd.concat([values, flood_values], ignore_index=True)
                 self._last_values = values
+        if self.scenarios is not None:
+            evaluation = RiskAccountEvaluator(self.scenarios, targets).evaluate(values)
+            self._last_risk = evaluation
+            return evaluation.objective + self._spatial_penalty(frame)
+        if any(target.aggregation != "single" for target in targets):
+            raise ValueError("risk-aggregated targets need a scenario_path")
         return objective(values, targets) + self._spatial_penalty(frame)
 
     def last_account_values(self) -> pd.DataFrame:
@@ -967,6 +984,16 @@ class Optimizer:
         """
         self._active_patch = model
 
+    def last_risk_evaluation(self) -> RiskEvaluation | None:
+        """Return the most recent risk evaluation, or None.
+
+        Returns
+        -------
+        RiskEvaluation or None
+            The per-scenario values, aggregation, and objective from the last evaluation.
+        """
+        return self._last_risk
+
     def delta_evaluator(
         self, targets: Sequence[Target], extra_accounts: Sequence[str] = ()
     ) -> IncrementalObjective | None:
@@ -989,7 +1016,7 @@ class Optimizer:
         IncrementalObjective or None
             The evaluator, or None when the configuration needs whole-schedule values.
         """
-        if self.cfg.flood_screen_config_path:
+        if self.cfg.flood_screen_config_path or self.scenarios is not None:
             return None
         model, route_accounts, duplicate_accounts = self.route()
         if duplicate_accounts or self.edge_elements() or self.spread_accounts():
@@ -2017,7 +2044,29 @@ class Optimizer:
                 )
         self._last_values = values
         values.to_csv(out_dir / "account_values.csv", index=False)
-        write_report(values, targets, out_dir, dataset=self.dataset_dir, run_id=out_dir.name)
+        risk_summary: dict[str, object] | None = None
+        if self.scenarios is not None:
+            risk = RiskAccountEvaluator(self.scenarios, targets).evaluate(values)
+            self._last_risk = risk
+            risk.values.to_csv(out_dir / "risk_values.csv", index=False)
+            risk.aggregated.to_csv(out_dir / "risk_aggregated.csv", index=False)
+            risk_summary = {
+                "scenarios": list(self.scenarios.scenario_ids),
+                "objective": risk.objective,
+                "targets": [target.account for target in risk.targets],
+            }
+            (out_dir / "risk_summary.json").write_text(
+                json.dumps(risk_summary, indent=2, sort_keys=True), encoding="utf-8"
+            )
+            write_report(
+                risk.aggregated,
+                list(risk.targets),
+                out_dir,
+                dataset=self.dataset_dir,
+                run_id=out_dir.name,
+            )
+        else:
+            write_report(values, targets, out_dir, dataset=self.dataset_dir, run_id=out_dir.name)
         ending = ending_inventory(values)
         ending_offset = int(ending["offset"].iloc[0]) if not ending.empty else -1
         ending_values = {
@@ -2041,6 +2090,8 @@ class Optimizer:
             "constraint_stats": constraint_report["stats"],
             "constraint_feasible": constraint_report["feasible"],
             "constraint_report": "constraint_report.json",
+            "scenario_path": self.cfg.scenario_path or None,
+            "risk": risk_summary,
             "run_manifest": "run_manifest.json",
             "data_quality": reproducibility["quality"]["summary"],
             "data_quality_report": "data_quality.json",

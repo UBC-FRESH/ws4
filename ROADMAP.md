@@ -177,6 +177,7 @@ exists and the maintainer approves it.
 | P177 Containment contract and validation protocol | #1046 | `feature/p177-containment-protocol` | pr-open |
 | P179 Generic process executor | #1056 | `feature/p179-process-executor` | pr-open |
 | P180 Succession, regeneration, and yield bridge | #1062 | `feature/p180-succession-yield` | pr-open |
+| P181 Scenario and risk evaluation in the optimizer | #1068 | `feature/p181-risk-optimizer` | active |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -5288,4 +5289,29 @@ Acceptance:
 - Fire, salvage, succession, regeneration, and the bridge run through one executor.
 - Replay and area conservation pass.
 - The report states what is calibrated and what is not.
+- `python scripts/dashboard.py` is green.
+
+
+## Phase 181: Scenario and risk evaluation in the optimizer
+
+Parent issue: #1068
+Branch: `feature/p181-risk-optimizer`
+Status: active
+Design note: `notes/design/ws4-risk-optimization.md`
+
+Goal: wire scenario and risk-aggregated targets into the estate optimizer through a fast,
+auditable account-overlay path.
+
+- [x] P181.1 Add the account-overlay risk evaluator (#1069)
+- [x] P181.2 Use risk evaluation in the optimizer objective (#1070)
+- [x] P181.3 Expose scenario risk in the optimizer CLI (#1071)
+- [ ] P181.4 Verify and close out risk-aware optimization (#1072)
+
+Acceptance:
+
+- A scenario file can drive risk targets in `ws4 optimize`.
+- Risk targets require non-single aggregation and a scenario file.
+- The optimizer objective uses the risk-aggregated values.
+- Per-move incremental evaluation is bypassed when scenarios are active.
+- The report names the account-overlay limitation.
 - `python scripts/dashboard.py` is green.

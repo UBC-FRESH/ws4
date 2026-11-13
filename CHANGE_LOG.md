@@ -5308,3 +5308,15 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   executor and closed P180. Full dashboard **OVERALL: GREEN**. The bridge is explicitly
   provisional, not calibrated. Report: `notes/reports/p180-closeout.md`. Design:
   `notes/design/ws4-succession-yield.md`. PR: #1067.
+
+- P181.1: added `ws4/opt/risk.py` with account-multiplier overlays and
+  `RiskAccountEvaluator`, using the existing scenario risk aggregations. Tests cover multipliers,
+  unknown accounts, mean/shortfall objectives, and single-aggregation rejection.
+
+- P181.2: added `OptimizeConfig.scenario_path`, scenario loading, risk aggregation in
+  `Optimizer._evaluate`, `last_risk_evaluation`, and a delta-evaluator bypass in scenario mode.
+  Risk targets without a scenario file fail with a named error.
+
+- P181.3: added `ws4 optimize --scenario-file`, target-aggregation validation, and risk
+  artifacts (`risk_values.csv`, `risk_aggregated.csv`, `risk_summary.json`) plus a summary
+  `risk` block. Dashboard: **GREEN**.

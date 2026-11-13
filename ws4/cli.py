@@ -748,6 +748,12 @@ def gcbm(
 def optimize(
     dataset: Path = typer.Option(..., exists=True),
     targets: Path = typer.Option(..., exists=True),
+    scenario_file: Path | None = typer.Option(
+        None,
+        "--scenario-file",
+        exists=True,
+        help="Scenario ensemble for risk targets (account-multiplier overlay)",
+    ),
     initial_schedule: Path | None = typer.Option(
         None,
         "--initial-schedule",
@@ -949,6 +955,12 @@ def optimize(
     ),
 ) -> None:
     """Search for a schedule that satisfies the targets and write a summary."""
+    if scenario_file is not None:
+        loaded_targets = load_targets(targets)
+        if any(target.active and target.aggregation == "single" for target in loaded_targets):
+            raise typer.BadParameter(
+                "risk scenarios require non-single aggregation on every active target"
+            )
     effective_lns = (
         lns_weight if lns_weight is not None else (0.0 if carbon_package is not None else 0.2)
     )
@@ -968,6 +980,7 @@ def optimize(
         islands=islands,
         episodes=episodes,
         targets_path=str(targets),
+        scenario_path=str(scenario_file) if scenario_file is not None else "",
         initial_schedule_path=(str(initial_schedule) if initial_schedule is not None else ""),
         weights_path=str(weights) if weights is not None else "",
         topology_path=str(topology) if topology is not None else "",

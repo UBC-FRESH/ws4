@@ -68,6 +68,8 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
      - The generic annual executor, process protocol, ownership, ordering, and fire migration.
    * - :doc:`ecosystem-succession`
      - Succession, regeneration, and the provisional biomass-to-volume bridge.
+   * - :doc:`risk-optimization`
+     - Scenario account overlays and risk-aggregated targets in the estate optimizer.
    * - :doc:`ecosystem-fire`
      - The first stochastic process: Poisson ignition, graph spread, mortality, salvage,
        and disturbance accounts.
@@ -137,6 +139,7 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
    ecosystem-package
    ecosystem-process
    ecosystem-succession
+   risk-optimization
    ecosystem-fire
    ecosystem-scenarios
    fire-behaviour

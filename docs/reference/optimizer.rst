@@ -885,3 +885,20 @@ cell difference. To profile the full path and see its hot functions:
 The design, fallback conditions, and parity plan are in
 `notes/design/ws4-incremental-route.md`. The P46 close-out records the c5 evidence in
 `notes/reports/p46-closeout.md`.
+
+
+Risk targets
+------------
+
+A target may carry an ``aggregation`` field (``mean``, ``min``, ``max``, ``cvar``,
+``cvar_upper``, ``quantile``, ``probability``, or ``regret``). Risk-aggregated targets need a
+scenario file:
+
+.. code-block:: bash
+
+   ws4 optimize ... --scenario-file scenarios.yaml
+
+The optimizer uses a fast account-overlay path: one deterministic account frame is evaluated
+under each scenario's ``account_multipliers``, then the existing risk layer aggregates the
+targets. The per-move delta evaluator is bypassed. This is not a process-driven stochastic
+simulation; see :doc:`risk-optimization`.
