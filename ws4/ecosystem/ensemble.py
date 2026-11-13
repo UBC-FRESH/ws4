@@ -27,6 +27,7 @@ from .fire import (
     SalvageSource,
 )
 from .log import EventLog, EventLogMetadata
+from .process import DecisionSource, Process
 from .regeneration import RegenerationConfig, RegenerationProcess
 from .scenarios import ScenarioSet, risk_account_values
 from .state import CohortState
@@ -56,6 +57,8 @@ class ProcessEnsembleConfig:
         Regeneration parameters.
     bridge : VolumeBridgeConfig, optional
         Provisional volume bridge parameters.
+    management : DecisionSource or None, optional
+        A controlled management source, such as a schedule harvest source.
     """
 
     horizon_years: int
@@ -63,6 +66,7 @@ class ProcessEnsembleConfig:
     succession: SuccessionConfig = field(default_factory=SuccessionConfig)
     regeneration: RegenerationConfig = field(default_factory=RegenerationConfig)
     bridge: VolumeBridgeConfig = field(default_factory=VolumeBridgeConfig)
+    management: DecisionSource | None = None
 
     def __post_init__(self) -> None:
         """Validate the horizon."""
@@ -215,12 +219,13 @@ def run_process_scenario(
     fire = FireProcess(config.fire, edges, tape, scenario_id=scenario_id)
     salvage = SalvageSource(config.fire, scenario_id=scenario_id)
     regeneration = RegenerationProcess(config.regeneration, tape, scenario_id=scenario_id)
-    sources = (
+    sources: list[Process | DecisionSource] = [
         FireProcessSource(fire),
         SuccessionProcess(config.succession),
-        SalvageProcessSource(salvage),
-        regeneration,
-    )
+    ]
+    if config.management is not None:
+        sources.append(config.management)
+    sources.extend((SalvageProcessSource(salvage), regeneration))
     bridge = SpeciesVolumeBridge(config.bridge)
     rows: list[dict[str, object]] = []
 

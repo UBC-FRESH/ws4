@@ -72,6 +72,8 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
      - Scenario account overlays and risk-aggregated targets in the estate optimizer.
    * - :doc:`ecosystem-ensemble`
      - Process-driven fire/succession/regeneration scenario ensembles.
+   * - :doc:`ecosystem-management`
+     - Schedule-to-cohort harvest bridge for process-conditioned landscapes.
    * - :doc:`ecosystem-fire`
      - The first stochastic process: Poisson ignition, graph spread, mortality, salvage,
        and disturbance accounts.
@@ -143,6 +145,7 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
    ecosystem-succession
    risk-optimization
    ecosystem-ensemble
+   ecosystem-management
    ecosystem-fire
    ecosystem-scenarios
    fire-behaviour

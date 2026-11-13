@@ -5360,3 +5360,17 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   produces per-scenario metrics and risk rows with replay and CRN evidence. It is not yet
   schedule-conditioned; the management/state bridge remains the next step. Report:
   `notes/reports/p183-closeout.md`. Design: `notes/design/ws4-process-ensemble.md`. PR: #1086.
+
+- P184.1: added `ws4/ecosystem/management.py` with schedule and block/fragment loaders and the
+  `ScheduleSource` contract.
+
+- P184.2: implemented the clearcut-like harvest transition. It removes a cohort fraction,
+  creates a bare age-zero cohort for the removed area, and conserves fragment area.
+
+- P184.3: integrated an optional management source into `ProcessEnsembleConfig`. A harvested
+  landscape now has lower biomass/fuel and different process metrics from the same initial
+  state. Dashboard: **GREEN**.
+
+- P184.4: verified and closed P184. Full dashboard **OVERALL: GREEN**. The management bridge
+  is a simplified clearcut-like transition, not the compiled treatment semantics. Report:
+  `notes/reports/p184-closeout.md`. Design: `notes/design/ws4-management-bridge.md`. PR: #1092.
