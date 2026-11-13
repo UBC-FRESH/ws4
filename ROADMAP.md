@@ -5416,7 +5416,7 @@ Branch: `feature/p185-landis-benchmarks`
 Status: pr-open
 Design note: `notes/design/ws4-predictive-ecology-benchmarks.md`
 Report: `notes/reports/p185-closeout.md`
-PR: #TBD
+PR: #1099
 Registry: `notes/reports/p185-benchmark-registry.json`
 
 Goal: build a provenance-complete Predictive Ecology benchmark registry and an original
