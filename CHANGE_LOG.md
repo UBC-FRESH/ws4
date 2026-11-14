@@ -5637,3 +5637,9 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   reference; year 10 is -6.64%. Report: `notes/reports/p202-reference-comparison.md`;
   close-out: `notes/reports/p202-closeout.md`. Design:
   `notes/design/ws4-reference-comparison.md`. PR: #1198.
+
+- P203.1: added per-cell containment closure times to `GrowthConfig` and target/intermediate-cell checks.
+- P203.2: ran the 2003_96 barrier with closure at 0, 6,000, 9,000, 10,500 and 12,000 minutes and
+  five weather members. Closure timing produced weather-sensitive containment.
+- P203.3: closed P203 with a go for time-dependent containment as a mechanism, not an operational
+  schedule. Report: `notes/reports/p203-containment-closure.md`. Dashboard: **GREEN**.

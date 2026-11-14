@@ -851,6 +851,7 @@ def run_observed_case(
     flat_terrain: bool = False,
     fuel_override: str | None = None,
     containment_mask: np.ndarray | None = None,
+    containment_start_min: np.ndarray | None = None,
 ) -> DogribCase:
     """Run one generic point-ignition observed-fire case.
 
@@ -884,6 +885,9 @@ def run_observed_case(
         Replace burnable-cell fuel with one FBP type for diagnosis.
     containment_mask : numpy.ndarray or None, optional
         Cells that are contained/non-burnable, such as a firebreak or suppression line.
+    containment_start_min : numpy.ndarray or None, optional
+        Per-cell closure time in minutes. A target cell with an arrival at or after its
+        closure time does not ignite. Default None preserves free-burn behaviour.
 
     Returns
     -------
@@ -983,6 +987,7 @@ def run_observed_case(
             neighbor_radius=neighbor_radius,
             weather_steps=steps,
             burning_conditions=burning_conditions,
+            containment_start_min=containment_start_min,
             wind_multiplier=wind_multiplier,
             head_ros_multiplier=head_ros_multiplier,
         ),

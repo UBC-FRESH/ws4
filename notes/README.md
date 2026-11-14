@@ -77,6 +77,8 @@ Working notes for WS4. Notes are living: update them in the same change set as t
 - `reports/p198-gated-ensemble.json` — P198 gated ensemble manifest.
 - `reports/p201-firebreak-gap.md` — P201 gap pilot and no-go decision.
 - `reports/p201-firebreak-gap.json` — P201 gap pilot manifest.
+- `reports/p203-containment-closure.md` — P203 closure-time sensitivity and go decision.
+- `reports/p203-containment-closure.json` — P203 closure-time manifest.
 - `reports/p159-model-card.md` — P159.2 surrogate architecture, training data, losses, and
   limitations.
 - `reports/p159-evaluation.md` — P159.3 held-out synthetic and Dogrib OOD evaluation.
