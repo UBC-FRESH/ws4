@@ -19,6 +19,7 @@ from ws4.fire.growth import (
     EffectiveWind,
     GrowthConfig,
     SiteGrid,
+    WeatherStep,
     directional_ros,
     effective_wind,
     fragment_ignition_events,
@@ -339,3 +340,76 @@ def test_directional_ros_matches_the_ellipse_template() -> None:
     assert directional_ros(10.0, 1.0, 90.0) == pytest.approx(10.0)
     assert directional_ros(10.0, 3.0, 0.0) == pytest.approx(10.0)
     assert directional_ros(10.0, 3.0, 180.0) < directional_ros(10.0, 3.0, 90.0)
+
+
+def test_containment_closure_blocks_a_target_at_arrival() -> None:
+    grid = make_grid(rows=9, cols=9)
+    closure = np.full((9, 9), np.inf)
+    closure[4, 5] = 0.0
+    weather = (
+        WeatherStep(
+            start_min=0.0,
+            wind_kmh=0.0,
+            wind_direction_deg=0.0,
+            ffmc=90.0,
+            bui=60.0,
+            relative_humidity_percent=40.0,
+        ),
+    )
+    result = grow_fire(
+        grid,
+        GrowthConfig(
+            ignition_cells=((4, 4),),
+            max_time_min=60.0,
+            snapshot_interval_min=60.0,
+            weather_steps=weather,
+            containment_start_min=closure,
+        ),
+    )
+    assert not np.isfinite(result.ignition_time_min[4, 5])
+    assert np.isfinite(result.ignition_time_min[4, 4])
+    assert np.isfinite(result.ignition_time_min[3, 4])
+
+
+def test_containment_closure_requires_matching_shape() -> None:
+    grid = make_grid(rows=5, cols=5)
+    with pytest.raises(FireFuelError, match="containment_start_min shape"):
+        grow_fire(
+            grid,
+            GrowthConfig(
+                ignition_cells=((2, 2),),
+                max_time_min=30.0,
+                containment_start_min=np.full((4, 4), np.inf),
+            ),
+        )
+
+
+def test_containment_closure_blocks_jumping_over_a_closed_gap() -> None:
+    grid = make_grid(rows=9, cols=9)
+    burnable = np.ones((9, 9), dtype=bool)
+    burnable[:, 4] = False
+    burnable[4, 4] = True
+    grid = make_grid(rows=9, cols=9, burnable=burnable)
+    closure = np.full((9, 9), np.inf)
+    closure[4, 4] = 0.0
+    weather = (
+        WeatherStep(
+            start_min=0.0,
+            wind_kmh=0.0,
+            wind_direction_deg=0.0,
+            ffmc=90.0,
+            bui=60.0,
+            relative_humidity_percent=40.0,
+        ),
+    )
+    result = grow_fire(
+        grid,
+        GrowthConfig(
+            ignition_cells=((4, 1),),
+            max_time_min=60.0,
+            snapshot_interval_min=60.0,
+            weather_steps=weather,
+            containment_start_min=closure,
+        ),
+    )
+    assert not np.isfinite(result.ignition_time_min[:, 5:]).any()

@@ -199,6 +199,7 @@ exists and the maintainer approves it.
 | P199 LANDIS kernel parity against the R reference | #1173 | `feature/p199-landis-r-parity` | complete |
 | P200 small spatial Biomass_core landscape reference | #1180 | `feature/p200-spatial-landscape` | complete |
 | P202 WS4-vs-Biomass_core spatial trajectory comparison | #1190 | `feature/p202-reference-comparison` | pr-open |
+| P203 Time-dependent containment closure | #1194 | `feature/p203-containment-closure` | pr-open |
 | P201 Firebreak gap sensitivity pilot | #1185 | `feature/p201-firebreak-gap` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
@@ -5918,4 +5919,32 @@ Acceptance:
 - The mismatch is documented, not hidden.
 - A test pins the current behavior.
 - The root-cause hypotheses cite the published R transition.
+- Dashboard green.
+
+## Phase 203: time-dependent containment closure
+
+Parent issue: #1194
+Branch: `feature/p203-containment-closure`
+Status: pr-open
+Report: `notes/reports/p203-containment-closure.md`
+Manifest: `notes/reports/p203-containment-closure.json`
+Artifact: `notes/reports/p203-containment-closure.csv`
+PR: #1203
+
+Goal: add an explicit per-cell closure time to the FBP growth path and test whether closure timing
+produces weather-sensitive containment.
+
+- [x] P203.1 Add containment closure times (#1195)
+- [x] P203.2 Run the closure-time pilot (#1196)
+- [x] P203.3 Close out closure sensitivity (#1197)
+
+Result: closure timing relative to arrival produces weather-sensitive final extent. Go for
+time-dependent containment as a mechanism; no-go for this synthetic schedule as operational.
+
+Acceptance:
+
+- A target with arrival at or after its closure time does not ignite.
+- Intermediate cells cannot be jumped over when closed.
+- Free-burn defaults unchanged.
+- No calibration and no operational claim.
 - Dashboard green.

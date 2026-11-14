@@ -575,6 +575,9 @@ class GrowthConfig:
         Stop applying the site-grid wind-direction patch after this time.
     burning_conditions : BurningConditions or None, optional
         Weather-step thresholds. They require ``weather_steps`` with relative humidity.
+    containment_start_min : numpy.ndarray or None, optional
+        Per-cell closure time in minutes. A target cell with an arrival at or after its
+        closure time does not ignite. Default None preserves free-burn behaviour.
     wind_grids : dict of int to WindNinjaGrid or None, optional
         Spatial wind inputs keyed by domain-average direction. They require
         ``weather_steps`` and select the nearest direction grid for each step.
@@ -594,6 +597,7 @@ class GrowthConfig:
     weather_steps: tuple[WeatherStep, ...] | None = None
     wind_patch_end_min: float | None = None
     burning_conditions: BurningConditions | None = None
+    containment_start_min: np.ndarray | None = None
     wind_grids: dict[int, WindNinjaGrid] | None = None
     wind_multiplier: float = 1.0
     head_ros_multiplier: float = 1.0
@@ -1044,6 +1048,38 @@ def directional_ros(head_ros_m_min: float, length_breadth: float, angle_deg: flo
     return _direction_ros(head_ros_m_min, length_breadth, math.radians(angle_deg))
 
 
+def _target_is_open(
+    closure: np.ndarray | None,
+    row: int,
+    col: int,
+    arrival_min: float,
+) -> bool:
+    """Return whether a target cell is still open at its arrival time."""
+    if closure is None:
+        return True
+    return not bool(arrival_min >= float(closure[row, col]))
+
+
+def _line_is_open(
+    closure: np.ndarray | None,
+    row: int,
+    col: int,
+    drow: int,
+    dcol: int,
+    arrival_min: float,
+) -> bool:
+    """Return whether every cell between a source and a target is still open."""
+    if closure is None:
+        return True
+    steps = max(abs(drow), abs(dcol))
+    for step in range(1, steps + 1):
+        check_row = row + round(drow * step / steps)
+        check_col = col + round(dcol * step / steps)
+        if arrival_min >= float(closure[check_row, check_col]):
+            return False
+    return True
+
+
 def _line_is_burnable(burnable: np.ndarray, row: int, col: int, drow: int, dcol: int) -> bool:
     """Return whether every cell between a source and a target is burnable."""
     steps = max(abs(drow), abs(dcol))
@@ -1444,6 +1480,8 @@ def _grow_fire_time_dependent(grid: SiteGrid, config: GrowthConfig) -> GrowthRes
                 math.isfinite(arrival)
                 and arrival <= config.max_time_min
                 and arrival < ignition[nrow, ncol] - 1e-12
+                and _target_is_open(config.containment_start_min, nrow, ncol, arrival)
+                and _line_is_open(config.containment_start_min, row, col, drow, dcol, arrival)
             ):
                 ignition[nrow, ncol] = arrival
                 heapq.heappush(queue, (arrival, nrow, ncol))
@@ -1507,6 +1545,11 @@ def grow_fire(grid: SiteGrid, config: GrowthConfig) -> GrowthResult:
     burnable = np.asarray(grid.burnable, dtype=bool)
     if not bool(burnable.any()):
         raise FireFuelError("grid has no burnable cells")
+    if (
+        config.containment_start_min is not None
+        and config.containment_start_min.shape != burnable.shape
+    ):
+        raise FireFuelError("containment_start_min shape must match the grid")
     for row, col in config.ignition_cells:
         if row < 0 or row >= grid.rows or col < 0 or col >= grid.cols:
             raise FireFuelError(f"ignition cell ({row}, {col}) is outside the grid")
@@ -1552,7 +1595,12 @@ def grow_fire(grid: SiteGrid, config: GrowthConfig) -> GrowthResult:
             if ros <= 0.0:
                 continue
             arrival = time + distance / ros
-            if arrival <= config.max_time_min and arrival < ignition[nrow, ncol] - 1e-12:
+            if (
+                arrival <= config.max_time_min
+                and arrival < ignition[nrow, ncol] - 1e-12
+                and _target_is_open(config.containment_start_min, nrow, ncol, arrival)
+                and _line_is_open(config.containment_start_min, row, col, drow, dcol, arrival)
+            ):
                 ignition[nrow, ncol] = arrival
                 heapq.heappush(queue, (arrival, nrow, ncol))
     snapshots: list[GrowthSnapshot] = []
