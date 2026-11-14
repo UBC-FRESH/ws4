@@ -35,6 +35,7 @@ def _optimize(
     initial: ProcessSearchCandidate | None = None,
     targets: tuple[Target, ...] = (_target(),),
     max_iterations: int = 3,
+    horizon_years: int = 1,
 ) -> object:
     """Run the optimization on the small grid."""
     selected_grammar = grammar or _grammar()
@@ -46,7 +47,7 @@ def _optimize(
         selected_grammar,
         selected_initial,
         {1: (1, 2), 2: (3,)},
-        horizon_years=1,
+        horizon_years=horizon_years,
         fire=FireConfig(ignition_rate_per_fragment_year=0.0),
         targets=targets,
         max_iterations=max_iterations,
@@ -152,3 +153,23 @@ def test_estate_handoff_rejects_invalid_mappings() -> None:
         ProcessOptimizationResult(search=result.search, block_fragments={0: (1,)})
     with pytest.raises(ProcessOptimizationError, match="positive"):
         ProcessOptimizationResult(search=result.search, block_fragments={1: (0,)})
+
+
+def test_windowed_optimization_selects_the_allowed_offset() -> None:
+    grammar = ScheduleMoveGrammar(
+        blocks=(1, 2),
+        treatments=("CC",),
+        horizon_years=2,
+        max_events_per_block=1,
+        windows={1: (1, 2)},
+    )
+    result = _optimize(
+        grammar=grammar,
+        horizon_years=2,
+        targets=(Target(account="harvest.area_ha_total", period=1, period_width=2, minimum=20.0),),
+    )
+    from ws4.opt.process_optimization import ProcessOptimizationResult
+
+    assert isinstance(result, ProcessOptimizationResult)
+    assert result.best.candidate.schedule == {1: (("CC", 1),)}
+    assert result.best.objective == 0.0

@@ -106,6 +106,9 @@ class ScheduleMoveGrammar:
         Maximum number of events in one block (default one).
     allow_offset_moves : bool, optional
         Whether to move an existing event to each other offset (default False).
+    windows : mapping of int to (int, int) or None, optional
+        Inclusive start and exclusive end offsets per block. Omitted blocks use the full
+        horizon.
     """
 
     blocks: Sequence[int]
@@ -113,6 +116,7 @@ class ScheduleMoveGrammar:
     horizon_years: int
     max_events_per_block: int = 1
     allow_offset_moves: bool = False
+    windows: Mapping[int, tuple[int, int]] | None = None
 
     def __post_init__(self) -> None:
         """Validate and canonicalize the grammar."""
@@ -142,8 +146,52 @@ class ScheduleMoveGrammar:
             raise ScheduleGrammarError("max_events_per_block must be a positive integer")
         if not isinstance(self.allow_offset_moves, bool):
             raise ScheduleGrammarError("allow_offset_moves must be a boolean")
+        windows: dict[int, tuple[int, int]] | None
+        if self.windows is None:
+            windows = None
+        else:
+            if not isinstance(self.windows, Mapping):
+                raise ScheduleGrammarError("windows must be a mapping")
+            windows = {}
+            for raw_block, raw_window in self.windows.items():
+                if raw_block not in blocks:
+                    raise ScheduleGrammarError(f"window block {raw_block} is outside the grammar")
+                if not isinstance(raw_window, tuple) or len(raw_window) != 2:
+                    raise ScheduleGrammarError("windows must be (start, end) pairs")
+                start, end = raw_window
+                if (
+                    isinstance(start, bool)
+                    or isinstance(end, bool)
+                    or not isinstance(start, int)
+                    or not isinstance(end, int)
+                    or start < 0
+                    or end > self.horizon_years
+                    or start >= end
+                ):
+                    raise ScheduleGrammarError(
+                        "window bounds must satisfy 0 <= start < end <= horizon_years"
+                    )
+                windows[raw_block] = (start, end)
         object.__setattr__(self, "blocks", blocks)
         object.__setattr__(self, "treatments", treatments)
+        object.__setattr__(self, "windows", windows)
+
+    def _window(self, block: int) -> tuple[int, int]:
+        """Return a block's allowed offset window.
+
+        Parameters
+        ----------
+        block : int
+            Block id.
+
+        Returns
+        -------
+        tuple of (int, int)
+            Inclusive start and exclusive end.
+        """
+        if self.windows is None:
+            return (0, self.horizon_years)
+        return self.windows.get(block, (0, self.horizon_years))
 
     def validate(self, schedule: Mapping[int, Sequence[tuple[str, int]]]) -> None:
         """Require every schedule entry to be inside the grammar universe.
@@ -165,13 +213,12 @@ class ScheduleMoveGrammar:
                 raise ScheduleGrammarError(f"block {block} is outside the grammar")
             if len(events) > self.max_events_per_block:
                 raise ScheduleGrammarError(f"block {block} exceeds max_events_per_block")
+            start, end = self._window(block)
             for treatment, offset in events:
                 if treatment not in treatments:
                     raise ScheduleGrammarError(f"treatment {treatment!r} is outside the grammar")
-                if offset >= self.horizon_years:
-                    raise ScheduleGrammarError(
-                        f"offset {offset} is outside the {self.horizon_years}-year horizon"
-                    )
+                if offset < start or offset >= end:
+                    raise ScheduleGrammarError(f"offset {offset} is outside block {block}'s window")
 
     def neighbours(self, candidate: ProcessSearchCandidate) -> tuple[ProcessSearchCandidate, ...]:
         """Return deterministic add and remove neighbours.
@@ -204,8 +251,9 @@ class ScheduleMoveGrammar:
             events = current.get(block, ())
             if len(events) >= self.max_events_per_block:
                 continue
+            start, end = self._window(block)
             for treatment in self.treatments:
-                for offset in range(self.horizon_years):
+                for offset in range(start, end):
                     item = (treatment, offset)
                     if item in events:
                         continue
@@ -228,8 +276,9 @@ class ScheduleMoveGrammar:
         if self.allow_offset_moves:
             for block in tuple(current):
                 events = current[block]
+                start, end = self._window(block)
                 for index, (treatment, offset) in enumerate(events):
-                    for new_offset in range(self.horizon_years):
+                    for new_offset in range(start, end):
                         if new_offset == offset or (treatment, new_offset) in events:
                             continue
                         moved = list(events)

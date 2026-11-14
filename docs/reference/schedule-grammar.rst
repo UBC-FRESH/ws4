@@ -7,6 +7,16 @@ Purpose
 ``ws4.opt.schedule_grammar`` supplies a neighbour function for the P193 process neighbourhood
 search. It performs add and remove moves over a fixed block universe, treatment set, and horizon.
 
+Treatment windows
+-----------------
+
+``windows`` optionally maps a block to ``(start, end)`` offsets, with an inclusive start and
+exclusive end. Omitted blocks use the full horizon. Add and offset-move neighbours iterate only
+inside the window, and a schedule outside its window is invalid.
+
+The default remains no windows, so existing add/remove and offset-move neighbour counts are
+unchanged.
+
 Universe
 --------
 
