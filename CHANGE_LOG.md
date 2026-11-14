@@ -5605,3 +5605,9 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   fixtures and 5 tests pass; maximum absolute difference 4.73e-11. Reports:
   `notes/reports/p199-landis-r-parity.md` and `notes/reports/p199-closeout.md`. Design:
   `notes/design/ws4-landis-r-parity.md`. PR: #1179.
+
+- P201.1: added a synthetic firebreak-gap diagnostic for 2003_96 with deterministic barrier and gap construction.
+- P201.2: ran five weather members at 0, 5 and 10 cell gaps. Final area and IoU were identical across
+  weather members at every gap width; the gap changed containment, weather changed timing.
+- P201.3: closed P201 with a no-go for extending gap sweeps. Report:
+  `notes/reports/p201-firebreak-gap.md`. Dashboard: **GREEN**.
