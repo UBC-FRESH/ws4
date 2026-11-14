@@ -5583,3 +5583,10 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P197.3: verified and closed P197. Full dashboard **OVERALL: GREEN**. Windowed neighbours,
   validation, defaults, and optimization pass. Report: `notes/reports/p197-closeout.md`.
   Design: `notes/design/ws4-treatment-windows.md`. PR: #1172.
+
+- P198.1: added an optional uniform burning-condition gate to the free-burn ensemble runner.
+- P198.2: ran four large cases with five weather members under the gate. Final area and IoU spread
+  became non-zero in all four cases; 2003_663 remained nearly insensitive.
+- P198.3: closed P198. Go for weather-conditioned stopping as a sensitivity lever; no-go for this
+  uniform gate as an operational threshold. Report: `notes/reports/p198-weather-stopping.md`.
+  Dashboard: **GREEN**.

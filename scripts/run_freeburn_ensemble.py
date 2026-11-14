@@ -15,6 +15,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 if TYPE_CHECKING:
+    from ws4.fire.growth import BurningConditions
     from ws4.fire.observed import ObservedFire
 
 MEMBERS: tuple[dict[str, Any], ...] = (
@@ -24,6 +25,29 @@ MEMBERS: tuple[dict[str, Any], ...] = (
     {"name": "rh-dry", "wind_scale": 1.0, "rh_offset": -10.0},
     {"name": "rh-moist", "wind_scale": 1.0, "rh_offset": 10.0},
 )
+
+BURNING_CONDITIONS_SOURCE = (
+    "P160 Dogrib/Prometheus diagnostic thresholds applied uniformly; "
+    "not calibrated and not operational"
+)
+
+
+def diagnostic_burning_conditions() -> BurningConditions:
+    """Return the fixed diagnostic stopping gate.
+
+    Returns
+    -------
+    BurningConditions
+        The P160 diagnostic thresholds applied uniformly to every case.
+    """
+    from ws4.fire.growth import BurningConditions
+
+    return BurningConditions(
+        isi_gt=8.0,
+        wind_gt_kmh=5.0,
+        relative_humidity_lt_percent=50.0,
+        source=BURNING_CONDITIONS_SOURCE,
+    )
 
 
 def _weather_member(fire: ObservedFire, wind_scale: float, rh_offset: float) -> ObservedFire:
@@ -115,7 +139,13 @@ def main() -> None:
         type=Path,
         default=ROOT / "notes" / "reports" / "p178-freeburn-ensemble.csv",
     )
+    parser.add_argument(
+        "--burning-conditions",
+        action="store_true",
+        help="apply the fixed diagnostic weather-step stopping gate",
+    )
     args = parser.parse_args()
+    gate = diagnostic_burning_conditions() if args.burning_conditions else None
     rows: list[dict[str, Any]] = []
     for fixture in args.fixtures:
         metadata = json.loads((fixture / "metadata.json").read_text(encoding="utf-8"))
@@ -136,6 +166,7 @@ def main() -> None:
                 initial_mask=start,
                 snapshot_interval_min=60.0,
                 neighbor_radius=2,
+                burning_conditions=gate,
             )
             rows.append(
                 {
@@ -158,6 +189,16 @@ def main() -> None:
         "protocol": "free-burn large fires; first-perimeter seed; weather perturbation envelope",
         "model_skill": False,
         "members": list(MEMBERS),
+        "burning_conditions": (
+            {
+                "isi_gt": gate.isi_gt,
+                "wind_gt_kmh": gate.wind_gt_kmh,
+                "relative_humidity_lt_percent": gate.relative_humidity_lt_percent,
+                "source": gate.source,
+            }
+            if gate is not None
+            else None
+        ),
         "summary": _summary(rows),
         "rows": rows,
         "limitations": (

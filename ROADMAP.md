@@ -195,6 +195,7 @@ exists and the maintainer approves it.
 | P195 end-to-end process optimization | #1150 | `feature/p195-process-optimization` | complete |
 | P196 process optimization estate handoff | #1155 | `feature/p196-estate-handoff` | complete |
 | P197 per-block treatment windows | #1160 | `feature/p197-treatment-windows` | pr-open |
+| P198 Weather-conditioned stopping | #1168 | `feature/p198-weather-stopping` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -5784,4 +5785,32 @@ Acceptance:
 - Out-of-window schedules fail loudly.
 - Default P194/P195 neighbour counts are unchanged.
 - A windowed optimization selects the allowed offset.
+- Dashboard green.
+
+## Phase 198: Weather-conditioned stopping
+
+Parent issue: #1168
+Branch: `feature/p198-weather-stopping`
+Status: pr-open
+Report: `notes/reports/p198-weather-stopping.md`
+Manifest: `notes/reports/p198-gated-ensemble.json`
+Artifact: `notes/reports/p198-gated-ensemble.csv`
+PR: #1177
+
+Goal: test whether a documented weather-step stopping gate breaks the P178 basin-filling
+degeneracy without calibrating to observed perimeters.
+
+- [x] P198.1 Add the optional burning-condition gate (#1169)
+- [x] P198.2 Run the gated weather ensemble (#1170)
+- [x] P198.3 Close out stopping sensitivity (#1171)
+
+Result: the uniform gate produces non-zero final area and IoU spread in all four cases, strongly in
+three. Go for stopping as a sensitivity lever; no-go for this gate as an operational threshold.
+
+Acceptance:
+
+- Threshold source, units and direction recorded.
+- Same fixtures, members and growth settings as P178.
+- Final area, IoU, time to observed area and per-case spread reported.
+- No calibration and no operational claim.
 - Dashboard green.
