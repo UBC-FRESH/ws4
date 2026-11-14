@@ -5503,3 +5503,17 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P192.3: verified and closed P192. Full dashboard **OVERALL: GREEN**. The exact ranking,
   tie-break, determinism, and artifact tests pass. Report: `notes/reports/p192-closeout.md`.
   Design: `notes/design/ws4-process-candidate-search.md`. PR: #1139.
+
+- P192 merged: process candidate search is on `main` as `ad5e96d`. Branch deleted; no tag,
+  release, or settings change.
+
+- P193.1: added a bounded strict-improvement hill-climb over process candidates with a
+  caller-supplied neighbour function and common seed.
+
+- P193.2: added per-round history and the neighbourhood CSV/JSON artifact. Dashboard: pending
+  full run.
+
+- P193.3: verified and closed P193. Full dashboard **OVERALL: GREEN**. The exact improvement
+  chain, bound, non-improvement stop, and artifact tests pass. Report:
+  `notes/reports/p193-closeout.md`. Design: `notes/design/ws4-process-neighbourhood.md`.
+  PR: #1144.

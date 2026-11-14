@@ -188,7 +188,8 @@ exists and the maintainer approves it.
 | P189 LANDIS reference traits and exact age mortality | #1120 | `feature/p189-landis-reference-traits` | complete |
 | P190 process-conditioned schedule evaluation | #1125 | `feature/p190-process-schedule-evaluation` | complete |
 | P191 process schedule objective adapter | #1130 | `feature/p191-process-objective` | complete |
-| P192 process candidate search | #1135 | `feature/p192-process-candidate-search` | pr-open |
+| P192 process candidate search | #1135 | `feature/p192-process-candidate-search` | complete |
+| P193 bounded process neighbourhood search | #1140 | `feature/p193-process-neighbourhood` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -5604,7 +5605,8 @@ Acceptance:
 
 Parent issue: #1135
 Branch: `feature/p192-process-candidate-search`
-Status: pr-open
+Status: complete
+Merge commit: `ad5e96d`
 Design note: `notes/design/ws4-process-candidate-search.md`
 Report: `notes/reports/p192-closeout.md`
 PR: #1139
@@ -5622,4 +5624,29 @@ Acceptance:
 - The best candidate is stable and reproducible.
 - Empty, duplicate, and target-free searches fail loudly.
 - The ranking artifact is stable and tested.
+- Dashboard green.
+
+
+## Phase 193: bounded process neighbourhood search
+
+Parent issue: #1140
+Branch: `feature/p193-process-neighbourhood`
+Status: pr-open
+Design note: `notes/design/ws4-process-neighbourhood.md`
+Report: `notes/reports/p193-closeout.md`
+PR: #1144
+
+Goal: add a bounded, deterministic hill-climb over process candidate schedules with a
+caller-supplied neighbour function.
+
+- [x] P193.1 Implement bounded neighbourhood hill-climb (#1141)
+- [x] P193.2 Add neighbourhood history and artifact (#1142)
+- [x] P193.3 Test and close out neighbourhood search (#1143)
+
+Acceptance:
+
+- A two-step improving neighbourhood reaches the exact best objective.
+- A non-improving neighbour stops the search.
+- Bounds and invalid inputs fail loudly.
+- History and summary artifacts are stable and tested.
 - Dashboard green.
