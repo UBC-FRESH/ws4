@@ -50,4 +50,4 @@ is the first WS4-vs-Biomass_core spatial comparison.
 
 ## Pull request
 
-PR: #TBD is queued for maintainer approval. Do not merge without approval.
+PR: #1184 is queued for maintainer approval. Do not merge without approval.

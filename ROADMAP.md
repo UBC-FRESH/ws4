@@ -5852,7 +5852,7 @@ Status: pr-open
 Design note: `notes/design/ws4-spatial-landscape.md`
 Report: `notes/reports/p200-closeout.md`
 Spatial report: `notes/reports/p200-spatial-reference.md`
-PR: #TBD
+PR: #1184
 
 Goal: run a pinned, small spatial Biomass_core landscape and capture a trajectory reference.
 

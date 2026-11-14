@@ -5623,4 +5623,4 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P200.3: verified and closed P200. Full dashboard **OVERALL: GREEN**. The spatial Biomass_core
   reference is deterministic and the fixture test passes. Report:
   `notes/reports/p200-spatial-reference.md`; close-out: `notes/reports/p200-closeout.md`.
-  Design: `notes/design/ws4-spatial-landscape.md`. PR: #TBD.
+  Design: `notes/design/ws4-spatial-landscape.md`. PR: #1184.
