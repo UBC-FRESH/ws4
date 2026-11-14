@@ -53,6 +53,14 @@
         "fixtures": "tests/fixtures/landis_r_parity/",
         "test": "tests/test_landis_r_parity.py",
         "max_abs_diff": 4.73e-11
+      },
+      "spatial_reference": {
+        "date": "2026-11-14",
+        "case": "10x10 at 100 m; two species; 10 years",
+        "seed": 20261114,
+        "output": "tests/fixtures/landis_spatial_reference/simulationOutput.csv",
+        "script": "scripts/landis_spatial_reference.R",
+        "test": "tests/test_landis_spatial_reference.py"
       }
     },
     {
