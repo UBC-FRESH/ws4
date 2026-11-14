@@ -5570,3 +5570,16 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 
 - P178 review follow-up: added time-to-observed-area timing, per-case spread, and behavioral tests
   for weather perturbations. Dashboard: **GREEN**.
+
+- P196 merged: the process optimization estate handoff is on `main` as `f8e2bd7`. Branch
+  deleted; no tag, release, or settings change.
+
+- P197.1: added optional per-block treatment windows to the schedule grammar, restricting adds,
+  offset moves, and schedule validation.
+
+- P197.2: proved a windowed grammar drives the P195 optimizer to the allowed offset while the
+  default neighbour counts remain unchanged. Dashboard: pending full run.
+
+- P197.3: verified and closed P197. Full dashboard **OVERALL: GREEN**. Windowed neighbours,
+  validation, defaults, and optimization pass. Report: `notes/reports/p197-closeout.md`.
+  Design: `notes/design/ws4-treatment-windows.md`. PR: #TBD.

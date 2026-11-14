@@ -193,7 +193,8 @@ exists and the maintainer approves it.
 | P193 bounded process neighbourhood search | #1140 | `feature/p193-process-neighbourhood` | complete |
 | P194 deterministic schedule mutation grammar | #1145 | `feature/p194-schedule-grammar` | complete |
 | P195 end-to-end process optimization | #1150 | `feature/p195-process-optimization` | complete |
-| P196 process optimization estate handoff | #1155 | `feature/p196-estate-handoff` | pr-open |
+| P196 process optimization estate handoff | #1155 | `feature/p196-estate-handoff` | complete |
+| P197 per-block treatment windows | #1160 | `feature/p197-treatment-windows` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -5740,7 +5741,8 @@ Acceptance:
 
 Parent issue: #1155
 Branch: `feature/p196-estate-handoff`
-Status: pr-open
+Status: complete
+Merge commit: `f8e2bd7`
 Design note: `notes/design/ws4-estate-handoff.md`
 Report: `notes/reports/p196-closeout.md`
 PR: #1159
@@ -5758,4 +5760,28 @@ Acceptance:
 - CSV headers and row order are stable and tested.
 - Invalid mappings fail loudly.
 - The handoff artifact includes the process optimization evidence.
+- Dashboard green.
+
+
+## Phase 197: per-block treatment windows
+
+Parent issue: #1160
+Branch: `feature/p197-treatment-windows`
+Status: pr-open
+Design note: `notes/design/ws4-treatment-windows.md`
+Report: `notes/reports/p197-closeout.md`
+PR: #TBD
+
+Goal: add per-block treatment windows to the schedule grammar and optimizer.
+
+- [x] P197.1 Add per-block windows to the grammar (#1161)
+- [x] P197.2 Integrate windows with optimization (#1162)
+- [x] P197.3 Test and close out treatment windows (#1163)
+
+Acceptance:
+
+- Windowed add and move neighbours are exact and deterministic.
+- Out-of-window schedules fail loudly.
+- Default P194/P195 neighbour counts are unchanged.
+- A windowed optimization selects the allowed offset.
 - Dashboard green.

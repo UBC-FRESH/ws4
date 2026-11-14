@@ -46,4 +46,4 @@ run or published numeric landscape output.
 
 ## Pull request
 
-PR: #1159 is queued for maintainer approval. Do not merge without approval.
+Merged as `f8e2bd7` (PR #1159); branch deleted.

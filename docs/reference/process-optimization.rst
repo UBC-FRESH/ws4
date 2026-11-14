@@ -13,7 +13,8 @@ Contract
 --------
 
 The grammar horizon must match the evaluation horizon, and the initial candidate must be inside
-the grammar universe. The search needs at least one target.
+the grammar universe. Per-block treatment windows restrict every add and offset move. The search
+needs at least one target.
 
 ``ScheduleMoveGrammar`` has an optional ``allow_offset_moves`` flag. When true, each existing
 event can move to another unused offset on its block. The default remains add/remove only, so the
