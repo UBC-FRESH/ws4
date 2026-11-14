@@ -194,7 +194,8 @@ exists and the maintainer approves it.
 | P194 deterministic schedule mutation grammar | #1145 | `feature/p194-schedule-grammar` | complete |
 | P195 end-to-end process optimization | #1150 | `feature/p195-process-optimization` | complete |
 | P196 process optimization estate handoff | #1155 | `feature/p196-estate-handoff` | complete |
-| P197 per-block treatment windows | #1160 | `feature/p197-treatment-windows` | pr-open |
+| P197 per-block treatment windows | #1160 | `feature/p197-treatment-windows` | complete |
+| P198 LANDIS kernel parity against the R reference | #1173 | `feature/p198-landis-r-parity` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -5767,7 +5768,8 @@ Acceptance:
 
 Parent issue: #1160
 Branch: `feature/p197-treatment-windows`
-Status: pr-open
+Status: complete
+Merge commit: `1918bdf`
 Design note: `notes/design/ws4-treatment-windows.md`
 Report: `notes/reports/p197-closeout.md`
 PR: #1172
@@ -5784,4 +5786,28 @@ Acceptance:
 - Out-of-window schedules fail loudly.
 - Default P194/P195 neighbour counts are unchanged.
 - A windowed optimization selects the allowed offset.
+- Dashboard green.
+
+
+## Phase 198: LANDIS kernel parity against the open-source R reference
+
+Parent issue: #1173
+Branch: `feature/p198-landis-r-parity`
+Status: pr-open
+Design note: `notes/design/ws4-landis-r-parity.md`
+Report: `notes/reports/p198-closeout.md`
+PR: #TBD
+
+Goal: run the published Biomass_core R kernel against the WS4 Python kernel on identical cases.
+
+- [x] P198.1 Load the pinned R stack (#1174)
+- [x] P198.2 Run randomized kernel parity (#1175)
+- [x] P198.3 Publish the parity evidence and close out (#1176)
+
+Acceptance:
+
+- The R stack loads and the published functions execute.
+- Every compared function is within the recorded tolerance.
+- The package versions, commands, and input counts are recorded.
+- No "SpaDES unavailable" claim remains.
 - Dashboard green.

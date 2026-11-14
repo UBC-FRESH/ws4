@@ -37,7 +37,23 @@
       ],
       "remaining": [
         "full landscape LBSE trajectory comparison is not implemented"
-      ]
+      ],
+      "runtime_parity": {
+        "date": "2026-11-14",
+        "r_version": "4.3.3",
+        "LandR": "1.2.0.9064",
+        "SpaDES.core": "3.2.1.9067",
+        "functions": [
+          "calculateAgeMortality",
+          "calculateANPP",
+          "calculateGrowthMortality",
+          "calculateCompetition",
+          "calculateSumB"
+        ],
+        "fixtures": "tests/fixtures/landis_r_parity/",
+        "test": "tests/test_landis_r_parity.py",
+        "max_abs_diff": 4.73e-11
+      }
     },
     {
       "repo": "Biomass_regeneration",

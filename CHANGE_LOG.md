@@ -5583,3 +5583,18 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P197.3: verified and closed P197. Full dashboard **OVERALL: GREEN**. Windowed neighbours,
   validation, defaults, and optimization pass. Report: `notes/reports/p197-closeout.md`.
   Design: `notes/design/ws4-treatment-windows.md`. PR: #1172.
+
+- P197 merged: per-block treatment windows are on `main` as `1918bdf`. Branch deleted; no tag,
+  release, or settings change.
+
+- P198.1: installed and loaded the isolated LandR/SpaDES.core stack and sourced the published
+  Biomass_core kernel functions.
+
+- P198.2: ran randomized kernel parity for age mortality, ANPP, growth mortality, competition,
+  and sumB; the maximum absolute difference was 4.73e-11. Captured the R outputs as fixtures.
+  Dashboard: pending full run.
+
+- P198.3: verified and closed P198. Full dashboard **OVERALL: GREEN**. The live R kernel parity
+  fixtures and 5 tests pass; maximum absolute difference 4.73e-11. Reports:
+  `notes/reports/p198-landis-r-parity.md` and `notes/reports/p198-closeout.md`. Design:
+  `notes/design/ws4-landis-r-parity.md`. PR: #TBD.
