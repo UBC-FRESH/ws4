@@ -5517,3 +5517,17 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   chain, bound, non-improvement stop, and artifact tests pass. Report:
   `notes/reports/p193-closeout.md`. Design: `notes/design/ws4-process-neighbourhood.md`.
   PR: #1144.
+
+- P193 merged: bounded process neighbourhood search is on `main` as `e4c2e5a`. Branch
+  deleted; no tag, release, or settings change.
+
+- P194.1: added the deterministic add/remove schedule mutation grammar with a validated block,
+  treatment, offset, and event-cap universe.
+
+- P194.2: added canonical schedule ids and proved the grammar drives the P193 hierarchy from an
+  empty schedule to objective zero. Dashboard: pending full run.
+
+- P194.3: verified and closed P194. Full dashboard **OVERALL: GREEN**. The exact neighbour
+  sets, canonical ids, validation, and P193 integration pass. Report:
+  `notes/reports/p194-closeout.md`. Design: `notes/design/ws4-schedule-grammar.md`.
+  PR: #1149.

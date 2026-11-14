@@ -78,6 +78,8 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
      - Process-conditioned evaluation of a block-level harvest schedule.
    * - :doc:`process-search`
      - Deterministic candidate ranking over process-conditioned schedules.
+   * - :doc:`schedule-grammar`
+     - Deterministic add/remove mutations for process schedule candidates.
    * - :doc:`ecosystem-landis`
      - LANDIS-II-compatible succession kernel and exact reference tests.
    * - :doc:`fire-regime`
@@ -158,6 +160,7 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
    ecosystem-management
    ecosystem-evaluation
    process-search
+   schedule-grammar
    ecosystem-landis
    fire-regime
    fire-risk
