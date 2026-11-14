@@ -41,4 +41,4 @@ remaining step before a WS4-vs-LBSE landscape comparison.
 
 ## Pull request
 
-PR: #TBD is queued for maintainer approval. Do not merge without approval.
+PR: #1178 is queued for maintainer approval. Do not merge without approval.
