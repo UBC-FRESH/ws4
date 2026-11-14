@@ -190,7 +190,8 @@ exists and the maintainer approves it.
 | P191 process schedule objective adapter | #1130 | `feature/p191-process-objective` | complete |
 | P192 process candidate search | #1135 | `feature/p192-process-candidate-search` | complete |
 | P193 bounded process neighbourhood search | #1140 | `feature/p193-process-neighbourhood` | complete |
-| P194 deterministic schedule mutation grammar | #1145 | `feature/p194-schedule-grammar` | pr-open |
+| P194 deterministic schedule mutation grammar | #1145 | `feature/p194-schedule-grammar` | complete |
+| P195 end-to-end process optimization | #1150 | `feature/p195-process-optimization` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -5658,7 +5659,8 @@ Acceptance:
 
 Parent issue: #1145
 Branch: `feature/p194-schedule-grammar`
-Status: pr-open
+Status: complete
+Merge commit: `3cf69e5`
 Design note: `notes/design/ws4-schedule-grammar.md`
 Report: `notes/reports/p194-closeout.md`
 PR: #1149
@@ -5675,4 +5677,28 @@ Acceptance:
 - Candidate ids are stable for the same schedule.
 - Out-of-universe schedules and invalid grammars fail loudly.
 - The grammar drives a P193 search.
+- Dashboard green.
+
+
+## Phase 195: end-to-end process optimization
+
+Parent issue: #1150
+Branch: `feature/p195-process-optimization`
+Status: pr-open
+Design note: `notes/design/ws4-process-optimization.md`
+Report: `notes/reports/p195-closeout.md`
+PR: #TBD
+
+Goal: add optional offset moves and an end-to-end process optimization wrapper.
+
+- [x] P195.1 Add optional offset moves to the grammar (#1151)
+- [x] P195.2 Add the process optimization wrapper (#1152)
+- [x] P195.3 Test and close out process optimization (#1153)
+
+Acceptance:
+
+- Offset moves produce exact neighbours and remain deterministic.
+- The default grammar's P194 neighbour counts are unchanged.
+- The optimizer wrapper reaches the expected best schedule and writes its artifacts.
+- Invalid inputs fail loudly.
 - Dashboard green.

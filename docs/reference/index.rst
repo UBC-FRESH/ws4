@@ -79,7 +79,9 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
    * - :doc:`process-search`
      - Deterministic candidate ranking over process-conditioned schedules.
    * - :doc:`schedule-grammar`
-     - Deterministic add/remove mutations for process schedule candidates.
+     - Deterministic add/remove and optional offset moves for process schedule candidates.
+   * - :doc:`process-optimization`
+     - End-to-end grammar plus hill-climb process optimization and artifacts.
    * - :doc:`ecosystem-landis`
      - LANDIS-II-compatible succession kernel and exact reference tests.
    * - :doc:`fire-regime`
@@ -161,6 +163,7 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
    ecosystem-evaluation
    process-search
    schedule-grammar
+   process-optimization
    ecosystem-landis
    fire-regime
    fire-risk

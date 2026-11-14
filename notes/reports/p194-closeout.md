@@ -50,4 +50,4 @@ published numeric landscape output.
 
 ## Pull request
 
-PR: #1149 is queued for maintainer approval. Do not merge without approval.
+Merged as `3cf69e5` (PR #1149); branch deleted.
