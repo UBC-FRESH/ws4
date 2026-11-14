@@ -174,7 +174,8 @@ exists and the maintainer approves it.
 | P174 Large-fire resolution sensitivity | #1031 | `feature/p174-resolution-sensitivity` | complete |
 | P175 ROS-scale sensitivity | #1036 | `feature/p175-ros-scale` | complete |
 | P176 Burnable-basin and stopping diagnosis | #1041 | `feature/p176-burnable-basin` | complete |
-| P177 Containment contract and validation protocol | #1046 | `feature/p177-containment-protocol` | pr-open |
+| P177 Containment contract and validation protocol | #1046 | `feature/p177-containment-protocol` | complete |
+| P178 Free-burn weather ensemble | #1051 | `feature/p178-freeburn-ensemble` | complete |
 | P179 Generic process executor | #1056 | `feature/p179-process-executor` | complete |
 | P180 Succession, regeneration, and yield bridge | #1062 | `feature/p180-succession-yield` | complete |
 | P181 Scenario and risk evaluation in the optimizer | #1068 | `feature/p181-risk-optimizer` | complete |
@@ -5228,7 +5229,8 @@ Acceptance:
 
 Parent issue: #1046
 Branch: `feature/p177-containment-protocol`
-Status: pr-open
+Status: complete
+Merge commit: `18f3bce`
 Report: `notes/reports/p177-containment-protocol.md`
 Close-out: `notes/reports/p177-closeout.md`
 PR: #1050
@@ -5250,6 +5252,34 @@ Acceptance:
 - Suppressed small fires are not ROS skill.
 - Dashboard green.
 
+
+## Phase 178: Free-burn weather ensemble
+
+Parent issue: #1051
+Branch: `feature/p178-freeburn-ensemble`
+Status: complete
+Report: `notes/reports/p178-freeburn-ensemble.md`
+Close-out: `notes/reports/p178-closeout.md`
+Manifest: `notes/reports/p178-freeburn-ensemble.json`
+PR: #1055
+
+Goal: quantify free-burn large-fire skill under a weather-perturbation envelope.
+
+- [x] P178.1 Add ensemble runner (#1052)
+- [x] P178.2 Run free-burn ensemble (#1053)
+- [x] P178.3 Close out (#1054)
+
+Result: 20 runs, zero spread in final area and IoU. Weather perturbations change the time to
+observed area by 2,040–6,600 minutes within a case, but not final extent, because the model fills
+the burnable basin. The ensemble is degenerate until stopping is modeled.
+
+Acceptance:
+
+- Five members per case.
+- Per-case and overall spread, including time to observed area.
+- No calibration.
+- Small fires excluded.
+- Dashboard green.
 
 ## Phase 179: Generic process executor
 

@@ -204,3 +204,14 @@ P176 compared simulated and observed area with the connected burnable basin acro
 
 The model is basin-limited. The next fix is containment/stopping or a defensible burnable-area
 constraint, not a ROS, fuel, weather, or terrain multiplier.
+
+Free-burn weather ensemble
+--------------------------
+
+P178 ran four large free-burn cases with five weather members.
+
+All members produced identical final area and IoU per case. Wind +/-20% and RH +/-10 points
+gave zero spread in final extent but moved the time to observed area by 2,040-6,600 minutes within
+a case. The model fills the burnable basin, so weather perturbations change timing, not extent.
+
+The ensemble is degenerate until containment/stopping or a burnable-area constraint is added.
