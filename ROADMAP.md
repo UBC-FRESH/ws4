@@ -203,7 +203,8 @@ exists and the maintainer approves it.
 | P204 Rain-driven fire stopping | #1205 | `feature/p204-rain-stopping` | pr-open |
 | P205 Crew line-construction rate | #1212 | `feature/p205-line-construction` | pr-open |
 | P206 Temporary wet-line suppression | #1217 | `feature/p206-wet-line` | pr-open |
-| P210 align the LANDIS process transition | #1199 | `feature/p210-transition-alignment` | pr-open |
+| P210 align the LANDIS process transition | #1199 | `feature/p210-transition-alignment` | complete |
+| P211 heterogeneous spatial reference | #1222 | `feature/p211-heterogeneous-reference` | pr-open |
 | P201 Firebreak gap sensitivity pilot | #1185 | `feature/p201-firebreak-gap` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
@@ -6039,7 +6040,8 @@ Acceptance:
 
 Parent issue: #1199
 Branch: `feature/p210-transition-alignment`
-Status: pr-open
+Status: complete
+Merge commit: `dded837`
 Design note: `notes/design/ws4-transition-alignment.md`
 Report: `notes/reports/p210-closeout.md`
 Comparison: `notes/reports/p210-transition-alignment.md`
@@ -6056,4 +6058,28 @@ Acceptance:
 - The aligned process matches the reference within 1% at year 10.
 - Kernel parity tests still pass.
 - The old 6.64% mismatch test is replaced with the aligned evidence.
+- Dashboard green.
+
+
+## Phase 211: heterogeneous spatial reference
+
+Parent issue: #1222
+Branch: `feature/p211-heterogeneous-reference`
+Status: pr-open
+Design note: `notes/design/ws4-heterogeneous-reference.md`
+Report: `notes/reports/p211-closeout.md`
+Comparison: `notes/reports/p211-heterogeneous-reference.md`
+PR: #TBD
+
+Goal: run a four-pixel-group, two-species Biomass_core reference and compare it with WS4.
+
+- [x] P211.1 Build and run the heterogeneous reference (#1223)
+- [x] P211.2 Compare WS4 with the heterogeneous reference (#1224)
+- [x] P211.3 Pin and close out the heterogeneous comparison (#1225)
+
+Acceptance:
+
+- The heterogeneous reference is deterministic.
+- WS4 is within 1% of the reference at year 10.
+- The trajectory test pins the result.
 - Dashboard green.

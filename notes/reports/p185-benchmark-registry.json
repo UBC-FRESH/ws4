@@ -70,6 +70,17 @@
         "year_10_ws4": 9444.0,
         "year_10_reference": 9460,
         "relative_error": -0.00169
+      },
+      "heterogeneous_reference": {
+        "date": "2026-11-14",
+        "case": "20x20 at 100 m; four groups; ages 10-100; B 500-5000",
+        "seed": 20261114,
+        "output": "tests/fixtures/landis_heterogeneous_reference/simulationOutput.csv",
+        "script": "scripts/landis_heterogeneous_reference.R",
+        "test": "tests/test_landis_heterogeneous_comparison.py",
+        "year_10_ws4": 10809.75,
+        "year_10_reference": 10822,
+        "relative_error": -0.00113
       }
     },
     {
