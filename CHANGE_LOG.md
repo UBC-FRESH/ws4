@@ -5557,4 +5557,4 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 
 - P196.3: verified and closed P196. Full dashboard **OVERALL: GREEN**. The exported schedule and
   mapping round-trip exactly through the existing loaders. Report:
-  `notes/reports/p196-closeout.md`. Design: `notes/design/ws4-estate-handoff.md`. PR: #TBD.
+  `notes/reports/p196-closeout.md`. Design: `notes/design/ws4-estate-handoff.md`. PR: #1159.

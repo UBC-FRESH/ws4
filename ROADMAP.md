@@ -5713,7 +5713,7 @@ Branch: `feature/p196-estate-handoff`
 Status: pr-open
 Design note: `notes/design/ws4-estate-handoff.md`
 Report: `notes/reports/p196-closeout.md`
-PR: #TBD
+PR: #1159
 
 Goal: export the P195 best schedule and block mapping in the canonical estate input format and
 round-trip them through the existing loaders.
