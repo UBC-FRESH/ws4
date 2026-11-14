@@ -5544,4 +5544,4 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P195.3: verified and closed P195. Full dashboard **OVERALL: GREEN**. Offset moves, the
   end-to-end optimizer, determinism, validation, and artifacts pass. Report:
   `notes/reports/p195-closeout.md`. Design: `notes/design/ws4-process-optimization.md`.
-  PR: #TBD.
+  PR: #1154.

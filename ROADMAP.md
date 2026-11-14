@@ -5687,7 +5687,7 @@ Branch: `feature/p195-process-optimization`
 Status: pr-open
 Design note: `notes/design/ws4-process-optimization.md`
 Report: `notes/reports/p195-closeout.md`
-PR: #TBD
+PR: #1154
 
 Goal: add optional offset moves and an end-to-end process optimization wrapper.
 
