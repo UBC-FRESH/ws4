@@ -5558,3 +5558,15 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P196.3: verified and closed P196. Full dashboard **OVERALL: GREEN**. The exported schedule and
   mapping round-trip exactly through the existing loaders. Report:
   `notes/reports/p196-closeout.md`. Design: `notes/design/ws4-estate-handoff.md`. PR: #1159.
+
+- P178.1: added a documented five-member weather-perturbation ensemble runner.
+- P178.2: ran four large free-burn cases with five members each. All 20 runs produced identical
+  final area and IoU per case; weather perturbations moved the time to observed area by 2,040-6,600
+  minutes within a case, not final extent. The ensemble is degenerate because the model fills the
+  burnable basin.
+- P178.3: closed P178. Do not use the ensemble as a risk distribution until containment/stopping
+  or a burnable-area constraint exists. Reports: `notes/reports/p178-freeburn-ensemble.md` and
+  `notes/reports/p178-closeout.md`. Dashboard: **GREEN**.
+
+- P178 review follow-up: added time-to-observed-area timing, per-case spread, and behavioral tests
+  for weather perturbations. Dashboard: **GREEN**.

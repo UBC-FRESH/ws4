@@ -1,0 +1,376 @@
+{
+  "limitations": "Weather perturbations are a sensitivity envelope, not an operational ensemble. Small suppressed fires are excluded. No calibration was applied.",
+  "members": [
+    {
+      "name": "baseline",
+      "rh_offset": 0.0,
+      "wind_scale": 1.0
+    },
+    {
+      "name": "wind-low",
+      "rh_offset": 0.0,
+      "wind_scale": 0.8
+    },
+    {
+      "name": "wind-high",
+      "rh_offset": 0.0,
+      "wind_scale": 1.2
+    },
+    {
+      "name": "rh-dry",
+      "rh_offset": -10.0,
+      "wind_scale": 1.0
+    },
+    {
+      "name": "rh-moist",
+      "rh_offset": 10.0,
+      "wind_scale": 1.0
+    }
+  ],
+  "model_skill": false,
+  "protocol": "free-burn large fires; first-perimeter seed; weather perturbation envelope",
+  "rows": [
+    {
+      "area_bias": 4.118589743589744,
+      "area_obs_ha": 31200.0,
+      "area_sim_ha": 159700.0,
+      "case": "2003_96",
+      "iou": 0.19182144529420947,
+      "member": "baseline",
+      "rh_offset": 0.0,
+      "sorensen": 0.321896280775275,
+      "time_to_observed_area_min": 6060.0,
+      "wind_scale": 1.0
+    },
+    {
+      "area_bias": 4.118589743589744,
+      "area_obs_ha": 31200.0,
+      "area_sim_ha": 159700.0,
+      "case": "2003_96",
+      "iou": 0.19182144529420947,
+      "member": "wind-low",
+      "rh_offset": 0.0,
+      "sorensen": 0.321896280775275,
+      "time_to_observed_area_min": 6300.0,
+      "wind_scale": 0.8
+    },
+    {
+      "area_bias": 4.118589743589744,
+      "area_obs_ha": 31200.0,
+      "area_sim_ha": 159700.0,
+      "case": "2003_96",
+      "iou": 0.19182144529420947,
+      "member": "wind-high",
+      "rh_offset": 0.0,
+      "sorensen": 0.321896280775275,
+      "time_to_observed_area_min": 5700.0,
+      "wind_scale": 1.2
+    },
+    {
+      "area_bias": 4.118589743589744,
+      "area_obs_ha": 31200.0,
+      "area_sim_ha": 159700.0,
+      "case": "2003_96",
+      "iou": 0.19182144529420947,
+      "member": "rh-dry",
+      "rh_offset": -10.0,
+      "sorensen": 0.321896280775275,
+      "time_to_observed_area_min": 3540.0,
+      "wind_scale": 1.0
+    },
+    {
+      "area_bias": 4.118589743589744,
+      "area_obs_ha": 31200.0,
+      "area_sim_ha": 159700.0,
+      "case": "2003_96",
+      "iou": 0.19182144529420947,
+      "member": "rh-moist",
+      "rh_offset": 10.0,
+      "sorensen": 0.321896280775275,
+      "time_to_observed_area_min": 9000.0,
+      "wind_scale": 1.0
+    },
+    {
+      "area_bias": 1.6650390625,
+      "area_obs_ha": 25600.0,
+      "area_sim_ha": 68225.0,
+      "case": "2003_663",
+      "iou": 0.34951456310679613,
+      "member": "baseline",
+      "rh_offset": 0.0,
+      "sorensen": 0.5179856115107914,
+      "time_to_observed_area_min": 3120.0,
+      "wind_scale": 1.0
+    },
+    {
+      "area_bias": 1.6650390625,
+      "area_obs_ha": 25600.0,
+      "area_sim_ha": 68225.0,
+      "case": "2003_663",
+      "iou": 0.34951456310679613,
+      "member": "wind-low",
+      "rh_offset": 0.0,
+      "sorensen": 0.5179856115107914,
+      "time_to_observed_area_min": 3180.0,
+      "wind_scale": 0.8
+    },
+    {
+      "area_bias": 1.6650390625,
+      "area_obs_ha": 25600.0,
+      "area_sim_ha": 68225.0,
+      "case": "2003_663",
+      "iou": 0.34951456310679613,
+      "member": "wind-high",
+      "rh_offset": 0.0,
+      "sorensen": 0.5179856115107914,
+      "time_to_observed_area_min": 3120.0,
+      "wind_scale": 1.2
+    },
+    {
+      "area_bias": 1.6650390625,
+      "area_obs_ha": 25600.0,
+      "area_sim_ha": 68225.0,
+      "case": "2003_663",
+      "iou": 0.34951456310679613,
+      "member": "rh-dry",
+      "rh_offset": -10.0,
+      "sorensen": 0.5179856115107914,
+      "time_to_observed_area_min": 2280.0,
+      "wind_scale": 1.0
+    },
+    {
+      "area_bias": 1.6650390625,
+      "area_obs_ha": 25600.0,
+      "area_sim_ha": 68225.0,
+      "case": "2003_663",
+      "iou": 0.34951456310679613,
+      "member": "rh-moist",
+      "rh_offset": 10.0,
+      "sorensen": 0.5179856115107914,
+      "time_to_observed_area_min": 4320.0,
+      "wind_scale": 1.0
+    },
+    {
+      "area_bias": 2.1457632303456715,
+      "area_obs_ha": 163450.0,
+      "area_sim_ha": 514175.0,
+      "case": "2023_331",
+      "iou": 0.26481567895473634,
+      "member": "baseline",
+      "rh_offset": 0.0,
+      "sorensen": 0.4187419295332964,
+      "time_to_observed_area_min": 9120.0,
+      "wind_scale": 1.0
+    },
+    {
+      "area_bias": 2.1457632303456715,
+      "area_obs_ha": 163450.0,
+      "area_sim_ha": 514175.0,
+      "case": "2023_331",
+      "iou": 0.26481567895473634,
+      "member": "wind-low",
+      "rh_offset": 0.0,
+      "sorensen": 0.4187419295332964,
+      "time_to_observed_area_min": 10200.0,
+      "wind_scale": 0.8
+    },
+    {
+      "area_bias": 2.1457632303456715,
+      "area_obs_ha": 163450.0,
+      "area_sim_ha": 514175.0,
+      "case": "2023_331",
+      "iou": 0.26481567895473634,
+      "member": "wind-high",
+      "rh_offset": 0.0,
+      "sorensen": 0.4187419295332964,
+      "time_to_observed_area_min": 8760.0,
+      "wind_scale": 1.2
+    },
+    {
+      "area_bias": 2.1457632303456715,
+      "area_obs_ha": 163450.0,
+      "area_sim_ha": 514175.0,
+      "case": "2023_331",
+      "iou": 0.26481567895473634,
+      "member": "rh-dry",
+      "rh_offset": -10.0,
+      "sorensen": 0.4187419295332964,
+      "time_to_observed_area_min": 6480.0,
+      "wind_scale": 1.0
+    },
+    {
+      "area_bias": 2.1457632303456715,
+      "area_obs_ha": 163450.0,
+      "area_sim_ha": 514175.0,
+      "case": "2023_331",
+      "iou": 0.26481567895473634,
+      "member": "rh-moist",
+      "rh_offset": 10.0,
+      "sorensen": 0.4187419295332964,
+      "time_to_observed_area_min": 13080.0,
+      "wind_scale": 1.0
+    },
+    {
+      "area_bias": 3.6388496468213924,
+      "area_obs_ha": 247750.0,
+      "area_sim_ha": 1149275.0,
+      "case": "2023_366",
+      "iou": 0.2113021047839941,
+      "member": "baseline",
+      "rh_offset": 0.0,
+      "sorensen": 0.3488842361446646,
+      "time_to_observed_area_min": 2040.0,
+      "wind_scale": 1.0
+    },
+    {
+      "area_bias": 3.6388496468213924,
+      "area_obs_ha": 247750.0,
+      "area_sim_ha": 1149275.0,
+      "case": "2023_366",
+      "iou": 0.2113021047839941,
+      "member": "wind-low",
+      "rh_offset": 0.0,
+      "sorensen": 0.3488842361446646,
+      "time_to_observed_area_min": 2340.0,
+      "wind_scale": 0.8
+    },
+    {
+      "area_bias": 3.6388496468213924,
+      "area_obs_ha": 247750.0,
+      "area_sim_ha": 1149275.0,
+      "case": "2023_366",
+      "iou": 0.2113021047839941,
+      "member": "wind-high",
+      "rh_offset": 0.0,
+      "sorensen": 0.3488842361446646,
+      "time_to_observed_area_min": 1860.0,
+      "wind_scale": 1.2
+    },
+    {
+      "area_bias": 3.6388496468213924,
+      "area_obs_ha": 247750.0,
+      "area_sim_ha": 1149275.0,
+      "case": "2023_366",
+      "iou": 0.2113021047839941,
+      "member": "rh-dry",
+      "rh_offset": -10.0,
+      "sorensen": 0.3488842361446646,
+      "time_to_observed_area_min": 1560.0,
+      "wind_scale": 1.0
+    },
+    {
+      "area_bias": 3.6388496468213924,
+      "area_obs_ha": 247750.0,
+      "area_sim_ha": 1149275.0,
+      "case": "2023_366",
+      "iou": 0.2113021047839941,
+      "member": "rh-moist",
+      "rh_offset": 10.0,
+      "sorensen": 0.3488842361446646,
+      "time_to_observed_area_min": 4920.0,
+      "wind_scale": 1.0
+    }
+  ],
+  "summary": {
+    "case_count": 4,
+    "max_area_bias": 4.118589743589744,
+    "max_iou": 0.34951456310679613,
+    "median_area_bias": 2.8923064385835318,
+    "median_iou": 0.23805889186936524,
+    "min_area_bias": 1.6650390625,
+    "min_iou": 0.19182144529420947,
+    "per_case": {
+      "2003_663": {
+        "area_bias": {
+          "max": 1.6650390625,
+          "median": 1.6650390625,
+          "min": 1.6650390625,
+          "range": 0.0
+        },
+        "iou": {
+          "max": 0.34951456310679613,
+          "median": 0.34951456310679613,
+          "min": 0.34951456310679613,
+          "range": 0.0
+        },
+        "run_count": 5,
+        "time_to_observed_area_min": {
+          "max": 4320.0,
+          "median": 3120.0,
+          "min": 2280.0,
+          "range": 2040.0
+        }
+      },
+      "2003_96": {
+        "area_bias": {
+          "max": 4.118589743589744,
+          "median": 4.118589743589744,
+          "min": 4.118589743589744,
+          "range": 0.0
+        },
+        "iou": {
+          "max": 0.19182144529420947,
+          "median": 0.19182144529420947,
+          "min": 0.19182144529420947,
+          "range": 0.0
+        },
+        "run_count": 5,
+        "time_to_observed_area_min": {
+          "max": 9000.0,
+          "median": 6060.0,
+          "min": 3540.0,
+          "range": 5460.0
+        }
+      },
+      "2023_331": {
+        "area_bias": {
+          "max": 2.1457632303456715,
+          "median": 2.1457632303456715,
+          "min": 2.1457632303456715,
+          "range": 0.0
+        },
+        "iou": {
+          "max": 0.26481567895473634,
+          "median": 0.26481567895473634,
+          "min": 0.26481567895473634,
+          "range": 0.0
+        },
+        "run_count": 5,
+        "time_to_observed_area_min": {
+          "max": 13080.0,
+          "median": 9120.0,
+          "min": 6480.0,
+          "range": 6600.0
+        }
+      },
+      "2023_366": {
+        "area_bias": {
+          "max": 3.6388496468213924,
+          "median": 3.6388496468213924,
+          "min": 3.6388496468213924,
+          "range": 0.0
+        },
+        "iou": {
+          "max": 0.2113021047839941,
+          "median": 0.2113021047839941,
+          "min": 0.2113021047839941,
+          "range": 0.0
+        },
+        "run_count": 5,
+        "time_to_observed_area_min": {
+          "max": 4920.0,
+          "median": 2040.0,
+          "min": 1560.0,
+          "range": 3360.0
+        }
+      }
+    },
+    "run_count": 20,
+    "time_to_observed_area_min": {
+      "max": 13080.0,
+      "median": 4620.0,
+      "min": 1560.0,
+      "range": 11520.0
+    }
+  }
+}
