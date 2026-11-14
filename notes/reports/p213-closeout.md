@@ -37,4 +37,4 @@ Use the artifact in the ensemble report and optimizer risk reporting.
 
 ## Pull request
 
-PR: #TBD is queued for maintainer approval. Do not merge without approval.
+PR: #1245 is queued for maintainer approval. Do not merge without approval.

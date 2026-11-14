@@ -6175,7 +6175,7 @@ Status: pr-open
 Design note: `notes/design/ws4-ensemble-fire-artifact.md`
 Report: `notes/reports/p213-closeout.md`
 Artifact report: `notes/reports/p213-ensemble-artifact.md`
-PR: #TBD
+PR: #1245
 
 Goal: write the P212 per-scenario fire-regime summaries to a stable JSON artifact.
 

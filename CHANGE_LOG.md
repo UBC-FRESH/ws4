@@ -5726,4 +5726,4 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P213.2: verified and closed P213. Full dashboard **OVERALL: GREEN**. The artifact, totals, and
   zero-fire output pass. Report: `notes/reports/p213-ensemble-artifact.md`; close-out:
   `notes/reports/p213-closeout.md`. Design: `notes/design/ws4-ensemble-fire-artifact.md`.
-  PR: #TBD.
+  PR: #1245.
