@@ -1,0 +1,85 @@
+{
+  "proof": "P204 rain-driven fire stopping",
+  "case_id": "2023_366",
+  "fixture": "tests/fixtures/fire/large_2023_366",
+  "criterion": "Latham and Rothermel (1993): at least 0.5 inch (~12.7 mm) accumulated over 5 days or fewer",
+  "rows": [
+    {
+      "case": "2023_366",
+      "member": "baseline",
+      "wind_scale": 1.0,
+      "rh_offset": 0.0,
+      "threshold_mm": 12.7,
+      "window_min": 7200.0,
+      "area_obs_ha": 247750.0,
+      "area_sim_ha": 438175.0,
+      "area_bias": 0.7686175580221998,
+      "iou": 0.44549812970865604,
+      "sorensen": 0.6163939206181434,
+      "time_to_observed_area_min": 2040.0
+    },
+    {
+      "case": "2023_366",
+      "member": "wind-low",
+      "wind_scale": 0.8,
+      "rh_offset": 0.0,
+      "threshold_mm": 12.7,
+      "window_min": 7200.0,
+      "area_obs_ha": 247750.0,
+      "area_sim_ha": 396175.0,
+      "area_bias": 0.5990918264379415,
+      "iou": 0.45118034818863034,
+      "sorensen": 0.6218115463757425,
+      "time_to_observed_area_min": 2340.0
+    },
+    {
+      "case": "2023_366",
+      "member": "wind-high",
+      "wind_scale": 1.2,
+      "rh_offset": 0.0,
+      "threshold_mm": 12.7,
+      "window_min": 7200.0,
+      "area_obs_ha": 247750.0,
+      "area_sim_ha": 496875.0,
+      "area_bias": 1.0055499495459133,
+      "iou": 0.42239732569245464,
+      "sorensen": 0.5939231156622461,
+      "time_to_observed_area_min": 1860.0
+    },
+    {
+      "case": "2023_366",
+      "member": "rh-dry",
+      "wind_scale": 1.0,
+      "rh_offset": -10.0,
+      "threshold_mm": 12.7,
+      "window_min": 7200.0,
+      "area_obs_ha": 247750.0,
+      "area_sim_ha": 692050.0,
+      "area_bias": 1.7933400605449041,
+      "iou": 0.3403216030234963,
+      "sorensen": 0.5078208129389232,
+      "time_to_observed_area_min": 1560.0
+    },
+    {
+      "case": "2023_366",
+      "member": "rh-moist",
+      "wind_scale": 1.0,
+      "rh_offset": 10.0,
+      "threshold_mm": 12.7,
+      "window_min": 7200.0,
+      "area_obs_ha": 247750.0,
+      "area_sim_ha": 296475.0,
+      "area_bias": 0.19667003027245206,
+      "iou": 0.47286874154262515,
+      "sorensen": 0.6421057467040286,
+      "time_to_observed_area_min": 4920.0
+    }
+  ],
+  "limitations": [
+    "Expert-opinion fire-stopping criterion, not a calibrated physical threshold.",
+    "Hard stop: no reignition after the threshold is reached.",
+    "One case and five weather members.",
+    "No water, retardant, crews or suppression resources.",
+    "No calibration and no operational claim."
+  ]
+}
