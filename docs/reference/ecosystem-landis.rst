@@ -40,7 +40,7 @@ can replace the default logistic succession source through
 R parity
 --------
 
-P198 ran the published Biomass_core R kernel in an isolated LandR/SpaDES.core stack and captured
+P199 ran the published Biomass_core R kernel in an isolated LandR/SpaDES.core stack and captured
 randomized parity fixtures in ``tests/fixtures/landis_r_parity/``. WS4 matches the R outputs
 within ``1e-8`` for age mortality, ANPP, growth mortality, competition, and sumB. This is
 kernel parity, not a spatial landscape run.

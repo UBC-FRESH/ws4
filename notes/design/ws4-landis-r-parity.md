@@ -1,7 +1,7 @@
 # LANDIS R kernel parity
 
-Status: implemented (P198)
-Phase: P198 (#1173)
+Status: implemented (P199)
+Phase: P199 (#1173)
 Date: 2026-11-14
 Related: `notes/design/ws4-predictive-ecology-benchmarks.md`,
 `tests/test_landis_r_parity.py`
@@ -9,7 +9,7 @@ Related: `notes/design/ws4-predictive-ecology-benchmarks.md`,
 ## 1. Purpose
 
 P185/P189 compared the WS4 LANDIS kernel to numeric values transcribed from the public
-Biomass_core tests. P198 removes the "R/SpaDES unavailable" caveat by running the published R
+Biomass_core tests. P199 removes the "R/SpaDES unavailable" caveat by running the published R
 functions directly and comparing them with the WS4 kernel on identical randomized cases.
 
 This is kernel parity, not a full landscape LBSE run.

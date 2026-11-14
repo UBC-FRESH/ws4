@@ -1,8 +1,8 @@
-# P198 report: LANDIS kernel parity against the open-source R reference
+# P199 report: LANDIS kernel parity against the open-source R reference
 
 Date: 2026-11-14
-Phase: P198 (#1173)
-Branch: `feature/p198-landis-r-parity`
+Phase: P199 (#1173)
+Branch: `feature/p199-landis-r-parity`
 Design note: `notes/design/ws4-landis-r-parity.md`
 
 ## Result

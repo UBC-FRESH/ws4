@@ -1,11 +1,11 @@
-# P198 close-out: LANDIS kernel parity against the open-source R reference
+# P199 close-out: LANDIS kernel parity against the open-source R reference
 
 Date: 2026-11-14
-Phase: P198 (#1173)
-Branch: `feature/p198-landis-r-parity`
-Tasks: P198.1 (#1174), P198.2 (#1175), P198.3 (#1176)
+Phase: P199 (#1173)
+Branch: `feature/p199-landis-r-parity`
+Tasks: P199.1 (#1174), P199.2 (#1175), P199.3 (#1176)
 Design note: `notes/design/ws4-landis-r-parity.md`
-Report: `notes/reports/p198-landis-r-parity.md`
+Report: `notes/reports/p199-landis-r-parity.md`
 
 ## Result
 
