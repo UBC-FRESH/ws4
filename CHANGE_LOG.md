@@ -5611,3 +5611,16 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   weather members at every gap width; the gap changed containment, weather changed timing.
 - P201.3: closed P201 with a no-go for extending gap sweeps. Report:
   `notes/reports/p201-firebreak-gap.md`. Dashboard: **GREEN**.
+
+- P199 merged: live LANDIS R kernel parity is on `main` as `5523cb9`. Branch deleted; no tag,
+  release, or settings change.
+
+- P200.1: built a 10 × 10, 100 m Biomass_core landscape with hand-built deterministic inputs.
+
+- P200.2: ran the full module for 10 years with seed 20261114; captured a deterministic
+  trajectory and a reproducibility script. Dashboard: pending full run.
+
+- P200.3: verified and closed P200. Full dashboard **OVERALL: GREEN**. The spatial Biomass_core
+  reference is deterministic and the fixture test passes. Report:
+  `notes/reports/p200-spatial-reference.md`; close-out: `notes/reports/p200-closeout.md`.
+  Design: `notes/design/ws4-spatial-landscape.md`. PR: #1184.

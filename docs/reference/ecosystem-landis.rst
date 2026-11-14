@@ -45,6 +45,14 @@ randomized parity fixtures in ``tests/fixtures/landis_r_parity/``. WS4 matches t
 within ``1e-8`` for age mortality, ANPP, growth mortality, competition, and sumB. This is
 kernel parity, not a spatial landscape run.
 
+Spatial reference
+-----------------
+
+P200 ran the full Biomass_core module on a 10 × 10, 100 m landscape for 10 years with a fixed
+seed. The captured trajectory is in ``tests/fixtures/landis_spatial_reference/`` and the
+reproducibility script is ``scripts/landis_spatial_reference.R``. This is a toy spatial
+reference, not a regional LBSE reproduction.
+
 Tests
 -----
 

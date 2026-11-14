@@ -196,7 +196,8 @@ exists and the maintainer approves it.
 | P196 process optimization estate handoff | #1155 | `feature/p196-estate-handoff` | complete |
 | P197 per-block treatment windows | #1160 | `feature/p197-treatment-windows` | complete |
 | P198 Weather-conditioned stopping | #1168 | `feature/p198-weather-stopping` | pr-open |
-| P199 LANDIS kernel parity against the R reference | #1173 | `feature/p199-landis-r-parity` | pr-open |
+| P199 LANDIS kernel parity against the R reference | #1173 | `feature/p199-landis-r-parity` | complete |
+| P200 small spatial Biomass_core landscape reference | #1180 | `feature/p200-spatial-landscape` | pr-open |
 | P201 Firebreak gap sensitivity pilot | #1185 | `feature/p201-firebreak-gap` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
@@ -5822,7 +5823,8 @@ Acceptance:
 
 Parent issue: #1173
 Branch: `feature/p199-landis-r-parity`
-Status: pr-open
+Status: complete
+Merge commit: `5523cb9`
 Design note: `notes/design/ws4-landis-r-parity.md`
 Report: `notes/reports/p199-closeout.md`
 PR: #1179
@@ -5840,6 +5842,29 @@ Acceptance:
 - The package versions, commands, and input counts are recorded.
 - No "SpaDES unavailable" claim remains.
 - Dashboard green.
+
+
+## Phase 200: small spatial Biomass_core landscape reference
+
+Parent issue: #1180
+Branch: `feature/p200-spatial-landscape`
+Status: pr-open
+Design note: `notes/design/ws4-spatial-landscape.md`
+Report: `notes/reports/p200-closeout.md`
+Spatial report: `notes/reports/p200-spatial-reference.md`
+PR: #1184
+
+Goal: run a pinned, small spatial Biomass_core landscape and capture a trajectory reference.
+
+- [x] P200.1 Build the minimal spatial reference case (#1181)
+- [x] P200.2 Run and capture the trajectory (#1182)
+- [x] P200.3 Document and close out the spatial reference (#1183)
+
+Acceptance:
+
+- The reference run executes or fails with a precise, reproducible error.
+- The trajectory, versions, and parameters are recorded.
+- The result is explicitly separated from WS4 parity.
 
 ## Phase 201: firebreak gap sensitivity pilot
 
