@@ -208,7 +208,8 @@ exists and the maintainer approves it.
 | P210 align the LANDIS process transition | #1199 | `feature/p210-transition-alignment` | complete |
 | P211 heterogeneous spatial reference | #1222 | `feature/p211-heterogeneous-reference` | complete |
 | P212 process-ensemble fire-regime report | #1232 | `feature/p212-process-fire-regime` | complete |
-| P213 process-ensemble fire-regime artifact | #1241 | `feature/p213-ensemble-artifact` | pr-open |
+| P213 process-ensemble fire-regime artifact | #1241 | `feature/p213-ensemble-artifact` | complete |
+| P214 process fire-regime risk accounts | #1246 | `feature/p214-fire-risk-accounts` | pr-open |
 | P201 Firebreak gap sensitivity pilot | #1185 | `feature/p201-firebreak-gap` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
@@ -6171,7 +6172,8 @@ Acceptance:
 
 Parent issue: #1241
 Branch: `feature/p213-ensemble-artifact`
-Status: pr-open
+Status: complete
+Merge commit: `58fa941`
 Design note: `notes/design/ws4-ensemble-fire-artifact.md`
 Report: `notes/reports/p213-closeout.md`
 Artifact report: `notes/reports/p213-ensemble-artifact.md`
@@ -6187,4 +6189,28 @@ Acceptance:
 - The artifact is written next to the process artifacts.
 - Each scenario summary matches the in-memory summary.
 - Zero-fire output is valid JSON.
+- Dashboard green.
+
+
+## Phase 214: process fire-regime risk accounts
+
+Parent issue: #1246
+Branch: `feature/p214-fire-risk-accounts`
+Status: pr-open
+Design note: `notes/design/ws4-fire-risk-accounts.md`
+Report: `notes/reports/p214-closeout.md`
+Accounts report: `notes/reports/p214-fire-risk-accounts.md`
+PR: #1252
+
+Goal: convert per-scenario fire-regime summaries into optimizer account rows.
+
+- [x] P214.1 Implement fire-regime account values (#1247)
+- [x] P214.2 Connect the accounts to risk aggregation (#1248)
+- [x] P214.3 Document and close out fire-risk accounts (#1249)
+
+Acceptance:
+
+- Account rows are stable and complete for a scenario.
+- Zero-fire FRI is omitted, not zero-filled.
+- The rows feed `risk_account_values` with a mean risk target.
 - Dashboard green.
