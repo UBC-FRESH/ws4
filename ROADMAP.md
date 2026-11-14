@@ -5931,7 +5931,7 @@ Status: pr-open
 Design note: `notes/design/ws4-transition-alignment.md`
 Report: `notes/reports/p203-closeout.md`
 Comparison: `notes/reports/p203-transition-alignment.md`
-PR: #TBD
+PR: #1204
 
 Goal: align `LandisSuccessionProcess` with the published Biomass_core annual transition.
 
