@@ -37,4 +37,4 @@ Use the artifact in the ensemble report and optimizer risk reporting.
 
 ## Pull request
 
-PR: #1245 is queued for maintainer approval. Do not merge without approval.
+Merged as `58fa941` (PR #1245); branch deleted.

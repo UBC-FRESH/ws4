@@ -5727,3 +5727,17 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   zero-fire output pass. Report: `notes/reports/p213-ensemble-artifact.md`; close-out:
   `notes/reports/p213-closeout.md`. Design: `notes/design/ws4-ensemble-fire-artifact.md`.
   PR: #1245.
+
+- P213 merged: the process-ensemble fire-regime artifact is on `main` as `58fa941`. Branch
+  deleted; no tag, release, or settings change.
+
+- P214.1: added `fire_regime_account_values`, mapping per-scenario summaries to optimizer account
+  rows.
+
+- P214.2: verified the rows through `risk_account_values` with a mean target; zero fire omits FRI.
+  Dashboard: pending full run.
+
+- P214.3: verified and closed P214. Full dashboard **OVERALL: GREEN**. Account rows, risk
+  aggregation, and zero-fire FRI omission pass. Report: `notes/reports/p214-fire-risk-accounts.md`;
+  close-out: `notes/reports/p214-closeout.md`. Design:
+  `notes/design/ws4-fire-risk-accounts.md`. PR: #TBD.
