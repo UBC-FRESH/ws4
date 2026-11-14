@@ -5741,3 +5741,16 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   aggregation, and zero-fire FRI omission pass. Report: `notes/reports/p214-fire-risk-accounts.md`;
   close-out: `notes/reports/p214-closeout.md`. Design:
   `notes/design/ws4-fire-risk-accounts.md`. PR: #1252.
+
+- P214 merged: process fire-regime risk accounts are on `main` as `1f5c4d1`. Branch deleted;
+  no tag, release, or settings change.
+
+- P215.1: added `evaluate_process_fire_risk`, composing P214 account rows with risk aggregation
+  and the existing objective.
+
+- P215.2: verified zero and exact-penalty cases on a process ensemble. Dashboard: pending full run.
+
+- P215.3: verified and closed P215. Full dashboard **OVERALL: GREEN**. The zero and exact-penalty
+  cases pass. Report: `notes/reports/p215-process-risk-report.md`; close-out:
+  `notes/reports/p215-closeout.md`. Design: `notes/design/ws4-process-risk-report.md`.
+  PR: #TBD.
