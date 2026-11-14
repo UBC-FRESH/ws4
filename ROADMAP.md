@@ -204,6 +204,7 @@ exists and the maintainer approves it.
 | P205 Crew line-construction rate | #1212 | `feature/p205-line-construction` | pr-open |
 | P206 Temporary wet-line suppression | #1217 | `feature/p206-wet-line` | pr-open |
 | P207 Drop-depth and dispatch contract | #1227 | `feature/p207-drop-contract` | pr-open |
+| P208 Single drop-depth pilot | #1237 | `feature/p208-drop-depth` | pr-open |
 | P210 align the LANDIS process transition | #1199 | `feature/p210-transition-alignment` | complete |
 | P211 heterogeneous spatial reference | #1222 | `feature/p211-heterogeneous-reference` | complete |
 | P212 process-ensemble fire-regime report | #1232 | `feature/p212-process-fire-regime` | pr-open |
@@ -6061,6 +6062,33 @@ Acceptance:
 - Resource, payload, cycle, source and queue contracts are explicit.
 - Free-burn defaults untouched.
 - No operational claim.
+- Dashboard green.
+
+## Phase 208: single drop-depth pilot
+
+Parent issue: #1237
+Branch: `feature/p208-drop-depth`
+Status: pr-open
+Report: `notes/reports/p208-drop-depth.md`
+Manifest: `notes/reports/p208-drop-depth.json`
+PR: #1244
+
+Goal: run the first drop-depth pilot at the benchmark resolution.
+
+- [x] P208.1 Add decaying depth field (#1238)
+- [x] P208.2 Run the drop-depth pilot (#1239)
+- [x] P208.3 Close out drop-depth pilot (#1240)
+
+Result: two 6,000 L drops per gap cell produce 0.044 mm cell-mean depth at 500 m, far below the
+0.75 mm threshold. No-go at this resolution; use subcell aggregation, 100 m, more litres, or
+overlapping drops.
+
+Acceptance:
+
+- Depth/coverage are computed from footprint and volume.
+- Decay and threshold checks are tested.
+- Free-burn defaults unchanged.
+- No calibration and no operational claim.
 - Dashboard green.
 
 ## Phase 210: align the LANDIS process transition

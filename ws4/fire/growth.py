@@ -585,6 +585,16 @@ class GrowthConfig:
     wet_until_min : numpy.ndarray or None, optional
         Per-cell wet-until time in minutes. A target cell with an arrival at or before its
         wet-until time does not ignite. Default None preserves free-burn behaviour.
+    wet_depth_mm : numpy.ndarray or None, optional
+        Initial per-cell water depth in millimetres. Requires ``wet_start_min`` and
+        ``wet_decay_min`` and suppresses ignition while depth is at or above
+        ``wet_required_mm``.
+    wet_start_min : float, optional
+        Time of the depth field in minutes (default 0).
+    wet_decay_min : float, optional
+        Linear decay duration of the depth field (default 60).
+    wet_required_mm : float, optional
+        Suppression threshold for the depth field (default 0.75).
     fire_stopping_precipitation_mm : float or None, optional
         Accumulated precipitation threshold for a hard stop. Default None preserves free burn.
     fire_stopping_window_min : float, optional
@@ -610,6 +620,10 @@ class GrowthConfig:
     burning_conditions: BurningConditions | None = None
     containment_start_min: np.ndarray | None = None
     wet_until_min: np.ndarray | None = None
+    wet_depth_mm: np.ndarray | None = None
+    wet_start_min: float = 0.0
+    wet_decay_min: float = 60.0
+    wet_required_mm: float = 0.75
     fire_stopping_precipitation_mm: float | None = None
     fire_stopping_window_min: float = 7200.0
     wind_grids: dict[int, WindNinjaGrid] | None = None
@@ -664,6 +678,10 @@ class GrowthConfig:
             raise FireFuelError("fire_stopping_precipitation_mm must be positive")
         if self.fire_stopping_window_min <= 0.0:
             raise FireFuelError("fire_stopping_window_min must be positive")
+        if self.wet_decay_min <= 0.0:
+            raise FireFuelError("wet_decay_min must be positive")
+        if self.wet_required_mm <= 0.0:
+            raise FireFuelError("wet_required_mm must be positive")
         if self.spotting is not None:
             if not isinstance(self.spotting, SpottingConfig):
                 raise FireFuelError("spotting must be a SpottingConfig value")
@@ -1113,6 +1131,50 @@ def _line_is_wet(
     return False
 
 
+def _wet_depth_at(
+    depth: np.ndarray | None,
+    start_min: float,
+    decay_min: float,
+    required_mm: float,
+    row: int,
+    col: int,
+    time_min: float,
+) -> bool:
+    """Return whether a cell is wet enough at a given time."""
+    if depth is None:
+        return False
+    age = time_min - start_min
+    if age < 0.0 or age > decay_min:
+        return False
+    value = float(depth[row, col]) * max(0.0, 1.0 - age / decay_min)
+    return value >= required_mm
+
+
+def _line_has_wet_depth(
+    depth: np.ndarray | None,
+    start_min: float,
+    decay_min: float,
+    required_mm: float,
+    row: int,
+    col: int,
+    drow: int,
+    dcol: int,
+    arrival_min: float,
+) -> bool:
+    """Return whether any intermediate cell is wet enough at arrival."""
+    if depth is None:
+        return False
+    steps = max(abs(drow), abs(dcol))
+    for step in range(1, steps + 1):
+        check_row = row + round(drow * step / steps)
+        check_col = col + round(dcol * step / steps)
+        if _wet_depth_at(
+            depth, start_min, decay_min, required_mm, check_row, check_col, arrival_min
+        ):
+            return True
+    return False
+
+
 def _line_is_open(
     closure: np.ndarray | None,
     row: int,
@@ -1550,6 +1612,26 @@ def _grow_fire_time_dependent(grid: SiteGrid, config: GrowthConfig) -> GrowthRes
                 and _line_is_open(config.containment_start_min, row, col, drow, dcol, arrival)
                 and not _target_is_wet(config.wet_until_min, nrow, ncol, arrival)
                 and not _line_is_wet(config.wet_until_min, row, col, drow, dcol, arrival)
+                and not _wet_depth_at(
+                    config.wet_depth_mm,
+                    config.wet_start_min,
+                    config.wet_decay_min,
+                    config.wet_required_mm,
+                    nrow,
+                    ncol,
+                    arrival,
+                )
+                and not _line_has_wet_depth(
+                    config.wet_depth_mm,
+                    config.wet_start_min,
+                    config.wet_decay_min,
+                    config.wet_required_mm,
+                    row,
+                    col,
+                    drow,
+                    dcol,
+                    arrival,
+                )
             ):
                 ignition[nrow, ncol] = arrival
                 heapq.heappush(queue, (arrival, nrow, ncol))
@@ -1620,6 +1702,8 @@ def grow_fire(grid: SiteGrid, config: GrowthConfig) -> GrowthResult:
         raise FireFuelError("containment_start_min shape must match the grid")
     if config.wet_until_min is not None and config.wet_until_min.shape != burnable.shape:
         raise FireFuelError("wet_until_min shape must match the grid")
+    if config.wet_depth_mm is not None and config.wet_depth_mm.shape != burnable.shape:
+        raise FireFuelError("wet_depth_mm shape must match the grid")
     for row, col in config.ignition_cells:
         if row < 0 or row >= grid.rows or col < 0 or col >= grid.cols:
             raise FireFuelError(f"ignition cell ({row}, {col}) is outside the grid")
@@ -1672,6 +1756,26 @@ def grow_fire(grid: SiteGrid, config: GrowthConfig) -> GrowthResult:
                 and _line_is_open(config.containment_start_min, row, col, drow, dcol, arrival)
                 and not _target_is_wet(config.wet_until_min, nrow, ncol, arrival)
                 and not _line_is_wet(config.wet_until_min, row, col, drow, dcol, arrival)
+                and not _wet_depth_at(
+                    config.wet_depth_mm,
+                    config.wet_start_min,
+                    config.wet_decay_min,
+                    config.wet_required_mm,
+                    nrow,
+                    ncol,
+                    arrival,
+                )
+                and not _line_has_wet_depth(
+                    config.wet_depth_mm,
+                    config.wet_start_min,
+                    config.wet_decay_min,
+                    config.wet_required_mm,
+                    row,
+                    col,
+                    drow,
+                    dcol,
+                    arrival,
+                )
             ):
                 ignition[nrow, ncol] = arrival
                 heapq.heappush(queue, (arrival, nrow, ncol))

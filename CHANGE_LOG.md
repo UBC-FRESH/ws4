@@ -5710,3 +5710,9 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   zero-fire cases pass. Report: `notes/reports/p212-process-fire-regime.md`; close-out:
   `notes/reports/p212-closeout.md`. Design: `notes/design/ws4-process-fire-regime.md`.
   PR: #1236.
+
+- P208.1: added optional decaying `wet_depth_mm` fields to `GrowthConfig` and `run_observed_case`.
+- P208.2: two 6,000 L drops per gap cell produce 0.044 mm cell-mean depth at 500 m; every run crosses.
+- P208.3: closed P208 with a no-go for drop-depth suppression at 500 m. Need subcell aggregation,
+  a 100 m grid, more litres, or overlapping drops. Report: `notes/reports/p208-drop-depth.md`.
+  Dashboard: **GREEN**.
