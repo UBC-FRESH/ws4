@@ -6226,7 +6226,7 @@ Status: pr-open
 Design note: `notes/design/ws4-process-risk-report.md`
 Report: `notes/reports/p215-closeout.md`
 Evaluation report: `notes/reports/p215-process-risk-report.md`
-PR: #TBD
+PR: #1257
 
 Goal: evaluate optimizer risk targets over process-conditioned fire-regime summaries.
 
