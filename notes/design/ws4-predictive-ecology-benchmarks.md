@@ -46,6 +46,11 @@ The exact reference values from `Biomass_core` are used in
 `tests/test_ecosystem_landis.py`. The tests cover spin-up and non-spin-up stages, age-zero
 boundaries, the bAP > 1 branch, and the young-cohort `sumB` regression.
 
+P198 additionally ran the published R functions in an isolated LandR/SpaDES.core stack and
+captured randomized parity fixtures. The WS4 kernel matches the R outputs within `1e-8` for
+age mortality, ANPP, growth mortality, competition, and sumB. This is kernel parity, not a
+spatial landscape run. See `notes/design/ws4-landis-r-parity.md`.
+
 ## 4. Evidence layers
 
 1. **Exact equations**: exact published test values.
@@ -59,7 +64,8 @@ boundaries, the bAP > 1 branch, and the young-cohort `sumB` regression.
 ## 5. Limits
 
 - No third-party code is copied or vendored.
-- The R/SpaDES modules are not runtime dependencies.
+- The R/SpaDES stack is verification infrastructure, not a package runtime dependency; P198
+  executes it out of tree.
 - `fireProperties` and `Biomass_fuels` are weak numerical benchmarks.
 - `LandMine` is not a full parity test of its original.
 - `scfm` validates regime distributions, not event perimeters.
