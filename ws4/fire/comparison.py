@@ -853,6 +853,7 @@ def run_observed_case(
     fuel_override: str | None = None,
     containment_mask: np.ndarray | None = None,
     containment_start_min: np.ndarray | None = None,
+    wet_until_min: np.ndarray | None = None,
     fire_stopping_precipitation_mm: float | None = None,
     fire_stopping_window_min: float = 7200.0,
 ) -> DogribCase:
@@ -891,6 +892,8 @@ def run_observed_case(
     containment_start_min : numpy.ndarray or None, optional
         Per-cell closure time in minutes. A target cell with an arrival at or after its
         closure time does not ignite. Default None preserves free-burn behaviour.
+    wet_until_min : numpy.ndarray or None, optional
+        Per-cell wet-until time in minutes. Default None preserves free-burn behaviour.
     fire_stopping_precipitation_mm : float or None, optional
         Accumulated precipitation threshold for a hard stop. Default None preserves free burn.
     fire_stopping_window_min : float, optional
@@ -995,6 +998,7 @@ def run_observed_case(
             weather_steps=steps,
             burning_conditions=burning_conditions,
             containment_start_min=containment_start_min,
+            wet_until_min=wet_until_min,
             fire_stopping_precipitation_mm=fire_stopping_precipitation_mm,
             fire_stopping_window_min=fire_stopping_window_min,
             wind_multiplier=wind_multiplier,

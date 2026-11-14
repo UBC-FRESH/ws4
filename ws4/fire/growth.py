@@ -582,6 +582,9 @@ class GrowthConfig:
     containment_start_min : numpy.ndarray or None, optional
         Per-cell closure time in minutes. A target cell with an arrival at or after its
         closure time does not ignite. Default None preserves free-burn behaviour.
+    wet_until_min : numpy.ndarray or None, optional
+        Per-cell wet-until time in minutes. A target cell with an arrival at or before its
+        wet-until time does not ignite. Default None preserves free-burn behaviour.
     fire_stopping_precipitation_mm : float or None, optional
         Accumulated precipitation threshold for a hard stop. Default None preserves free burn.
     fire_stopping_window_min : float, optional
@@ -606,6 +609,7 @@ class GrowthConfig:
     wind_patch_end_min: float | None = None
     burning_conditions: BurningConditions | None = None
     containment_start_min: np.ndarray | None = None
+    wet_until_min: np.ndarray | None = None
     fire_stopping_precipitation_mm: float | None = None
     fire_stopping_window_min: float = 7200.0
     wind_grids: dict[int, WindNinjaGrid] | None = None
@@ -1077,6 +1081,38 @@ def _target_is_open(
     return not bool(arrival_min >= float(closure[row, col]))
 
 
+def _target_is_wet(
+    wet_until: np.ndarray | None,
+    row: int,
+    col: int,
+    arrival_min: float,
+) -> bool:
+    """Return whether a target is still wet at its arrival time."""
+    if wet_until is None:
+        return False
+    return bool(arrival_min <= float(wet_until[row, col]))
+
+
+def _line_is_wet(
+    wet_until: np.ndarray | None,
+    row: int,
+    col: int,
+    drow: int,
+    dcol: int,
+    arrival_min: float,
+) -> bool:
+    """Return whether any intermediate cell is still wet at arrival."""
+    if wet_until is None:
+        return False
+    steps = max(abs(drow), abs(dcol))
+    for step in range(1, steps + 1):
+        check_row = row + round(drow * step / steps)
+        check_col = col + round(dcol * step / steps)
+        if arrival_min <= float(wet_until[check_row, check_col]):
+            return True
+    return False
+
+
 def _line_is_open(
     closure: np.ndarray | None,
     row: int,
@@ -1512,6 +1548,8 @@ def _grow_fire_time_dependent(grid: SiteGrid, config: GrowthConfig) -> GrowthRes
                 and arrival < ignition[nrow, ncol] - 1e-12
                 and _target_is_open(config.containment_start_min, nrow, ncol, arrival)
                 and _line_is_open(config.containment_start_min, row, col, drow, dcol, arrival)
+                and not _target_is_wet(config.wet_until_min, nrow, ncol, arrival)
+                and not _line_is_wet(config.wet_until_min, row, col, drow, dcol, arrival)
             ):
                 ignition[nrow, ncol] = arrival
                 heapq.heappush(queue, (arrival, nrow, ncol))
@@ -1580,6 +1618,8 @@ def grow_fire(grid: SiteGrid, config: GrowthConfig) -> GrowthResult:
         and config.containment_start_min.shape != burnable.shape
     ):
         raise FireFuelError("containment_start_min shape must match the grid")
+    if config.wet_until_min is not None and config.wet_until_min.shape != burnable.shape:
+        raise FireFuelError("wet_until_min shape must match the grid")
     for row, col in config.ignition_cells:
         if row < 0 or row >= grid.rows or col < 0 or col >= grid.cols:
             raise FireFuelError(f"ignition cell ({row}, {col}) is outside the grid")
@@ -1630,6 +1670,8 @@ def grow_fire(grid: SiteGrid, config: GrowthConfig) -> GrowthResult:
                 and arrival < ignition[nrow, ncol] - 1e-12
                 and _target_is_open(config.containment_start_min, nrow, ncol, arrival)
                 and _line_is_open(config.containment_start_min, row, col, drow, dcol, arrival)
+                and not _target_is_wet(config.wet_until_min, nrow, ncol, arrival)
+                and not _line_is_wet(config.wet_until_min, row, col, drow, dcol, arrival)
             ):
                 ignition[nrow, ncol] = arrival
                 heapq.heappush(queue, (arrival, nrow, ncol))

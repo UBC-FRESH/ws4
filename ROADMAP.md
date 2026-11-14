@@ -202,6 +202,7 @@ exists and the maintainer approves it.
 | P203 Time-dependent containment closure | #1194 | `feature/p203-containment-closure` | pr-open |
 | P204 Rain-driven fire stopping | #1205 | `feature/p204-rain-stopping` | pr-open |
 | P205 Crew line-construction rate | #1212 | `feature/p205-line-construction` | pr-open |
+| P206 Temporary wet-line suppression | #1217 | `feature/p206-wet-line` | pr-open |
 | P210 align the LANDIS process transition | #1199 | `feature/p210-transition-alignment` | pr-open |
 | P201 Firebreak gap sensitivity pilot | #1185 | `feature/p201-firebreak-gap` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
@@ -6004,6 +6005,33 @@ Acceptance:
 
 - Closure time derives from distance and construction rate.
 - Final area, crossing and completion reported.
+- No calibration and no operational claim.
+- Dashboard green.
+
+## Phase 206: temporary wet-line suppression
+
+Parent issue: #1217
+Branch: `feature/p206-wet-line`
+Status: pr-open
+Report: `notes/reports/p206-wet-line.md`
+Manifest: `notes/reports/p206-wet-line.json`
+PR: #1221
+
+Goal: add a temporary wet-cell suppression mechanism to the FBP path.
+
+- [x] P206.1 Add temporary wet-cell contract (#1218)
+- [x] P206.2 Run the wet-line pilot (#1219)
+- [x] P206.3 Close out wet-line suppression (#1220)
+
+Result: wet duration relative to arrival changes containment. At 16,000 min one weather member is
+contained; the rest cross after drying. Go for temporary wet cells; no-go for operational water or
+retardant claims.
+
+Acceptance:
+
+- Wet cells suppress ignition only through their wet interval.
+- Intermediate cells cannot be jumped over while wet.
+- Free-burn defaults unchanged.
 - No calibration and no operational claim.
 - Dashboard green.
 

@@ -83,6 +83,8 @@ Working notes for WS4. Notes are living: update them in the same change set as t
 - `reports/p204-rain-stopping-2023-366.json` — P204 positive-case manifest.
 - `reports/p205-line-construction.md` — P205 construction-rate pilot and go/no-go.
 - `reports/p205-line-construction.json` — P205 construction-rate manifest.
+- `reports/p206-wet-line.md` — P206 temporary wet-line pilot and go/no-go.
+- `reports/p206-wet-line.json` — P206 wet-line manifest.
 - `reports/p159-model-card.md` — P159.2 surrogate architecture, training data, losses, and
   limitations.
 - `reports/p159-evaluation.md` — P159.3 held-out synthetic and Dogrib OOD evaluation.
