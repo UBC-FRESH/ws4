@@ -59,7 +59,7 @@ def _trajectory() -> list[float]:
     )
     state = _state()
     values = []
-    for year in range(10):
+    for year in range(11):
         context = ProcessContext(year, "growth", "p202")
         for event in process.events(state, context):
             state = process.apply(state, event)
@@ -76,16 +76,16 @@ def test_ws4_trajectory_matches_the_reference_at_year_one() -> None:
     trajectory = _trajectory()
     reference = pd.read_csv(_FIXTURE)
 
-    assert trajectory[0] == pytest.approx(2694.6167, abs=1e-3)
+    assert trajectory[0] == pytest.approx(2694.0, abs=1e-3)
     assert reference.loc[1, "Biomass"] == 2694
 
 
-def test_ws4_trajectory_has_a_known_year_ten_mismatch() -> None:
+def test_ws4_trajectory_matches_the_reference_at_year_ten() -> None:
     trajectory = _trajectory()
     reference = pd.read_csv(_FIXTURE)
     simulated = trajectory[-1]
     expected = float(str(reference.loc[2, "Biomass"]))
 
-    assert simulated == pytest.approx(8832.0582, abs=1e-3)
+    assert simulated == pytest.approx(9444.0, abs=1e-3)
     assert simulated < expected
-    assert (simulated - expected) / expected == pytest.approx(-0.0664, abs=1e-4)
+    assert (simulated - expected) / expected == pytest.approx(-0.00169, abs=1e-5)

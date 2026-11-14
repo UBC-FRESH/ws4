@@ -56,10 +56,10 @@ reference, not a regional LBSE reproduction.
 WS4 spatial comparison
 ----------------------
 
-P202 ran the WS4 LANDIS process on the P200 initial cohorts. Year 1 matches the reference
-(2694.6 vs 2694), but year 10 is 8832.1 vs 9460 (-6.64%). The kernel functions are exact; the
-full process transition is simplified and does not yet apply Biomass_core's double `mAge`
-removal, floors, integer truncation, or regeneration.
+P202 ran the WS4 LANDIS process on the P200 initial cohorts and found a -6.64% year-10 gap.
+P203 aligned the annual transition with Biomass_core's age, `mAge`, floor, and integer-truncation
+order. Year 1 is now 2694 vs 2694; year 10 is 9444 vs 9460 (**-0.169%**). The residual is
+consistent with regeneration and module bookkeeping that the process does not yet implement.
 
 Tests
 -----
