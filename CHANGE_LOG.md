@@ -5637,3 +5637,17 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   reference; year 10 is -6.64%. Report: `notes/reports/p202-reference-comparison.md`;
   close-out: `notes/reports/p202-closeout.md`. Design:
   `notes/design/ws4-reference-comparison.md`. PR: #1198.
+
+- P202 merged: the WS4-vs-Biomass_core trajectory comparison is on `main` as `282b6ea`.
+  Branch deleted; no tag, release, or settings change.
+
+- P203.1: aligned the LANDIS process transition with Biomass_core's age, mAge, floor, and
+  integer-truncation order.
+
+- P203.2: re-ran the spatial comparison over 11 annual updates; year 10 improved from 8832.1 to
+  9444.0 vs the 9460 reference (-0.169%). Dashboard: pending full run.
+
+- P203.3: verified and closed P203. Full dashboard **OVERALL: GREEN**. Year 10 is now -0.169%
+  from the reference, down from -6.64%. Report: `notes/reports/p203-transition-alignment.md`;
+  close-out: `notes/reports/p203-closeout.md`. Design:
+  `notes/design/ws4-transition-alignment.md`. PR: #TBD.
