@@ -191,7 +191,8 @@ exists and the maintainer approves it.
 | P192 process candidate search | #1135 | `feature/p192-process-candidate-search` | complete |
 | P193 bounded process neighbourhood search | #1140 | `feature/p193-process-neighbourhood` | complete |
 | P194 deterministic schedule mutation grammar | #1145 | `feature/p194-schedule-grammar` | complete |
-| P195 end-to-end process optimization | #1150 | `feature/p195-process-optimization` | pr-open |
+| P195 end-to-end process optimization | #1150 | `feature/p195-process-optimization` | complete |
+| P196 process optimization estate handoff | #1155 | `feature/p196-estate-handoff` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -5684,7 +5685,8 @@ Acceptance:
 
 Parent issue: #1150
 Branch: `feature/p195-process-optimization`
-Status: pr-open
+Status: complete
+Merge commit: `f74b9b4`
 Design note: `notes/design/ws4-process-optimization.md`
 Report: `notes/reports/p195-closeout.md`
 PR: #1154
@@ -5701,4 +5703,29 @@ Acceptance:
 - The default grammar's P194 neighbour counts are unchanged.
 - The optimizer wrapper reaches the expected best schedule and writes its artifacts.
 - Invalid inputs fail loudly.
+- Dashboard green.
+
+
+## Phase 196: process optimization estate handoff
+
+Parent issue: #1155
+Branch: `feature/p196-estate-handoff`
+Status: pr-open
+Design note: `notes/design/ws4-estate-handoff.md`
+Report: `notes/reports/p196-closeout.md`
+PR: #1159
+
+Goal: export the P195 best schedule and block mapping in the canonical estate input format and
+round-trip them through the existing loaders.
+
+- [x] P196.1 Carry the block mapping and write estate inputs (#1156)
+- [x] P196.2 Round-trip the handoff through the loaders (#1157)
+- [x] P196.3 Verify and close out the estate handoff (#1158)
+
+Acceptance:
+
+- The exported schedule and mapping round-trip exactly through the existing loaders.
+- CSV headers and row order are stable and tested.
+- Invalid mappings fail loudly.
+- The handoff artifact includes the process optimization evidence.
 - Dashboard green.

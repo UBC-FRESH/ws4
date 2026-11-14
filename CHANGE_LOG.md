@@ -5545,3 +5545,16 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   end-to-end optimizer, determinism, validation, and artifacts pass. Report:
   `notes/reports/p195-closeout.md`. Design: `notes/design/ws4-process-optimization.md`.
   PR: #1154.
+
+- P195 merged: end-to-end process optimization is on `main` as `f74b9b4`. Branch deleted; no
+  tag, release, or settings change.
+
+- P196.1: carried the block mapping in the optimization result and added canonical estate CSV
+  export for the best schedule.
+
+- P196.2: round-tripped the exported schedule and mapping through the existing management
+  loaders, with invalid-mapping tests. Dashboard: pending full run.
+
+- P196.3: verified and closed P196. Full dashboard **OVERALL: GREEN**. The exported schedule and
+  mapping round-trip exactly through the existing loaders. Report:
+  `notes/reports/p196-closeout.md`. Design: `notes/design/ws4-estate-handoff.md`. PR: #1159.

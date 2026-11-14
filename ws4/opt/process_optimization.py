@@ -7,6 +7,7 @@ returns the best process evaluation together with its search history.
 
 from __future__ import annotations
 
+import csv
 import json
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
@@ -39,9 +40,26 @@ class ProcessOptimizationResult:
     ----------
     search : ProcessNeighbourhoodResult
         Hill-climb result.
+    block_fragments : mapping of int to sequence of int
+        Block to fragment ids used by the evaluation.
     """
 
     search: ProcessNeighbourhoodResult
+    block_fragments: Mapping[int, Sequence[int]]
+
+    def __post_init__(self) -> None:
+        """Validate and canonicalize the block mapping."""
+        if not isinstance(self.block_fragments, Mapping):
+            raise ProcessOptimizationError("block_fragments must be a mapping")
+        canonical: dict[int, tuple[int, ...]] = {}
+        for raw_block, raw_fragments in self.block_fragments.items():
+            if isinstance(raw_block, bool) or not isinstance(raw_block, int) or raw_block <= 0:
+                raise ProcessOptimizationError("block ids must be positive integers")
+            fragments = tuple(int(fragment) for fragment in raw_fragments)
+            if not fragments or any(fragment <= 0 for fragment in fragments):
+                raise ProcessOptimizationError("fragment ids must be positive")
+            canonical[raw_block] = tuple(sorted(set(fragments)))
+        object.__setattr__(self, "block_fragments", dict(sorted(canonical.items())))
 
     @property
     def best(self) -> ProcessSearchEvaluation:
@@ -88,6 +106,30 @@ class ProcessOptimizationResult:
             "best_schedule": self._best_schedule(),
             "best_accounts": dict(sorted(accounts.items())),
         }
+
+    def write_estate_inputs(self, out_dir: Path) -> None:
+        """Write the best schedule in the canonical estate input format.
+
+        Parameters
+        ----------
+        out_dir : Path
+            Output directory, created when missing.
+        """
+        target = Path(out_dir)
+        target.mkdir(parents=True, exist_ok=True)
+        with (target / "schedule.csv").open("w", encoding="utf-8", newline="") as handle:
+            writer = csv.writer(handle)
+            writer.writerow(("block_id", "treatment", "offset"))
+            for block, events in sorted(self.best.candidate.schedule.items()):
+                for treatment, offset in sorted(events, key=lambda item: (item[1], item[0])):
+                    writer.writerow((block, treatment, offset))
+        with (target / "block_fragments.csv").open("w", encoding="utf-8", newline="") as handle:
+            writer = csv.writer(handle)
+            writer.writerow(("block_id", "fragment_id"))
+            for block, fragments in sorted(self.block_fragments.items()):
+                for fragment in fragments:
+                    writer.writerow((block, fragment))
+        self.write(target)
 
     def write(self, out_dir: Path) -> None:
         """Write the search trace, best evaluation, and summary.
@@ -189,4 +231,9 @@ def optimize_process_schedule(
         harvest_fraction=harvest_fraction,
         seed=seed,
     )
-    return ProcessOptimizationResult(search=search)
+    return ProcessOptimizationResult(
+        search=search,
+        block_fragments={
+            block: tuple(fragments) for block, fragments in sorted(block_fragments.items())
+        },
+    )

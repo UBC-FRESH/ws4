@@ -122,3 +122,33 @@ def test_optimization_rejects_horizon_and_schedule_mismatches() -> None:
             targets=(_target(),),
             max_iterations=1,
         )
+
+
+def test_estate_handoff_round_trips_through_the_loaders(tmp_path: Path) -> None:
+    from ws4.ecosystem.management import load_block_fragments, load_schedule
+    from ws4.opt.process_optimization import ProcessOptimizationResult
+
+    result = _optimize()
+    assert isinstance(result, ProcessOptimizationResult)
+    result.write_estate_inputs(tmp_path / "handoff")
+
+    schedule_path = tmp_path / "handoff" / "schedule.csv"
+    mapping_path = tmp_path / "handoff" / "block_fragments.csv"
+    assert schedule_path.read_text() == "block_id,treatment,offset\n1,CC,0\n"
+    assert mapping_path.read_text() == "block_id,fragment_id\n1,1\n1,2\n2,3\n"
+    assert load_schedule(schedule_path) == result.best.candidate.schedule
+    assert load_block_fragments(mapping_path) == {1: (1, 2), 2: (3,)}
+    assert (tmp_path / "handoff" / "best_evaluation" / "process_evaluation.json").is_file()
+
+
+def test_estate_handoff_rejects_invalid_mappings() -> None:
+    from ws4.opt.process_optimization import ProcessOptimizationResult
+
+    result = _optimize()
+    from ws4.opt.process_optimization import ProcessOptimizationResult as Result
+
+    assert isinstance(result, Result)
+    with pytest.raises(ProcessOptimizationError, match="positive"):
+        ProcessOptimizationResult(search=result.search, block_fragments={0: (1,)})
+    with pytest.raises(ProcessOptimizationError, match="positive"):
+        ProcessOptimizationResult(search=result.search, block_fragments={1: (0,)})

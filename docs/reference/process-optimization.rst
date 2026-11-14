@@ -34,6 +34,17 @@ Reference case
 On a 3 × 3 grid with a 20 ha harvest target, the search reaches the full block-1 harvest with
 objective 0, then stops on a tied candidate without moving the incumbent.
 
+Estate handoff
+--------------
+
+``ProcessOptimizationResult.write_estate_inputs`` writes the best schedule as
+``schedule.csv`` (``block_id,treatment,offset``) and the block mapping as
+``block_fragments.csv`` (``block_id,fragment_id``), plus the P195 artifacts and
+``best_evaluation/``.
+
+Rows are sorted and the headers are stable. ``load_schedule`` and ``load_block_fragments``
+round-trip the exported files exactly. This is an export, not an estate simulation.
+
 Limits
 ------
 
