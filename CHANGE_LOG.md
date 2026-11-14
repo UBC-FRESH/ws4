@@ -5670,3 +5670,10 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   from the reference, down from -6.64%. Report: `notes/reports/p210-transition-alignment.md`;
   close-out: `notes/reports/p210-closeout.md`. Design:
   `notes/design/ws4-transition-alignment.md`. PR: #1211.
+
+- P206.1: added optional `wet_until_min` to `GrowthConfig` and `run_observed_case` with target and
+  intermediate-cell wet checks.
+- P206.2: ran the 2003_96 barrier with gap wet until 12,000, 14,000 and 16,000 minutes and five
+  weather members. At 16,000 min one member is contained; the rest cross after drying.
+- P206.3: closed P206 with a go for temporary wet-cell suppression as a mechanism and a no-go for
+  operational water/retardant claims. Report: `notes/reports/p206-wet-line.md`. Dashboard: **GREEN**.
