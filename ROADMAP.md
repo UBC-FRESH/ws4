@@ -197,6 +197,7 @@ exists and the maintainer approves it.
 | P197 per-block treatment windows | #1160 | `feature/p197-treatment-windows` | complete |
 | P198 Weather-conditioned stopping | #1168 | `feature/p198-weather-stopping` | pr-open |
 | P199 LANDIS kernel parity against the R reference | #1173 | `feature/p199-landis-r-parity` | pr-open |
+| P201 Firebreak gap sensitivity pilot | #1185 | `feature/p201-firebreak-gap` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -5838,4 +5839,31 @@ Acceptance:
 - Every compared function is within the recorded tolerance.
 - The package versions, commands, and input counts are recorded.
 - No "SpaDES unavailable" claim remains.
+- Dashboard green.
+
+## Phase 201: firebreak gap sensitivity pilot
+
+Parent issue: #1185
+Branch: `feature/p201-firebreak-gap`
+Status: pr-open
+Report: `notes/reports/p201-firebreak-gap.md`
+Manifest: `notes/reports/p201-firebreak-gap.json`
+Artifact: `notes/reports/p201-firebreak-gap.csv`
+PR: #1189
+
+Goal: test whether a synthetic firebreak gap produces weather-sensitive final extent on `2003_96`.
+
+- [x] P201.1 Build the barrier-gap diagnostic (#1186)
+- [x] P201.2 Run the gap pilot (#1187)
+- [x] P201.3 Close out the gap pilot (#1188)
+
+Result: final area and IoU are identical across weather members at every gap width. The gap changes
+containment; weather changes timing only. No-go for extending the gap sweep.
+
+Acceptance:
+
+- Barrier geometry and oracle-assisted placement explicit.
+- Same five weather members as P178.
+- Final area, IoU, time to observed area and east-of-barrier cells reported.
+- No calibration and no operational claim.
 - Dashboard green.
