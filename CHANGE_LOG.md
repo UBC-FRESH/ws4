@@ -5590,3 +5590,18 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P198.3: closed P198. Go for weather-conditioned stopping as a sensitivity lever; no-go for this
   uniform gate as an operational threshold. Report: `notes/reports/p198-weather-stopping.md`.
   Dashboard: **GREEN**.
+
+- P197 merged: per-block treatment windows are on `main` as `1918bdf`. Branch deleted; no tag,
+  release, or settings change.
+
+- P199.1: installed and loaded the isolated LandR/SpaDES.core stack and sourced the published
+  Biomass_core kernel functions.
+
+- P199.2: ran randomized kernel parity for age mortality, ANPP, growth mortality, competition,
+  and sumB; the maximum absolute difference was 4.73e-11. Captured the R outputs as fixtures.
+  Dashboard: pending full run.
+
+- P199.3: verified and closed P199. Full dashboard **OVERALL: GREEN**. The live R kernel parity
+  fixtures and 5 tests pass; maximum absolute difference 4.73e-11. Reports:
+  `notes/reports/p199-landis-r-parity.md` and `notes/reports/p199-closeout.md`. Design:
+  `notes/design/ws4-landis-r-parity.md`. PR: #1179.
