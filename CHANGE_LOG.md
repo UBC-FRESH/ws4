@@ -5643,3 +5643,17 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   five weather members. Closure timing produced weather-sensitive containment.
 - P203.3: closed P203 with a go for time-dependent containment as a mechanism, not an operational
   schedule. Report: `notes/reports/p203-containment-closure.md`. Dashboard: **GREEN**.
+
+- P202 merged: the WS4-vs-Biomass_core trajectory comparison is on `main` as `282b6ea`.
+  Branch deleted; no tag, release, or settings change.
+
+- P204.1: aligned the LANDIS process transition with Biomass_core's age, mAge, floor, and
+  integer-truncation order.
+
+- P204.2: re-ran the spatial comparison over 11 annual updates; year 10 improved from 8832.1 to
+  9444.0 vs the 9460 reference (-0.169%). Dashboard: pending full run.
+
+- P204.3: verified and closed P204. Full dashboard **OVERALL: GREEN**. Year 10 is now -0.169%
+  from the reference, down from -6.64%. Report: `notes/reports/p204-transition-alignment.md`;
+  close-out: `notes/reports/p204-closeout.md`. Design:
+  `notes/design/ws4-transition-alignment.md`. PR: #TBD.

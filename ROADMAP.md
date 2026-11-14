@@ -198,8 +198,9 @@ exists and the maintainer approves it.
 | P198 Weather-conditioned stopping | #1168 | `feature/p198-weather-stopping` | pr-open |
 | P199 LANDIS kernel parity against the R reference | #1173 | `feature/p199-landis-r-parity` | complete |
 | P200 small spatial Biomass_core landscape reference | #1180 | `feature/p200-spatial-landscape` | complete |
-| P202 WS4-vs-Biomass_core spatial trajectory comparison | #1190 | `feature/p202-reference-comparison` | pr-open |
+| P202 WS4-vs-Biomass_core spatial trajectory comparison | #1190 | `feature/p202-reference-comparison` | complete |
 | P203 Time-dependent containment closure | #1194 | `feature/p203-containment-closure` | pr-open |
+| P204 align the LANDIS process transition | #1199 | `feature/p204-transition-alignment` | pr-open |
 | P201 Firebreak gap sensitivity pilot | #1185 | `feature/p201-firebreak-gap` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
@@ -5901,7 +5902,8 @@ Acceptance:
 
 Parent issue: #1190
 Branch: `feature/p202-reference-comparison`
-Status: pr-open
+Status: complete
+Merge commit: `282b6ea`
 Design note: `notes/design/ws4-reference-comparison.md`
 Report: `notes/reports/p202-closeout.md`
 Comparison: `notes/reports/p202-reference-comparison.md`
@@ -5947,4 +5949,27 @@ Acceptance:
 - Intermediate cells cannot be jumped over when closed.
 - Free-burn defaults unchanged.
 - No calibration and no operational claim.
+
+
+## Phase 204: align the LANDIS process transition
+
+Parent issue: #1199
+Branch: `feature/p204-transition-alignment`
+Status: pr-open
+Design note: `notes/design/ws4-transition-alignment.md`
+Report: `notes/reports/p204-closeout.md`
+Comparison: `notes/reports/p204-transition-alignment.md`
+PR: #TBD
+
+Goal: align `LandisSuccessionProcess` with the published Biomass_core annual transition.
+
+- [x] P204.1 Align ages, mortality, and biomass update (#1200)
+- [x] P204.2 Re-run the spatial comparison (#1201)
+- [x] P204.3 Verify and close out transition alignment (#1202)
+
+Acceptance:
+
+- The aligned process matches the reference within 1% at year 10.
+- Kernel parity tests still pass.
+- The old 6.64% mismatch test is replaced with the aligned evidence.
 - Dashboard green.
