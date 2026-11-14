@@ -5740,4 +5740,4 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P214.3: verified and closed P214. Full dashboard **OVERALL: GREEN**. Account rows, risk
   aggregation, and zero-fire FRI omission pass. Report: `notes/reports/p214-fire-risk-accounts.md`;
   close-out: `notes/reports/p214-closeout.md`. Design:
-  `notes/design/ws4-fire-risk-accounts.md`. PR: #TBD.
+  `notes/design/ws4-fire-risk-accounts.md`. PR: #1252.

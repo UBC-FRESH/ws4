@@ -6200,7 +6200,7 @@ Status: pr-open
 Design note: `notes/design/ws4-fire-risk-accounts.md`
 Report: `notes/reports/p214-closeout.md`
 Accounts report: `notes/reports/p214-fire-risk-accounts.md`
-PR: #TBD
+PR: #1252
 
 Goal: convert per-scenario fire-regime summaries into optimizer account rows.
 
