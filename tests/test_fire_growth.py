@@ -413,3 +413,87 @@ def test_containment_closure_blocks_jumping_over_a_closed_gap() -> None:
         ),
     )
     assert not np.isfinite(result.ignition_time_min[:, 5:]).any()
+
+
+def test_rain_stopping_threshold_halts_growth() -> None:
+    grid = make_grid(rows=61, cols=61)
+    weather = (
+        WeatherStep(
+            start_min=0.0,
+            wind_kmh=0.0,
+            wind_direction_deg=0.0,
+            ffmc=90.0,
+            bui=60.0,
+            relative_humidity_percent=40.0,
+            precipitation_mm=0.0,
+        ),
+        WeatherStep(
+            start_min=60.0,
+            wind_kmh=0.0,
+            wind_direction_deg=0.0,
+            ffmc=90.0,
+            bui=60.0,
+            relative_humidity_percent=40.0,
+            precipitation_mm=20.0,
+        ),
+    )
+    free = grow_fire(
+        grid,
+        GrowthConfig(
+            ignition_cells=((30, 30),),
+            max_time_min=600.0,
+            snapshot_interval_min=60.0,
+            weather_steps=weather,
+        ),
+    )
+    stopped = grow_fire(
+        grid,
+        GrowthConfig(
+            ignition_cells=((30, 30),),
+            max_time_min=600.0,
+            snapshot_interval_min=60.0,
+            weather_steps=weather,
+            fire_stopping_precipitation_mm=12.7,
+        ),
+    )
+    assert stopped.burned_area_ha < free.burned_area_ha
+
+
+def test_rain_stopping_window_is_rolling() -> None:
+    grid = make_grid(rows=21, cols=21)
+    weather = tuple(
+        WeatherStep(
+            start_min=float(index * 60),
+            wind_kmh=0.0,
+            wind_direction_deg=0.0,
+            ffmc=90.0,
+            bui=60.0,
+            relative_humidity_percent=40.0,
+            precipitation_mm=0.0,
+        )
+        for index in range(5)
+    )
+    weather = (
+        *weather,
+        WeatherStep(
+            start_min=300.0,
+            wind_kmh=0.0,
+            wind_direction_deg=0.0,
+            ffmc=90.0,
+            bui=60.0,
+            relative_humidity_percent=40.0,
+            precipitation_mm=20.0,
+        ),
+    )
+    stopped = grow_fire(
+        grid,
+        GrowthConfig(
+            ignition_cells=((10, 10),),
+            max_time_min=600.0,
+            snapshot_interval_min=60.0,
+            weather_steps=weather,
+            fire_stopping_precipitation_mm=12.7,
+            fire_stopping_window_min=120.0,
+        ),
+    )
+    assert stopped.burned_area_ha > 0.0

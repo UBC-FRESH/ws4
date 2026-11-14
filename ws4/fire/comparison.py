@@ -571,6 +571,7 @@ def hourly_weather_steps(
                 ffmc=current_ffmc,
                 bui=buildup,
                 relative_humidity_percent=humidity,
+                precipitation_mm=rain,
             )
         )
     if not steps or steps[0].start_min != 0.0:
@@ -852,6 +853,8 @@ def run_observed_case(
     fuel_override: str | None = None,
     containment_mask: np.ndarray | None = None,
     containment_start_min: np.ndarray | None = None,
+    fire_stopping_precipitation_mm: float | None = None,
+    fire_stopping_window_min: float = 7200.0,
 ) -> DogribCase:
     """Run one generic point-ignition observed-fire case.
 
@@ -888,6 +891,10 @@ def run_observed_case(
     containment_start_min : numpy.ndarray or None, optional
         Per-cell closure time in minutes. A target cell with an arrival at or after its
         closure time does not ignite. Default None preserves free-burn behaviour.
+    fire_stopping_precipitation_mm : float or None, optional
+        Accumulated precipitation threshold for a hard stop. Default None preserves free burn.
+    fire_stopping_window_min : float, optional
+        Rolling accumulation window in minutes (default 7200, five days).
 
     Returns
     -------
@@ -988,6 +995,8 @@ def run_observed_case(
             weather_steps=steps,
             burning_conditions=burning_conditions,
             containment_start_min=containment_start_min,
+            fire_stopping_precipitation_mm=fire_stopping_precipitation_mm,
+            fire_stopping_window_min=fire_stopping_window_min,
             wind_multiplier=wind_multiplier,
             head_ros_multiplier=head_ros_multiplier,
         ),

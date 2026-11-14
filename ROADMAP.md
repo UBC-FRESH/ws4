@@ -200,6 +200,7 @@ exists and the maintainer approves it.
 | P200 small spatial Biomass_core landscape reference | #1180 | `feature/p200-spatial-landscape` | complete |
 | P202 WS4-vs-Biomass_core spatial trajectory comparison | #1190 | `feature/p202-reference-comparison` | pr-open |
 | P203 Time-dependent containment closure | #1194 | `feature/p203-containment-closure` | pr-open |
+| P204 Rain-driven fire stopping | #1205 | `feature/p204-rain-stopping` | pr-open |
 | P201 Firebreak gap sensitivity pilot | #1185 | `feature/p201-firebreak-gap` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
@@ -5946,5 +5947,33 @@ Acceptance:
 - A target with arrival at or after its closure time does not ignite.
 - Intermediate cells cannot be jumped over when closed.
 - Free-burn defaults unchanged.
+- No calibration and no operational claim.
+- Dashboard green.
+
+## Phase 204: rain-driven fire stopping
+
+Parent issue: #1205
+Branch: `feature/p204-rain-stopping`
+Status: pr-open
+Report: `notes/reports/p204-rain-stopping.md`
+Manifest: `notes/reports/p204-rain-stopping-2023-366.json`
+PR: #1210
+
+Goal: add an explicit, documented rain-driven fire-stopping mechanism to the FBP path.
+
+- [x] P204.1 Add rain-stopping contract (#1206)
+- [x] P204.2 Run the rain-stopping pilot (#1207)
+- [x] P204.3 Close out rain stopping (#1208)
+
+Result: the 12.7 mm / five-day criterion stops `2023_366` while it is still growing and produces
+weather-sensitive final area. It has no effect when the rain event arrives after basin fill.
+Go for rain stopping as a mechanism; no-go for operational rain-extinction claims.
+
+Acceptance:
+
+- Precipitation is carried in weather steps.
+- The rolling window and hard stop are tested.
+- Default free-burn behaviour is unchanged.
+- One positive and one null case reported.
 - No calibration and no operational claim.
 - Dashboard green.

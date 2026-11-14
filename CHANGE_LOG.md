@@ -5643,3 +5643,10 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   five weather members. Closure timing produced weather-sensitive containment.
 - P203.3: closed P203 with a go for time-dependent containment as a mechanism, not an operational
   schedule. Report: `notes/reports/p203-containment-closure.md`. Dashboard: **GREEN**.
+
+- P204.1: carried hourly precipitation into `WeatherStep` and added a rolling fire-stopping
+  precipitation threshold to `GrowthConfig` and `run_observed_case`.
+- P204.2: applied the 12.7 mm / five-day criterion to 2003_96 and 2023_366. It has no effect when
+  the threshold arrives after basin fill; on 2023_366 it produces weather-sensitive final area.
+- P204.3: closed P204 with a go for rain stopping as a mechanism and a no-go for operational
+  rain-extinction claims. Report: `notes/reports/p204-rain-stopping.md`. Dashboard: **GREEN**.

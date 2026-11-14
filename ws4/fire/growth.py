@@ -527,6 +527,8 @@ class WeatherStep:
         Moisture codes for this interval. None uses the site-grid values.
     relative_humidity_percent : float or None, optional
         Relative humidity in percent, required when burning conditions are enabled.
+    precipitation_mm : float, optional
+        Precipitation during the interval in millimetres (default 0).
     """
 
     start_min: float
@@ -535,6 +537,7 @@ class WeatherStep:
     ffmc: float | None = None
     bui: float | None = None
     relative_humidity_percent: float | None = None
+    precipitation_mm: float = 0.0
 
     def __post_init__(self) -> None:
         """Validate the weather step."""
@@ -550,6 +553,7 @@ class WeatherStep:
             0.0 <= _number(self.relative_humidity_percent, "relative_humidity_percent") <= 100.0
         ):
             raise FireFuelError("relative_humidity_percent must be between 0 and 100")
+        _non_negative(self.precipitation_mm, "precipitation_mm")
 
 
 @dataclass(frozen=True)
@@ -578,6 +582,10 @@ class GrowthConfig:
     containment_start_min : numpy.ndarray or None, optional
         Per-cell closure time in minutes. A target cell with an arrival at or after its
         closure time does not ignite. Default None preserves free-burn behaviour.
+    fire_stopping_precipitation_mm : float or None, optional
+        Accumulated precipitation threshold for a hard stop. Default None preserves free burn.
+    fire_stopping_window_min : float, optional
+        Rolling accumulation window in minutes (default 7200, five days).
     wind_grids : dict of int to WindNinjaGrid or None, optional
         Spatial wind inputs keyed by domain-average direction. They require
         ``weather_steps`` and select the nearest direction grid for each step.
@@ -598,6 +606,8 @@ class GrowthConfig:
     wind_patch_end_min: float | None = None
     burning_conditions: BurningConditions | None = None
     containment_start_min: np.ndarray | None = None
+    fire_stopping_precipitation_mm: float | None = None
+    fire_stopping_window_min: float = 7200.0
     wind_grids: dict[int, WindNinjaGrid] | None = None
     wind_multiplier: float = 1.0
     head_ros_multiplier: float = 1.0
@@ -643,6 +653,13 @@ class GrowthConfig:
             raise FireFuelError("wind_multiplier must be positive")
         if _non_negative(self.head_ros_multiplier, "head_ros_multiplier") <= 0.0:
             raise FireFuelError("head_ros_multiplier must be positive")
+        if (
+            self.fire_stopping_precipitation_mm is not None
+            and self.fire_stopping_precipitation_mm <= 0.0
+        ):
+            raise FireFuelError("fire_stopping_precipitation_mm must be positive")
+        if self.fire_stopping_window_min <= 0.0:
+            raise FireFuelError("fire_stopping_window_min must be positive")
         if self.spotting is not None:
             if not isinstance(self.spotting, SpottingConfig):
                 raise FireFuelError("spotting must be a SpottingConfig value")
@@ -1379,6 +1396,17 @@ def _grow_fire_time_dependent(grid: SiteGrid, config: GrowthConfig) -> GrowthRes
         return value
 
     starts = [step.start_min for step in steps]
+    rain_values = [step.precipitation_mm for step in steps]
+    rain_cumulative = np.concatenate(([0.0], np.cumsum(rain_values)))
+
+    def rain_stopped(time_min: float) -> bool:
+        threshold = config.fire_stopping_precipitation_mm
+        if threshold is None:
+            return False
+        end = bisect.bisect_right(starts, time_min)
+        begin = bisect.bisect_left(starts, time_min - config.fire_stopping_window_min)
+        return float(rain_cumulative[end] - rain_cumulative[begin]) >= threshold
+
     spotting = config.spotting
     rng = np.random.default_rng(spotting.seed) if spotting is not None else None
     spot_ignitions: list[SpotIgnition] = []
@@ -1395,6 +1423,8 @@ def _grow_fire_time_dependent(grid: SiteGrid, config: GrowthConfig) -> GrowthRes
             break
         if time > ignition[row, col] + 1e-12:
             continue
+        if rain_stopped(time):
+            break
         if spotting is not None and rng is not None:
             while time + 1e-9 >= next_spot_min:
                 active = (
