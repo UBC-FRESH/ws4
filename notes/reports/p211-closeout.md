@@ -40,4 +40,4 @@ should be decomposed before claiming full module parity.
 
 ## Pull request
 
-PR: #1226 is queued for maintainer approval. Do not merge without approval.
+Merged as `adf0ab5` (PR #1226); branch deleted.

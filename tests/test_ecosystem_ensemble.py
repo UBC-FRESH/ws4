@@ -114,3 +114,39 @@ def test_common_random_numbers_share_fire_draws() -> None:
 def test_ensemble_rejects_bad_horizon() -> None:
     with pytest.raises(ProcessEnsembleError, match="horizon_years"):
         ProcessEnsembleConfig(horizon_years=-1, fire=FireConfig())
+
+
+def test_ensemble_fire_regime_matches_annual_burned_area() -> None:
+    _schema, state, edges = synthetic_grid(4, 4)
+    scenarios = ScenarioSet((Scenario("one", 5, weight=1.0), Scenario("two", 6, weight=1.0)))
+    result = run_process_ensemble(state, edges, _config(), scenarios)
+
+    summaries = result.fire_regime_summaries(years=2, burnable_area_ha=160.0, cell_size_ha=10.0)
+
+    assert set(summaries) == {"one", "two"}
+    for scenario in result.scenarios:
+        burned = float(
+            scenario.values.loc[scenario.values["account"] == "fire.burned_area_ha", "value"].sum()
+        )
+        assert summaries[scenario.scenario_id].total_burned_ha == pytest.approx(burned)
+        payload = summaries[scenario.scenario_id].to_dict()
+        assert payload["schema_version"] == "ws4.fire-regime-risk.v1"
+        assert payload["years"] == 2
+
+
+def test_ensemble_fire_regime_accepts_zero_fire() -> None:
+    _schema, state, edges = synthetic_grid(3, 3)
+    scenarios = ScenarioSet((Scenario("quiet", 1, weight=1.0),))
+    config = ProcessEnsembleConfig(
+        horizon_years=2,
+        fire=FireConfig(ignition_rate_per_fragment_year=0.0),
+    )
+    result = run_process_ensemble(state, edges, config, scenarios)
+
+    summary = result.fire_regime_summaries(years=2, burnable_area_ha=90.0, cell_size_ha=10.0)[
+        "quiet"
+    ]
+
+    assert summary.fire_count == 0
+    assert summary.total_burned_ha == 0.0
+    assert summary.fire_return_interval_years is None

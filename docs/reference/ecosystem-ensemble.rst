@@ -44,6 +44,15 @@ Usage
 Artifacts are ``process_values.csv``, ``process_aggregated.csv``, and
 ``process_summary.json``.
 
+Fire-regime report
+------------------
+
+``ProcessEnsembleResult.fire_regime_summaries`` applies the P188 event-log summary to each
+scenario's replayable log. It returns a mapping of scenario id to a fire-regime risk summary,
+including annual burned area, burn probability, FRI, escaped fires, and size quantiles.
+
+The layer is distributional; it is not an observed-perimeter comparison or a calibration step.
+
 Limits
 ------
 
