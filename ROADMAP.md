@@ -201,6 +201,7 @@ exists and the maintainer approves it.
 | P202 WS4-vs-Biomass_core spatial trajectory comparison | #1190 | `feature/p202-reference-comparison` | pr-open |
 | P203 Time-dependent containment closure | #1194 | `feature/p203-containment-closure` | pr-open |
 | P204 Rain-driven fire stopping | #1205 | `feature/p204-rain-stopping` | pr-open |
+| P205 Crew line-construction rate | #1212 | `feature/p205-line-construction` | pr-open |
 | P201 Firebreak gap sensitivity pilot | #1185 | `feature/p201-firebreak-gap` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
@@ -5975,5 +5976,31 @@ Acceptance:
 - The rolling window and hard stop are tested.
 - Default free-burn behaviour is unchanged.
 - One positive and one null case reported.
+- No calibration and no operational claim.
+- Dashboard green.
+
+## Phase 205: crew line-construction rate
+
+Parent issue: #1212
+Branch: `feature/p205-line-construction`
+Status: pr-open
+Report: `notes/reports/p205-line-construction.md`
+Manifest: `notes/reports/p205-line-construction.json`
+PR: #1216
+
+Goal: test a crew line-construction race using the P203 closure-time mechanism.
+
+- [x] P205.1 Build the line-construction schedule (#1213)
+- [x] P205.2 Run the construction-rate pilot (#1214)
+- [x] P205.3 Close out construction rate (#1215)
+
+Result: at 80 m/h the fire crosses in every weather member; at 200 m/h and above the line contains
+every member. Construction rate is a meaningful mechanism, but this pilot is not weather-sensitive
+within a rate.
+
+Acceptance:
+
+- Closure time derives from distance and construction rate.
+- Final area, crossing and completion reported.
 - No calibration and no operational claim.
 - Dashboard green.

@@ -5650,3 +5650,9 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   the threshold arrives after basin fill; on 2023_366 it produces weather-sensitive final area.
 - P204.3: closed P204 with a go for rain stopping as a mechanism and a no-go for operational
   rain-extinction claims. Report: `notes/reports/p204-rain-stopping.md`. Dashboard: **GREEN**.
+
+- P205.1: derived per-cell closure times from a crew line-construction rate and the P201 barrier.
+- P205.2: ran 2003_96 at 80, 200 and 400 m/h with five weather members. At 80 m/h the fire crossed
+  in every member; at 200 m/h and above every member was contained.
+- P205.3: closed P205 with a go for rate-sensitive line construction and a no-go for weather-sensitive
+  final extent in this pilot. Report: `notes/reports/p205-line-construction.md`. Dashboard: **GREEN**.
