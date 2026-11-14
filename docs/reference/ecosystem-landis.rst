@@ -53,6 +53,14 @@ seed. The captured trajectory is in ``tests/fixtures/landis_spatial_reference/``
 reproducibility script is ``scripts/landis_spatial_reference.R``. This is a toy spatial
 reference, not a regional LBSE reproduction.
 
+WS4 spatial comparison
+----------------------
+
+P202 ran the WS4 LANDIS process on the P200 initial cohorts. Year 1 matches the reference
+(2694.6 vs 2694), but year 10 is 8832.1 vs 9460 (-6.64%). The kernel functions are exact; the
+full process transition is simplified and does not yet apply Biomass_core's double `mAge`
+removal, floors, integer truncation, or regeneration.
+
 Tests
 -----
 

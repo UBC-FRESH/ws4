@@ -5624,3 +5624,16 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   reference is deterministic and the fixture test passes. Report:
   `notes/reports/p200-spatial-reference.md`; close-out: `notes/reports/p200-closeout.md`.
   Design: `notes/design/ws4-spatial-landscape.md`. PR: #1184.
+
+- P200 merged: the small spatial Biomass_core reference is on `main` as `6e7682b`. Branch
+  deleted; no tag, release, or settings change.
+
+- P202.1: rebuilt the P200 initial cohorts as two WS4 fragments and ran ten annual LANDIS steps.
+
+- P202.2: quantified the trajectory: year 1 matches at 2694.6, year 10 is 8832.1 vs 9460
+  (-6.64%). Documented the Biomass_core transition differences. Dashboard: pending full run.
+
+- P202.3: verified and closed P202. Full dashboard **OVERALL: GREEN**. Year 1 matches the
+  reference; year 10 is -6.64%. Report: `notes/reports/p202-reference-comparison.md`;
+  close-out: `notes/reports/p202-closeout.md`. Design:
+  `notes/design/ws4-reference-comparison.md`. PR: #1198.

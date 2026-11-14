@@ -50,4 +50,4 @@ is the first WS4-vs-Biomass_core spatial comparison.
 
 ## Pull request
 
-PR: #1184 is queued for maintainer approval. Do not merge without approval.
+Merged as `6e7682b` (PR #1184); branch deleted.
