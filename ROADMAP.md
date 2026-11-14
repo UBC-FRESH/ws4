@@ -5770,7 +5770,7 @@ Branch: `feature/p197-treatment-windows`
 Status: pr-open
 Design note: `notes/design/ws4-treatment-windows.md`
 Report: `notes/reports/p197-closeout.md`
-PR: #TBD
+PR: #1172
 
 Goal: add per-block treatment windows to the schedule grammar and optimizer.
 

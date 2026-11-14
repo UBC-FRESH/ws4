@@ -5582,4 +5582,4 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 
 - P197.3: verified and closed P197. Full dashboard **OVERALL: GREEN**. Windowed neighbours,
   validation, defaults, and optimization pass. Report: `notes/reports/p197-closeout.md`.
-  Design: `notes/design/ws4-treatment-windows.md`. PR: #TBD.
+  Design: `notes/design/ws4-treatment-windows.md`. PR: #1172.

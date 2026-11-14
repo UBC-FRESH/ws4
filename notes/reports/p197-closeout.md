@@ -44,4 +44,4 @@ needs an isolated R library, the LandR/SpaDES dependency set, and a pinned Bioma
 
 ## Pull request
 
-PR: #TBD is queued for maintainer approval. Do not merge without approval.
+PR: #1172 is queued for maintainer approval. Do not merge without approval.
