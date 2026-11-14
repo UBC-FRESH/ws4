@@ -203,6 +203,7 @@ exists and the maintainer approves it.
 | P204 Rain-driven fire stopping | #1205 | `feature/p204-rain-stopping` | pr-open |
 | P205 Crew line-construction rate | #1212 | `feature/p205-line-construction` | pr-open |
 | P206 Temporary wet-line suppression | #1217 | `feature/p206-wet-line` | pr-open |
+| P207 Drop-depth and dispatch contract | #1227 | `feature/p207-drop-contract` | pr-open |
 | P210 align the LANDIS process transition | #1199 | `feature/p210-transition-alignment` | complete |
 | P211 heterogeneous spatial reference | #1222 | `feature/p211-heterogeneous-reference` | pr-open |
 | P201 Firebreak gap sensitivity pilot | #1185 | `feature/p201-firebreak-gap` | pr-open |
@@ -6034,6 +6035,31 @@ Acceptance:
 - Intermediate cells cannot be jumped over while wet.
 - Free-burn defaults unchanged.
 - No calibration and no operational claim.
+- Dashboard green.
+
+## Phase 207: drop-depth and dispatch contract
+
+Parent issue: #1227
+Branch: `feature/p207-drop-contract`
+Status: pr-open
+Design note: `notes/design/ws4-drop-suppression.md`
+PR: #1231
+
+Goal: define the contract for a proper water/retardant drop-depth and dispatch layer before code.
+
+- [x] P207.1 Define drop-depth and wetness contract (#1228)
+- [x] P207.2 Define dispatch contract (#1229)
+- [x] P207.3 Review and close out design (#1230)
+
+Result: design contract complete; no drop or dispatch code added. The next phase may implement one
+pilot against the contract.
+
+Acceptance:
+
+- Units, footprint, depth, decay, overlap and provenance are explicit.
+- Resource, payload, cycle, source and queue contracts are explicit.
+- Free-burn defaults untouched.
+- No operational claim.
 - Dashboard green.
 
 ## Phase 210: align the LANDIS process transition
