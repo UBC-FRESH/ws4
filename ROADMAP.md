@@ -189,7 +189,8 @@ exists and the maintainer approves it.
 | P190 process-conditioned schedule evaluation | #1125 | `feature/p190-process-schedule-evaluation` | complete |
 | P191 process schedule objective adapter | #1130 | `feature/p191-process-objective` | complete |
 | P192 process candidate search | #1135 | `feature/p192-process-candidate-search` | complete |
-| P193 bounded process neighbourhood search | #1140 | `feature/p193-process-neighbourhood` | pr-open |
+| P193 bounded process neighbourhood search | #1140 | `feature/p193-process-neighbourhood` | complete |
+| P194 deterministic schedule mutation grammar | #1145 | `feature/p194-schedule-grammar` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -5631,7 +5632,8 @@ Acceptance:
 
 Parent issue: #1140
 Branch: `feature/p193-process-neighbourhood`
-Status: pr-open
+Status: complete
+Merge commit: `e4c2e5a`
 Design note: `notes/design/ws4-process-neighbourhood.md`
 Report: `notes/reports/p193-closeout.md`
 PR: #1144
@@ -5649,4 +5651,28 @@ Acceptance:
 - A non-improving neighbour stops the search.
 - Bounds and invalid inputs fail loudly.
 - History and summary artifacts are stable and tested.
+- Dashboard green.
+
+
+## Phase 194: deterministic schedule mutation grammar
+
+Parent issue: #1145
+Branch: `feature/p194-schedule-grammar`
+Status: pr-open
+Design note: `notes/design/ws4-schedule-grammar.md`
+Report: `notes/reports/p194-closeout.md`
+PR: #TBD
+
+Goal: add a deterministic add/remove schedule mutation grammar for the P193 neighbourhood search.
+
+- [x] P194.1 Implement the schedule mutation grammar (#1146)
+- [x] P194.2 Validate and integrate with neighbourhood search (#1147)
+- [x] P194.3 Test and close out schedule grammar (#1148)
+
+Acceptance:
+
+- Empty and single-event schedules produce exact neighbour sets.
+- Candidate ids are stable for the same schedule.
+- Out-of-universe schedules and invalid grammars fail loudly.
+- The grammar drives a P193 search.
 - Dashboard green.
