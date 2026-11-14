@@ -5663,4 +5663,4 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P210.3: verified and closed P210. Full dashboard **OVERALL: GREEN**. Year 10 is now -0.169%
   from the reference, down from -6.64%. Report: `notes/reports/p210-transition-alignment.md`;
   close-out: `notes/reports/p210-closeout.md`. Design:
-  `notes/design/ws4-transition-alignment.md`. PR: #TBD.
+  `notes/design/ws4-transition-alignment.md`. PR: #1211.
