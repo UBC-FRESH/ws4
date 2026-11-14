@@ -5691,3 +5691,8 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   the heterogeneous reference. Report: `notes/reports/p211-heterogeneous-reference.md`;
   close-out: `notes/reports/p211-closeout.md`. Design:
   `notes/design/ws4-heterogeneous-reference.md`. PR: #1226.
+
+- P207.1: defined the drop-event, rasterized wetness and threshold contract.
+- P207.2: defined the dispatch resource, water source and task contract.
+- P207.3: closed the design phase without drop or dispatch code. Design:
+  `notes/design/ws4-drop-suppression.md`. Dashboard: **GREEN**.
