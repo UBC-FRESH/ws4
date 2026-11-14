@@ -5656,3 +5656,17 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   in every member; at 200 m/h and above every member was contained.
 - P205.3: closed P205 with a go for rate-sensitive line construction and a no-go for weather-sensitive
   final extent in this pilot. Report: `notes/reports/p205-line-construction.md`. Dashboard: **GREEN**.
+
+- P202 merged: the WS4-vs-Biomass_core trajectory comparison is on `main` as `282b6ea`.
+  Branch deleted; no tag, release, or settings change.
+
+- P210.1: aligned the LANDIS process transition with Biomass_core's age, mAge, floor, and
+  integer-truncation order.
+
+- P210.2: re-ran the spatial comparison over 11 annual updates; year 10 improved from 8832.1 to
+  9444.0 vs the 9460 reference (-0.169%). Dashboard: pending full run.
+
+- P210.3: verified and closed P210. Full dashboard **OVERALL: GREEN**. Year 10 is now -0.169%
+  from the reference, down from -6.64%. Report: `notes/reports/p210-transition-alignment.md`;
+  close-out: `notes/reports/p210-closeout.md`. Design:
+  `notes/design/ws4-transition-alignment.md`. PR: #TBD.

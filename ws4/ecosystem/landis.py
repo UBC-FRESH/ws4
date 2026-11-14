@@ -489,23 +489,29 @@ class LandisSuccessionProcess:
         group["longevity"] = [
             self.config.traits(str(species)).longevity for species in group["species"]
         ]
+        # Match the published Biomass_core transition order: age the cohort, compute
+        # age mortality, then competition, ANPP, and developmental mortality.
+        group.loc[group["age"] >= 1, "age"] = group.loc[group["age"] >= 1, "age"] + 1
         group = calculate_sum_b(
             group,
-            last_reg=event.year - 1,
+            last_reg=0,
             current_time=event.year,
             succession_timestep=self.config.succession_timestep,
         )
+        group = calculate_age_mortality(group, stage=self.config.stage)
         group = calculate_competition(group, stage=self.config.stage)
         group = calculate_anpp(group, stage=self.config.stage)
+        # Biomass_core removes mAge from aNPPAct and from mBio before the update.
+        group["aNPPAct"] = np.maximum(1.0, group["aNPPAct"] - group["mAge"])
         group = calculate_growth_mortality(group, stage=self.config.stage)
-        group = calculate_age_mortality(group, stage=self.config.stage)
+        group["mBio"] = np.maximum(0.0, group["mBio"] - group["mAge"])
+        group["mBio"] = np.minimum(group["mBio"], group["aNPPAct"])
+        group["mortality"] = group["mBio"] + group["mAge"]
         for index, row in group.iterrows():
             traits = self.config.traits(str(row["species"]))
-            biomass = (
-                float(row["B"]) + float(row["aNPPAct"]) - float(row["mBio"]) - float(row["mAge"])
-            )
-            biomass = max(0.0, min(traits.max_b, biomass))
-            frame.at[index, "age"] = int(row["age"]) + 1
+            delta = math.trunc(float(row["aNPPAct"] - row["mortality"]))
+            biomass = max(0.0, float(row["B"]) + delta)
+            frame.at[index, "age"] = int(row["age"])
             frame.at[index, "biomass_t_ha"] = biomass
             frame.at[index, "fuel_t_ha"] = max(
                 float(row["fuel_t_ha"]), biomass * traits.fuel_fraction
