@@ -38,4 +38,4 @@ Use the summaries in the ensemble report, then connect them to optimizer risk re
 
 ## Pull request
 
-PR: #TBD is queued for maintainer approval. Do not merge without approval.
+PR: #1236 is queued for maintainer approval. Do not merge without approval.

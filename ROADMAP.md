@@ -6121,7 +6121,7 @@ Status: pr-open
 Design note: `notes/design/ws4-process-fire-regime.md`
 Report: `notes/reports/p212-closeout.md`
 Comparison: `notes/reports/p212-process-fire-regime.md`
-PR: #TBD
+PR: #1236
 
 Goal: expose P188 fire-regime summaries over process ensemble event logs.
 
