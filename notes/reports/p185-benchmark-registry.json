@@ -61,6 +61,15 @@
         "output": "tests/fixtures/landis_spatial_reference/simulationOutput.csv",
         "script": "scripts/landis_spatial_reference.R",
         "test": "tests/test_landis_spatial_reference.py"
+      },
+      "ws4_transition_comparison": {
+        "date": "2026-11-14",
+        "test": "tests/test_landis_spatial_comparison.py",
+        "year_1_ws4": 2694.0,
+        "year_1_reference": 2694,
+        "year_10_ws4": 9444.0,
+        "year_10_reference": 9460,
+        "relative_error": -0.00169
       }
     },
     {
