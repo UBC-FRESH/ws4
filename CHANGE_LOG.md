@@ -5636,4 +5636,4 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P202.3: verified and closed P202. Full dashboard **OVERALL: GREEN**. Year 1 matches the
   reference; year 10 is -6.64%. Report: `notes/reports/p202-reference-comparison.md`;
   close-out: `notes/reports/p202-closeout.md`. Design:
-  `notes/design/ws4-reference-comparison.md`. PR: #TBD.
+  `notes/design/ws4-reference-comparison.md`. PR: #1198.

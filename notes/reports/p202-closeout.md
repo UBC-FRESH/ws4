@@ -50,4 +50,4 @@ Year 10 should move toward 9460 without breaking the P199 kernel parity tests.
 
 ## Pull request
 
-PR: #TBD is queued for maintainer approval. Do not merge without approval.
+PR: #1198 is queued for maintainer approval. Do not merge without approval.
