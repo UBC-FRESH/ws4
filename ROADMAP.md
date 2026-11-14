@@ -5796,7 +5796,7 @@ Branch: `feature/p198-landis-r-parity`
 Status: pr-open
 Design note: `notes/design/ws4-landis-r-parity.md`
 Report: `notes/reports/p198-closeout.md`
-PR: #TBD
+PR: #1178
 
 Goal: run the published Biomass_core R kernel against the WS4 Python kernel on identical cases.
 

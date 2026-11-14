@@ -5597,4 +5597,4 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P198.3: verified and closed P198. Full dashboard **OVERALL: GREEN**. The live R kernel parity
   fixtures and 5 tests pass; maximum absolute difference 4.73e-11. Reports:
   `notes/reports/p198-landis-r-parity.md` and `notes/reports/p198-closeout.md`. Design:
-  `notes/design/ws4-landis-r-parity.md`. PR: #TBD.
+  `notes/design/ws4-landis-r-parity.md`. PR: #1178.
