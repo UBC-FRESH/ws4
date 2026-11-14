@@ -205,7 +205,8 @@ exists and the maintainer approves it.
 | P206 Temporary wet-line suppression | #1217 | `feature/p206-wet-line` | pr-open |
 | P207 Drop-depth and dispatch contract | #1227 | `feature/p207-drop-contract` | pr-open |
 | P210 align the LANDIS process transition | #1199 | `feature/p210-transition-alignment` | complete |
-| P211 heterogeneous spatial reference | #1222 | `feature/p211-heterogeneous-reference` | pr-open |
+| P211 heterogeneous spatial reference | #1222 | `feature/p211-heterogeneous-reference` | complete |
+| P212 process-ensemble fire-regime report | #1232 | `feature/p212-process-fire-regime` | pr-open |
 | P201 Firebreak gap sensitivity pilot | #1185 | `feature/p201-firebreak-gap` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
@@ -6091,7 +6092,8 @@ Acceptance:
 
 Parent issue: #1222
 Branch: `feature/p211-heterogeneous-reference`
-Status: pr-open
+Status: complete
+Merge commit: `adf0ab5`
 Design note: `notes/design/ws4-heterogeneous-reference.md`
 Report: `notes/reports/p211-closeout.md`
 Comparison: `notes/reports/p211-heterogeneous-reference.md`
@@ -6108,4 +6110,28 @@ Acceptance:
 - The heterogeneous reference is deterministic.
 - WS4 is within 1% of the reference at year 10.
 - The trajectory test pins the result.
+- Dashboard green.
+
+
+## Phase 212: process-ensemble fire-regime report
+
+Parent issue: #1232
+Branch: `feature/p212-process-fire-regime`
+Status: pr-open
+Design note: `notes/design/ws4-process-fire-regime.md`
+Report: `notes/reports/p212-closeout.md`
+Comparison: `notes/reports/p212-process-fire-regime.md`
+PR: #1236
+
+Goal: expose P188 fire-regime summaries over process ensemble event logs.
+
+- [x] P212.1 Add the ensemble fire-regime method (#1233)
+- [x] P212.2 Test the process-ensemble summary (#1234)
+- [x] P212.3 Document and close out the ensemble report (#1235)
+
+Acceptance:
+
+- The ensemble summary matches the annual burned-area totals.
+- Per-scenario keys are stable.
+- Zero-fire scenarios are valid.
 - Dashboard green.

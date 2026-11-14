@@ -12,6 +12,7 @@ import json
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import pandas as pd
 
@@ -33,6 +34,10 @@ from .scenarios import ScenarioSet, risk_account_values
 from .state import CohortState
 from .succession import SuccessionConfig, SuccessionProcess
 from .tape import RandomTape
+
+if TYPE_CHECKING:
+    from ..fire.regime import FireRegimeParameters
+    from ..fire.risk import FireRegimeRiskSummary
 
 PROCESS_ENSEMBLE_VERSION = "ws4.process-ensemble.v1"
 
@@ -145,6 +150,46 @@ class ProcessEnsembleResult:
             "scenarios": [result.scenario_id for result in self.scenarios],
             "metrics": means,
         }
+
+    def fire_regime_summaries(
+        self,
+        *,
+        years: int,
+        burnable_area_ha: float,
+        cell_size_ha: float,
+        target: FireRegimeParameters | None = None,
+        historical_sizes_ha: Sequence[float] | None = None,
+    ) -> dict[str, FireRegimeRiskSummary]:
+        """Summarize fire regimes per scenario from the replayable event logs.
+
+        Parameters
+        ----------
+        years : int
+            Number of simulated years.
+        burnable_area_ha : float
+            Burnable area.
+        cell_size_ha : float
+            Area of one raster cell.
+        target : FireRegimeParameters or None, optional
+            Target regime for the P188 diagnostics.
+        historical_sizes_ha : sequence of float or None, optional
+            Historical fire sizes for the target diagnostics.
+
+        Returns
+        -------
+        dict
+            Scenario id to fire-regime risk summary.
+        """
+        from ..fire.risk import summarize_event_logs
+
+        return summarize_event_logs(
+            [result.log for result in self.scenarios],
+            years=years,
+            burnable_area_ha=burnable_area_ha,
+            cell_size_ha=cell_size_ha,
+            target=target,
+            historical_sizes_ha=historical_sizes_ha,
+        )
 
     def write(self, out_dir: Path) -> None:
         """Write values, aggregated rows, and a summary.

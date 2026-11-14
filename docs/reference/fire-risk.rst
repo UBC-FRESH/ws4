@@ -45,3 +45,4 @@ Limits
 - Target diagnostics need an explicit historical size sample.
 - Separate from event-perimeter validation.
 - LandMine FRI/reburn invariants remain a follow-up.
+- Process ensemble integration: ``ProcessEnsembleResult.fire_regime_summaries``.

@@ -5696,3 +5696,17 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P207.2: defined the dispatch resource, water source and task contract.
 - P207.3: closed the design phase without drop or dispatch code. Design:
   `notes/design/ws4-drop-suppression.md`. Dashboard: **GREEN**.
+
+- P211 merged: the heterogeneous spatial reference is on `main` as `adf0ab5`. Branch deleted;
+  no tag, release, or settings change.
+
+- P212.1: added `ProcessEnsembleResult.fire_regime_summaries`, applying the P188 summary to each
+  scenario event log.
+
+- P212.2: verified totals, zero-fire behavior, and JSON-ready output on a real process ensemble.
+  Dashboard: pending full run.
+
+- P212.3: verified and closed P212. Full dashboard **OVERALL: GREEN**. The ensemble report and
+  zero-fire cases pass. Report: `notes/reports/p212-process-fire-regime.md`; close-out:
+  `notes/reports/p212-closeout.md`. Design: `notes/design/ws4-process-fire-regime.md`.
+  PR: #1236.
