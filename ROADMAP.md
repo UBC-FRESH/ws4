@@ -207,7 +207,8 @@ exists and the maintainer approves it.
 | P208 Single drop-depth pilot | #1237 | `feature/p208-drop-depth` | pr-open |
 | P210 align the LANDIS process transition | #1199 | `feature/p210-transition-alignment` | complete |
 | P211 heterogeneous spatial reference | #1222 | `feature/p211-heterogeneous-reference` | complete |
-| P212 process-ensemble fire-regime report | #1232 | `feature/p212-process-fire-regime` | pr-open |
+| P212 process-ensemble fire-regime report | #1232 | `feature/p212-process-fire-regime` | complete |
+| P213 process-ensemble fire-regime artifact | #1241 | `feature/p213-ensemble-artifact` | pr-open |
 | P201 Firebreak gap sensitivity pilot | #1185 | `feature/p201-firebreak-gap` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
@@ -6145,7 +6146,8 @@ Acceptance:
 
 Parent issue: #1232
 Branch: `feature/p212-process-fire-regime`
-Status: pr-open
+Status: complete
+Merge commit: `c6f1922`
 Design note: `notes/design/ws4-process-fire-regime.md`
 Report: `notes/reports/p212-closeout.md`
 Comparison: `notes/reports/p212-process-fire-regime.md`
@@ -6162,4 +6164,27 @@ Acceptance:
 - The ensemble summary matches the annual burned-area totals.
 - Per-scenario keys are stable.
 - Zero-fire scenarios are valid.
+- Dashboard green.
+
+
+## Phase 213: process-ensemble fire-regime artifact
+
+Parent issue: #1241
+Branch: `feature/p213-ensemble-artifact`
+Status: pr-open
+Design note: `notes/design/ws4-ensemble-fire-artifact.md`
+Report: `notes/reports/p213-closeout.md`
+Artifact report: `notes/reports/p213-ensemble-artifact.md`
+PR: #1245
+
+Goal: write the P212 per-scenario fire-regime summaries to a stable JSON artifact.
+
+- [x] P213.1 Add the fire-regime artifact writer (#1242)
+- [x] P213.2 Test the artifact and close out (#1243)
+
+Acceptance:
+
+- The artifact is written next to the process artifacts.
+- Each scenario summary matches the in-memory summary.
+- Zero-fire output is valid JSON.
 - Dashboard green.

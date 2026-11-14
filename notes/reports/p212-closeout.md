@@ -38,4 +38,4 @@ Use the summaries in the ensemble report, then connect them to optimizer risk re
 
 ## Pull request
 
-PR: #1236 is queued for maintainer approval. Do not merge without approval.
+Merged as `c6f1922` (PR #1236); branch deleted.

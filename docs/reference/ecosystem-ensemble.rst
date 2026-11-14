@@ -53,6 +53,9 @@ including annual burned area, burn probability, FRI, escaped fires, and size qua
 
 The layer is distributional; it is not an observed-perimeter comparison or a calibration step.
 
+``ProcessEnsembleResult.write_fire_regime`` writes the same summaries to ``fire_regime.json``
+with top-level schema ``ws4.process-fire-regime.v1``.
+
 Limits
 ------
 
