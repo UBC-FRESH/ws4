@@ -45,6 +45,14 @@ randomized parity fixtures in ``tests/fixtures/landis_r_parity/``. WS4 matches t
 within ``1e-8`` for age mortality, ANPP, growth mortality, competition, and sumB. This is
 kernel parity, not a spatial landscape run.
 
+Heterogeneous reference
+-----------------------
+
+P211 extends the P200 case to four pixel groups with initial ages 10–100 and biomass 500–5000
+g/m². The reference year-10 biomass is 10822; WS4 is 10809.75 (**-0.113%**). The script and
+fixture are `scripts/landis_heterogeneous_reference.R` and
+`tests/fixtures/landis_heterogeneous_reference/`.
+
 Spatial reference
 -----------------
 

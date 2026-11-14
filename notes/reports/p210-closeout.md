@@ -47,4 +47,4 @@ residual should be explained before claiming full module parity.
 
 ## Pull request
 
-PR: #1211 is queued for maintainer approval. Do not merge without approval.
+Merged as `dded837` (PR #1211); branch deleted.

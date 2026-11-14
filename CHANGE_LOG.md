@@ -5677,3 +5677,17 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   weather members. At 16,000 min one member is contained; the rest cross after drying.
 - P206.3: closed P206 with a go for temporary wet-cell suppression as a mechanism and a no-go for
   operational water/retardant claims. Report: `notes/reports/p206-wet-line.md`. Dashboard: **GREEN**.
+
+- P210 merged: the aligned LANDIS process transition is on `main` as `dded837`. Branch deleted;
+  no tag, release, or settings change.
+
+- P211.1: built and ran a 20 × 20, four-group Biomass_core reference with varied ages and biomass;
+  two runs are byte-identical.
+
+- P211.2: compared the aligned WS4 process; year 10 is 10809.75 vs 10822 (-0.113%). Dashboard:
+  pending full run.
+
+- P211.3: verified and closed P211. Full dashboard **OVERALL: GREEN**. Year 10 is -0.113% from
+  the heterogeneous reference. Report: `notes/reports/p211-heterogeneous-reference.md`;
+  close-out: `notes/reports/p211-closeout.md`. Design:
+  `notes/design/ws4-heterogeneous-reference.md`. PR: #1226.
