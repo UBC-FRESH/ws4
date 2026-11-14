@@ -5661,7 +5661,7 @@ Branch: `feature/p194-schedule-grammar`
 Status: pr-open
 Design note: `notes/design/ws4-schedule-grammar.md`
 Report: `notes/reports/p194-closeout.md`
-PR: #TBD
+PR: #1149
 
 Goal: add a deterministic add/remove schedule mutation grammar for the P193 neighbourhood search.
 

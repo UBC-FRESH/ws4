@@ -5530,4 +5530,4 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P194.3: verified and closed P194. Full dashboard **OVERALL: GREEN**. The exact neighbour
   sets, canonical ids, validation, and P193 integration pass. Report:
   `notes/reports/p194-closeout.md`. Design: `notes/design/ws4-schedule-grammar.md`.
-  PR: #TBD.
+  PR: #1149.
