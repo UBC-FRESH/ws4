@@ -5650,3 +5650,17 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   the threshold arrives after basin fill; on 2023_366 it produces weather-sensitive final area.
 - P204.3: closed P204 with a go for rain stopping as a mechanism and a no-go for operational
   rain-extinction claims. Report: `notes/reports/p204-rain-stopping.md`. Dashboard: **GREEN**.
+
+- P202 merged: the WS4-vs-Biomass_core trajectory comparison is on `main` as `282b6ea`.
+  Branch deleted; no tag, release, or settings change.
+
+- P210.1: aligned the LANDIS process transition with Biomass_core's age, mAge, floor, and
+  integer-truncation order.
+
+- P210.2: re-ran the spatial comparison over 11 annual updates; year 10 improved from 8832.1 to
+  9444.0 vs the 9460 reference (-0.169%). Dashboard: pending full run.
+
+- P210.3: verified and closed P210. Full dashboard **OVERALL: GREEN**. Year 10 is now -0.169%
+  from the reference, down from -6.64%. Report: `notes/reports/p210-transition-alignment.md`;
+  close-out: `notes/reports/p210-closeout.md`. Design:
+  `notes/design/ws4-transition-alignment.md`. PR: #1211.
