@@ -6069,7 +6069,7 @@ Status: pr-open
 Design note: `notes/design/ws4-heterogeneous-reference.md`
 Report: `notes/reports/p211-closeout.md`
 Comparison: `notes/reports/p211-heterogeneous-reference.md`
-PR: #TBD
+PR: #1226
 
 Goal: run a four-pixel-group, two-species Biomass_core reference and compare it with WS4.
 

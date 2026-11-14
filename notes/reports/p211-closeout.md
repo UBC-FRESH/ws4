@@ -40,4 +40,4 @@ should be decomposed before claiming full module parity.
 
 ## Pull request
 
-PR: #TBD is queued for maintainer approval. Do not merge without approval.
+PR: #1226 is queued for maintainer approval. Do not merge without approval.

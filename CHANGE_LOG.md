@@ -5690,4 +5690,4 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P211.3: verified and closed P211. Full dashboard **OVERALL: GREEN**. Year 10 is -0.113% from
   the heterogeneous reference. Report: `notes/reports/p211-heterogeneous-reference.md`;
   close-out: `notes/reports/p211-closeout.md`. Design:
-  `notes/design/ws4-heterogeneous-reference.md`. PR: #TBD.
+  `notes/design/ws4-heterogeneous-reference.md`. PR: #1226.
