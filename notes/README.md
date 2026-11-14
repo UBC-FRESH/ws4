@@ -86,6 +86,8 @@ Working notes for WS4. Notes are living: update them in the same change set as t
 - `reports/p206-wet-line.md` — P206 temporary wet-line pilot and go/no-go.
 - `reports/p206-wet-line.json` — P206 wet-line manifest.
 - `design/ws4-drop-suppression.md` — P207 drop-depth and dispatch contract.
+- `reports/p208-drop-depth.md` — P208 500 m drop-depth scale result.
+- `reports/p208-drop-depth.json` — P208 drop-depth manifest.
 - `reports/p159-model-card.md` — P159.2 surrogate architecture, training data, losses, and
   limitations.
 - `reports/p159-evaluation.md` — P159.3 held-out synthetic and Dogrib OOD evaluation.

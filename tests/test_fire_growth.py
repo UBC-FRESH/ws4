@@ -538,3 +538,45 @@ def test_wet_until_shape_must_match() -> None:
                 wet_until_min=np.full((4, 4), 60.0),
             ),
         )
+
+
+def test_wet_depth_blocks_ignition_above_threshold() -> None:
+    grid = make_grid(rows=9, cols=9)
+    depth = np.zeros((9, 9))
+    depth[4, 5] = 2.0
+    weather = (
+        WeatherStep(
+            start_min=0.0,
+            wind_kmh=0.0,
+            wind_direction_deg=0.0,
+            ffmc=90.0,
+            bui=60.0,
+            relative_humidity_percent=40.0,
+        ),
+    )
+    result = grow_fire(
+        grid,
+        GrowthConfig(
+            ignition_cells=((4, 4),),
+            max_time_min=30.0,
+            snapshot_interval_min=30.0,
+            weather_steps=weather,
+            wet_depth_mm=depth,
+            wet_required_mm=0.75,
+        ),
+    )
+    assert not np.isfinite(result.ignition_time_min[4, 5])
+    assert np.isfinite(result.ignition_time_min[4, 4])
+
+
+def test_wet_depth_requires_matching_shape() -> None:
+    grid = make_grid(rows=5, cols=5)
+    with pytest.raises(FireFuelError, match="wet_depth_mm shape"):
+        grow_fire(
+            grid,
+            GrowthConfig(
+                ignition_cells=((2, 2),),
+                max_time_min=30.0,
+                wet_depth_mm=np.zeros((4, 4)),
+            ),
+        )
