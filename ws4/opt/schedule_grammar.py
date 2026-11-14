@@ -104,12 +104,15 @@ class ScheduleMoveGrammar:
         Number of offsets, starting at zero.
     max_events_per_block : int, optional
         Maximum number of events in one block (default one).
+    allow_offset_moves : bool, optional
+        Whether to move an existing event to each other offset (default False).
     """
 
     blocks: Sequence[int]
     treatments: Sequence[str]
     horizon_years: int
     max_events_per_block: int = 1
+    allow_offset_moves: bool = False
 
     def __post_init__(self) -> None:
         """Validate and canonicalize the grammar."""
@@ -137,10 +140,12 @@ class ScheduleMoveGrammar:
             or self.max_events_per_block <= 0
         ):
             raise ScheduleGrammarError("max_events_per_block must be a positive integer")
+        if not isinstance(self.allow_offset_moves, bool):
+            raise ScheduleGrammarError("allow_offset_moves must be a boolean")
         object.__setattr__(self, "blocks", blocks)
         object.__setattr__(self, "treatments", treatments)
 
-    def _validate(self, schedule: Mapping[int, Sequence[tuple[str, int]]]) -> None:
+    def validate(self, schedule: Mapping[int, Sequence[tuple[str, int]]]) -> None:
         """Require every schedule entry to be inside the grammar universe.
 
         Parameters
@@ -187,7 +192,7 @@ class ScheduleMoveGrammar:
             If the candidate schedule is outside the grammar universe.
         """
         current = _canonical_schedule(candidate.schedule)
-        self._validate(current)
+        self.validate(current)
         neighbours: dict[str, ProcessSearchCandidate] = {}
 
         def add(schedule: Mapping[int, Sequence[tuple[str, int]]]) -> None:
@@ -219,5 +224,20 @@ class ScheduleMoveGrammar:
                 else:
                     del updated[block]
                 add(updated)
+
+        if self.allow_offset_moves:
+            for block in tuple(current):
+                events = current[block]
+                for index, (treatment, offset) in enumerate(events):
+                    for new_offset in range(self.horizon_years):
+                        if new_offset == offset or (treatment, new_offset) in events:
+                            continue
+                        moved = list(events)
+                        moved[index] = (treatment, new_offset)
+                        updated = dict(current)
+                        updated[block] = tuple(
+                            sorted(moved, key=lambda value: (value[1], value[0]))
+                        )
+                        add(updated)
 
         return tuple(neighbours.values())

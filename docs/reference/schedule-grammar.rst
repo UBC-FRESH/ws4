@@ -41,6 +41,7 @@ With a cap of two and schedule ``{1: (CC, 0)}``, the neighbours are:
 Limits
 ------
 
-- Add/remove only; no treatment-window or offset-move grammar.
+- Add/remove by default; optional offset moves do not cover treatment changes.
+- No treatment-window grammar.
 - No spatial, road, adjacency, or patch constraints.
 - The optimizer's existing schedule semantics are unchanged.

@@ -118,3 +118,36 @@ def test_grammar_drives_the_process_neighbourhood_search() -> None:
         schedule_id({1: (("CC", 0),), 2: (("CC", 0),)}),
     ]
     assert result.history[1].improved is False
+
+
+def test_offset_moves_are_optional_and_exact() -> None:
+    schedule = {1: (("CC", 0), ("CC", 1))}
+    base = ScheduleMoveGrammar(
+        blocks=(1,), treatments=("CC",), horizon_years=3, max_events_per_block=3
+    )
+    moving = ScheduleMoveGrammar(
+        blocks=(1,),
+        treatments=("CC",),
+        horizon_years=3,
+        max_events_per_block=3,
+        allow_offset_moves=True,
+    )
+
+    base_ids = {
+        candidate.candidate_id
+        for candidate in base.neighbours(ProcessSearchCandidate(schedule_id(schedule), schedule))
+    }
+    move_ids = {
+        candidate.candidate_id
+        for candidate in moving.neighbours(ProcessSearchCandidate(schedule_id(schedule), schedule))
+    }
+
+    assert base_ids == {
+        schedule_id({1: (("CC", 0), ("CC", 1), ("CC", 2))}),
+        schedule_id({1: (("CC", 1),)}),
+        schedule_id({1: (("CC", 0),)}),
+    }
+    assert move_ids == base_ids | {
+        schedule_id({1: (("CC", 1), ("CC", 2))}),
+        schedule_id({1: (("CC", 0), ("CC", 2))}),
+    }

@@ -5531,3 +5531,17 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   sets, canonical ids, validation, and P193 integration pass. Report:
   `notes/reports/p194-closeout.md`. Design: `notes/design/ws4-schedule-grammar.md`.
   PR: #1149.
+
+- P194 merged: the deterministic schedule mutation grammar is on `main` as `3cf69e5`. Branch
+  deleted; no tag, release, or settings change.
+
+- P195.1: added optional offset moves to the schedule grammar while preserving the default
+  add/remove neighbour counts.
+
+- P195.2: added `optimize_process_schedule`, composing the grammar, P193 hill-climb, and best
+  evaluation/artifact. Dashboard: pending full run.
+
+- P195.3: verified and closed P195. Full dashboard **OVERALL: GREEN**. Offset moves, the
+  end-to-end optimizer, determinism, validation, and artifacts pass. Report:
+  `notes/reports/p195-closeout.md`. Design: `notes/design/ws4-process-optimization.md`.
+  PR: #1154.
