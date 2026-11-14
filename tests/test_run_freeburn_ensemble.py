@@ -39,6 +39,16 @@ def test_weather_member_scales_wind_offsets_rh_and_preserves_source() -> None:
     assert fire.weather.equals(original)
 
 
+def test_diagnostic_burning_conditions_are_fixed_and_labelled() -> None:
+    """The diagnostic gate has explicit thresholds and provenance."""
+    module: Any = importlib.import_module("run_freeburn_ensemble")
+    gate = module.diagnostic_burning_conditions()
+    assert gate.isi_gt == 8.0
+    assert gate.wind_gt_kmh == 5.0
+    assert gate.relative_humidity_lt_percent == 50.0
+    assert "not calibrated" in gate.source
+
+
 def test_time_to_observed_area_uses_first_matching_snapshot() -> None:
     """The timing endpoint uses the first snapshot at or above observed area."""
     module: Any = importlib.import_module("run_freeburn_ensemble")
@@ -104,6 +114,7 @@ def test_freeburn_ensemble_writes_members(
             str(output),
             "--csv",
             str(csv),
+            "--burning-conditions",
         ],
     )
 
@@ -114,5 +125,8 @@ def test_freeburn_ensemble_writes_members(
     assert len(payload["rows"]) == 5
     assert len({row["member"] for row in payload["rows"]}) == 5
     assert all("time_to_observed_area_min" in row for row in payload["rows"])
+    assert payload["burning_conditions"]["isi_gt"] == 8.0
+    assert payload["burning_conditions"]["wind_gt_kmh"] == 5.0
+    assert payload["burning_conditions"]["relative_humidity_lt_percent"] == 50.0
     assert payload["summary"]["per_case"]
     assert len(pd.read_csv(csv)) == 5

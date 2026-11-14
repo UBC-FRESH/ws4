@@ -73,6 +73,8 @@ Working notes for WS4. Notes are living: update them in the same change set as t
 - `reports/p177-closeout.md` — P177 decision: containment is a management input, not calibration.
 - `reports/p178-freeburn-ensemble.md` — P178 free-burn weather ensemble and zero spread.
 - `reports/p178-closeout.md` — P178 decision: ensemble is degenerate until stopping is modeled.
+- `reports/p198-weather-stopping.md` — P198 uniform burning-condition gate and go/no-go.
+- `reports/p198-gated-ensemble.json` — P198 gated ensemble manifest.
 - `reports/p159-model-card.md` — P159.2 surrogate architecture, training data, losses, and
   limitations.
 - `reports/p159-evaluation.md` — P159.3 held-out synthetic and Dogrib OOD evaluation.
