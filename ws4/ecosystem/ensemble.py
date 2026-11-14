@@ -40,6 +40,7 @@ if TYPE_CHECKING:
     from ..fire.risk import FireRegimeRiskSummary
 
 PROCESS_ENSEMBLE_VERSION = "ws4.process-ensemble.v1"
+PROCESS_FIRE_REGIME_VERSION = "ws4.process-fire-regime.v1"
 
 
 class ProcessEnsembleError(RuntimeError):
@@ -190,6 +191,58 @@ class ProcessEnsembleResult:
             target=target,
             historical_sizes_ha=historical_sizes_ha,
         )
+
+    def write_fire_regime(
+        self,
+        out_dir: Path,
+        *,
+        years: int,
+        burnable_area_ha: float,
+        cell_size_ha: float,
+        target: FireRegimeParameters | None = None,
+        historical_sizes_ha: Sequence[float] | None = None,
+    ) -> dict[str, FireRegimeRiskSummary]:
+        """Write per-scenario fire-regime summaries to ``fire_regime.json``.
+
+        Parameters
+        ----------
+        out_dir : Path
+            Output directory, created when missing.
+        years : int
+            Number of simulated years.
+        burnable_area_ha : float
+            Burnable area.
+        cell_size_ha : float
+            Area of one raster cell.
+        target : FireRegimeParameters or None, optional
+            Target regime for the P188 diagnostics.
+        historical_sizes_ha : sequence of float or None, optional
+            Historical fire sizes for the target diagnostics.
+
+        Returns
+        -------
+        dict
+            Scenario id to fire-regime risk summary.
+        """
+        summaries = self.fire_regime_summaries(
+            years=years,
+            burnable_area_ha=burnable_area_ha,
+            cell_size_ha=cell_size_ha,
+            target=target,
+            historical_sizes_ha=historical_sizes_ha,
+        )
+        target_dir = Path(out_dir)
+        target_dir.mkdir(parents=True, exist_ok=True)
+        payload = {
+            "schema_version": PROCESS_FIRE_REGIME_VERSION,
+            "scenarios": {
+                scenario: summary.to_dict() for scenario, summary in sorted(summaries.items())
+            },
+        }
+        (target_dir / "fire_regime.json").write_text(
+            json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+        )
+        return summaries
 
     def write(self, out_dir: Path) -> None:
         """Write values, aggregated rows, and a summary.

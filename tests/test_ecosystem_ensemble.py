@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import pytest
@@ -150,3 +151,36 @@ def test_ensemble_fire_regime_accepts_zero_fire() -> None:
     assert summary.fire_count == 0
     assert summary.total_burned_ha == 0.0
     assert summary.fire_return_interval_years is None
+
+
+def test_ensemble_fire_regime_artifact(tmp_path: Path) -> None:
+    _schema, state, edges = synthetic_grid(4, 4)
+    scenarios = ScenarioSet((Scenario("one", 5, weight=1.0), Scenario("two", 6, weight=1.0)))
+    result = run_process_ensemble(state, edges, _config(), scenarios)
+
+    summaries = result.write_fire_regime(
+        tmp_path / "ensemble", years=2, burnable_area_ha=160.0, cell_size_ha=10.0
+    )
+    payload = json.loads((tmp_path / "ensemble" / "fire_regime.json").read_text())
+
+    assert payload["schema_version"] == "ws4.process-fire-regime.v1"
+    assert set(payload["scenarios"]) == {"one", "two"}
+    for scenario, summary in summaries.items():
+        assert payload["scenarios"][scenario]["total_burned_ha"] == summary.total_burned_ha
+        assert payload["scenarios"][scenario]["fire_count"] == summary.fire_count
+
+
+def test_ensemble_fire_regime_artifact_zero_fire(tmp_path: Path) -> None:
+    _schema, state, edges = synthetic_grid(3, 3)
+    scenarios = ScenarioSet((Scenario("quiet", 1, weight=1.0),))
+    config = ProcessEnsembleConfig(
+        horizon_years=2,
+        fire=FireConfig(ignition_rate_per_fragment_year=0.0),
+    )
+    result = run_process_ensemble(state, edges, config, scenarios)
+
+    result.write_fire_regime(tmp_path / "quiet", years=2, burnable_area_ha=90.0, cell_size_ha=10.0)
+    payload = json.loads((tmp_path / "quiet" / "fire_regime.json").read_text())
+
+    assert payload["scenarios"]["quiet"]["fire_count"] == 0
+    assert payload["scenarios"]["quiet"]["fire_return_interval_years"] is None

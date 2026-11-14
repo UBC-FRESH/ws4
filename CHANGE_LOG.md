@@ -5716,3 +5716,14 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P208.3: closed P208 with a no-go for drop-depth suppression at 500 m. Need subcell aggregation,
   a 100 m grid, more litres, or overlapping drops. Report: `notes/reports/p208-drop-depth.md`.
   Dashboard: **GREEN**.
+
+- P212 merged: the process-ensemble fire-regime report is on `main` as `c6f1922`. Branch
+  deleted; no tag, release, or settings change.
+
+- P213.1: added `ProcessEnsembleResult.write_fire_regime`, writing per-scenario P212 summaries
+  to `fire_regime.json`.
+
+- P213.2: verified and closed P213. Full dashboard **OVERALL: GREEN**. The artifact, totals, and
+  zero-fire output pass. Report: `notes/reports/p213-ensemble-artifact.md`; close-out:
+  `notes/reports/p213-closeout.md`. Design: `notes/design/ws4-ensemble-fire-artifact.md`.
+  PR: #TBD.
