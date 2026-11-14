@@ -197,7 +197,8 @@ exists and the maintainer approves it.
 | P197 per-block treatment windows | #1160 | `feature/p197-treatment-windows` | complete |
 | P198 Weather-conditioned stopping | #1168 | `feature/p198-weather-stopping` | pr-open |
 | P199 LANDIS kernel parity against the R reference | #1173 | `feature/p199-landis-r-parity` | complete |
-| P200 small spatial Biomass_core landscape reference | #1180 | `feature/p200-spatial-landscape` | pr-open |
+| P200 small spatial Biomass_core landscape reference | #1180 | `feature/p200-spatial-landscape` | complete |
+| P202 WS4-vs-Biomass_core spatial trajectory comparison | #1190 | `feature/p202-reference-comparison` | pr-open |
 | P201 Firebreak gap sensitivity pilot | #1185 | `feature/p201-firebreak-gap` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
@@ -5848,7 +5849,8 @@ Acceptance:
 
 Parent issue: #1180
 Branch: `feature/p200-spatial-landscape`
-Status: pr-open
+Status: complete
+Merge commit: `6e7682b`
 Design note: `notes/design/ws4-spatial-landscape.md`
 Report: `notes/reports/p200-closeout.md`
 Spatial report: `notes/reports/p200-spatial-reference.md`
@@ -5891,4 +5893,29 @@ Acceptance:
 - Same five weather members as P178.
 - Final area, IoU, time to observed area and east-of-barrier cells reported.
 - No calibration and no operational claim.
+- Dashboard green.
+
+
+## Phase 202: WS4-vs-Biomass_core spatial trajectory comparison
+
+Parent issue: #1190
+Branch: `feature/p202-reference-comparison`
+Status: pr-open
+Design note: `notes/design/ws4-reference-comparison.md`
+Report: `notes/reports/p202-closeout.md`
+Comparison: `notes/reports/p202-reference-comparison.md`
+PR: #TBD
+
+Goal: run the WS4 LANDIS process on the P200 initial cohorts and quantify the trajectory difference.
+
+- [x] P202.1 Reproduce the P200 initial cohorts in WS4 (#1191)
+- [x] P202.2 Quantify and document the mismatch (#1192)
+- [x] P202.3 Pin the comparison and close out (#1193)
+
+Acceptance:
+
+- The WS4 trajectory and relative error are exact and reproducible.
+- The mismatch is documented, not hidden.
+- A test pins the current behavior.
+- The root-cause hypotheses cite the published R transition.
 - Dashboard green.
