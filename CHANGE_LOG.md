@@ -5877,7 +5877,7 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 
 - P231.3: verified and closed P231. Full dashboard **OVERALL: GREEN**. Age-curve bridge and shared
   schedule both report 340 m3. Report: `notes/reports/p231-age-curves.md`; close-out:
-  `notes/reports/p231-closeout.md`. Design: `notes/design/ws4-age-volume-curves.md`. PR: #TBD.
+  `notes/reports/p231-closeout.md`. Design: `notes/design/ws4-age-volume-curves.md`. PR: #1331.
 
 - P232.1: added the source-distance and drawdown calculator with tests.
 - P232.2: the 18.45 ha lake at 1.19 km requires 50.3 km/h average and 2.60 mm equivalent

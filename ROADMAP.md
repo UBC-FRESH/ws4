@@ -6627,7 +6627,7 @@ Status: pr-open
 Design note: `notes/design/ws4-age-volume-curves.md`
 Report: `notes/reports/p231-closeout.md`
 Curve report: `notes/reports/p231-age-curves.md`
-PR: #TBD
+PR: #1331
 
 Goal: use age-based yield curves in the shared-schedule comparison instead of a linear biomass bridge.
 

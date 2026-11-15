@@ -38,4 +38,4 @@ Load the compiled estate yield curves into the bridge instead of the test curve.
 
 ## Pull request
 
-PR: #TBD is queued for maintainer approval. Do not merge without approval.
+PR: #1331 is queued for maintainer approval. Do not merge without approval.
