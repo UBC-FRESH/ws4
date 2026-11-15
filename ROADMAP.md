@@ -6276,7 +6276,7 @@ Status: pr-open
 Design note: `notes/design/ws4-process-risk-artifact.md`
 Report: `notes/reports/p216-closeout.md`
 Artifact report: `notes/reports/p216-risk-report-artifact.md`
-PR: #TBD
+PR: #1266
 
 Goal: write the P215 process fire-risk report to a stable artifact directory.
 
