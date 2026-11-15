@@ -1,0 +1,96 @@
+{
+  "minimum_refill_l_min": {
+    "1": 4000.0,
+    "2": 2000.0
+  },
+  "cases": [
+    {
+      "sorties_per_hour": 40.0,
+      "payload_l": 6000.0,
+      "refill_l_min": 2000.0,
+      "sources": 1,
+      "required_l_per_hour": 240000.0,
+      "supplied_l_per_hour": 120000.0,
+      "source_limited_sorties_per_hour": 20.0,
+      "utilization": 2.0,
+      "feasible": false
+    },
+    {
+      "sorties_per_hour": 40.0,
+      "payload_l": 6000.0,
+      "refill_l_min": 3000.0,
+      "sources": 1,
+      "required_l_per_hour": 240000.0,
+      "supplied_l_per_hour": 180000.0,
+      "source_limited_sorties_per_hour": 30.0,
+      "utilization": 1.3333333333333333,
+      "feasible": false
+    },
+    {
+      "sorties_per_hour": 40.0,
+      "payload_l": 6000.0,
+      "refill_l_min": 4000.0,
+      "sources": 1,
+      "required_l_per_hour": 240000.0,
+      "supplied_l_per_hour": 240000.0,
+      "source_limited_sorties_per_hour": 40.0,
+      "utilization": 1.0,
+      "feasible": true
+    },
+    {
+      "sorties_per_hour": 40.0,
+      "payload_l": 6000.0,
+      "refill_l_min": 5000.0,
+      "sources": 1,
+      "required_l_per_hour": 240000.0,
+      "supplied_l_per_hour": 300000.0,
+      "source_limited_sorties_per_hour": 50.0,
+      "utilization": 0.8,
+      "feasible": true
+    },
+    {
+      "sorties_per_hour": 40.0,
+      "payload_l": 6000.0,
+      "refill_l_min": 2000.0,
+      "sources": 2,
+      "required_l_per_hour": 240000.0,
+      "supplied_l_per_hour": 240000.0,
+      "source_limited_sorties_per_hour": 40.0,
+      "utilization": 1.0,
+      "feasible": true
+    },
+    {
+      "sorties_per_hour": 40.0,
+      "payload_l": 6000.0,
+      "refill_l_min": 3000.0,
+      "sources": 2,
+      "required_l_per_hour": 240000.0,
+      "supplied_l_per_hour": 360000.0,
+      "source_limited_sorties_per_hour": 60.0,
+      "utilization": 0.6666666666666666,
+      "feasible": true
+    },
+    {
+      "sorties_per_hour": 40.0,
+      "payload_l": 6000.0,
+      "refill_l_min": 4000.0,
+      "sources": 2,
+      "required_l_per_hour": 240000.0,
+      "supplied_l_per_hour": 480000.0,
+      "source_limited_sorties_per_hour": 80.0,
+      "utilization": 0.5,
+      "feasible": true
+    },
+    {
+      "sorties_per_hour": 40.0,
+      "payload_l": 6000.0,
+      "refill_l_min": 5000.0,
+      "sources": 2,
+      "required_l_per_hour": 240000.0,
+      "supplied_l_per_hour": 600000.0,
+      "source_limited_sorties_per_hour": 100.0,
+      "utilization": 0.4,
+      "feasible": true
+    }
+  ]
+}
