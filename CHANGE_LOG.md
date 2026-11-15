@@ -5900,3 +5900,10 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - CI: parallelized the pytest gate with `pytest-xdist` (`-n auto`) in the dashboard, CI quality
   job, and pre-commit, and set an explicit 30-minute quality-job timeout. No test or coverage
   threshold was removed. Local full suite: 3m49s, 2470 passed, 90.40% coverage.
+
+- P235.1: compared four and five LANDIS transitions with the five-year estate final offset.
+  Four transitions match 750; five transitions are 762.5, one step ahead.
+
+- P235.2: verified and closed P235. Full dashboard **OVERALL: GREEN**. Four transitions match
+  750; five are one step ahead. Report: `notes/reports/p235-succession-offset.md`; close-out:
+  `notes/reports/p235-closeout.md`. Design: `notes/design/ws4-succession-offset.md`. PR: #1350.
