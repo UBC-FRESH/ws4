@@ -39,4 +39,4 @@ package.
 
 ## Pull request
 
-PR: #TBD is queued for maintainer approval. Do not merge without approval.
+PR: #1320 is queued for maintainer approval. Do not merge without approval.

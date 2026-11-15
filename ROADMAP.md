@@ -6577,7 +6577,7 @@ Status: pr-open
 Design note: `notes/design/ws4-shared-schedule.md`
 Report: `notes/reports/p228-closeout.md`
 Comparison report: `notes/reports/p228-shared-schedule.md`
-PR: #TBD
+PR: #1320
 
 Goal: run one clearcut schedule through both engines and compare mapped final volume.
 
