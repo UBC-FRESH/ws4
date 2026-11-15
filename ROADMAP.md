@@ -6655,7 +6655,7 @@ Goal: stop the quality job from being canceled before the full test suite finish
 
 - [x] P233.1 Raise quality-job timeout and quiet pytest (#1333)
 
-Result: quality and pre-commit jobs now have an explicit 30-minute timeout. The duplicate
+Result: quality, pre-commit and dashboard jobs now have an explicit 30-minute timeout. The duplicate
 quality test step and the pre-commit pytest hook are skipped in CI; the green dashboard runs
 the full suite and coverage gate. The test set and coverage gate are unchanged.
 
