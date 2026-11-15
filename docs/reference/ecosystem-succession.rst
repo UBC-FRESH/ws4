@@ -54,3 +54,11 @@ Limits
 - Regeneration is a single-cohort establishment rule, not species competition.
 - The bridge does not modify the compiled dataset or its yield curves.
 - The executor remains annual; continuous-time ecology is later work.
+
+
+Offset convention
+-----------------
+
+An estate ``simulate(..., years=N)`` writes offsets 0 to N-1 and ages cohorts to ``N-1`` annual
+steps. The process executor's ``horizon_years`` counts transitions. For a five-year estate run,
+four process transitions match the final offset; five transitions are one annual step ahead.

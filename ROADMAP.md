@@ -227,6 +227,7 @@ exists and the maintainer approves it.
 | P230 shared-schedule process/estate comparison | #1313 | `feature/p230-shared-schedule` | complete |
 | P231 age-based volume curves | #1326 | `feature/p231-age-curves` | complete |
 | P234 compiled yield curves in the process bridge | #1335 | `feature/p234-compiled-curves` | pr-open |
+| P235 five-year succession offset comparison | #1340 | `feature/p235-succession-offset` | pr-open |
 | P232 HWF113 source-distance and drawdown closure | #1321 | `feature/p232-source-geometry` | complete |
 | P217 Re-wetting interval at 100 m | #1262 | `feature/p217-rewetting` | pr-open |
 | P201 Firebreak gap sensitivity pilot | #1185 | `feature/p201-firebreak-gap` | pr-open |
@@ -6690,4 +6691,27 @@ Acceptance:
 - The loader reproduces compiled curve points.
 - The shared schedule reports a real, documented difference.
 - Invalid curves fail loudly.
+- Dashboard green.
+
+
+## Phase 235: five-year succession offset comparison
+
+Parent issue: #1340
+Branch: `feature/p235-succession-offset`
+Status: pr-open
+Design note: `notes/design/ws4-succession-offset.md`
+Report: `notes/reports/p235-closeout.md`
+Offset report: `notes/reports/p235-succession-offset.md`
+PR: #TBD
+
+Goal: compare four- and five-transition process horizons with the five-year estate offset.
+
+- [x] P235.1 Compare four and five process transitions (#1341)
+- [x] P235.2 Pin the offset and close out (#1342)
+
+Acceptance:
+
+- The four-transition horizon matches the estate final offset.
+- The five-transition horizon reports the one-step offset.
+- Both differences are tested.
 - Dashboard green.

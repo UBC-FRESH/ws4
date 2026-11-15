@@ -5895,3 +5895,12 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P234.3: verified and closed P234. Full dashboard **OVERALL: GREEN**. Compiled curve and shared
   schedule both report 340 m3. Report: `notes/reports/p234-compiled-curves.md`; close-out:
   `notes/reports/p234-closeout.md`. Design: `notes/design/ws4-compiled-curves.md`. PR: #1339.
+
+- P235.1: compared four and five LANDIS transitions with the five-year estate final offset.
+  Four transitions match 750; five transitions are 762.5, one step ahead.
+
+- P235.2: pinned the offset convention and artifact. Dashboard: pending full run.
+
+- P235.2: verified and closed P235. Full dashboard **OVERALL: GREEN**. Four transitions match
+  750; five are one step ahead. Report: `notes/reports/p235-succession-offset.md`; close-out:
+  `notes/reports/p235-closeout.md`. Design: `notes/design/ws4-succession-offset.md`. PR: #TBD.
