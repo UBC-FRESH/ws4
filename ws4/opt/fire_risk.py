@@ -20,6 +20,7 @@ from ..fire.risk import FireRegimeRiskSummary
 from .objective import Target, objective
 
 PROCESS_FIRE_RISK_VERSION: Final[str] = "ws4.process-fire-risk-accounts.v1"
+RISK_VERIFICATION_BUNDLE_VERSION: Final[str] = "ws4.risk-verification-bundle.v1"
 
 
 class ProcessFireRiskError(ValueError):
@@ -392,3 +393,47 @@ def evaluate_process_fire_risk_validation(
         weights=weights_for(validation_ids),
     )
     return ProcessFireRiskValidation(train=train, validation=validation, train_fraction=fraction)
+
+
+def write_risk_verification_bundle(
+    out_dir: Path,
+    *,
+    optimizer_summary: Mapping[str, object],
+    process: ProcessFireRiskValidation,
+) -> dict[str, object]:
+    """Write optimizer and process risk summaries into one JSON bundle.
+
+    Parameters
+    ----------
+    out_dir : Path
+        Output directory, created when missing.
+    optimizer_summary : mapping of str to object
+        Existing optimizer risk verification summary.
+    process : ProcessFireRiskValidation
+        Process fire-risk train/validation report.
+
+    Returns
+    -------
+    dict
+        The written payload.
+
+    Raises
+    ------
+    ProcessFireRiskError
+        If the optimizer summary is empty or the process report is invalid.
+    """
+    if not isinstance(optimizer_summary, Mapping) or not optimizer_summary:
+        raise ProcessFireRiskError("optimizer_summary must be a non-empty mapping")
+    if not isinstance(process, ProcessFireRiskValidation):
+        raise ProcessFireRiskError("process must be a ProcessFireRiskValidation")
+    payload: dict[str, object] = {
+        "schema_version": RISK_VERIFICATION_BUNDLE_VERSION,
+        "optimizer": dict(optimizer_summary),
+        "process": process.summary(),
+    }
+    target = Path(out_dir)
+    target.mkdir(parents=True, exist_ok=True)
+    (target / "risk_verification_bundle.json").write_text(
+        json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
+    return payload

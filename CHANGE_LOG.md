@@ -5788,3 +5788,15 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   invalid inputs pass. Report: `notes/reports/p218-process-risk-validation.md`; close-out:
   `notes/reports/p218-closeout.md`. Design: `notes/design/ws4-process-risk-validation.md`.
   PR: #1274.
+
+- P218 merged: process fire-risk train/validation is on `main` as `aca39df`. Branch deleted; no
+  tag, release, or settings change.
+
+- P220.1: added `write_risk_verification_bundle`, combining an optimizer risk summary with the
+  P218 process train/validation summary.
+
+- P220.2: verified bundle contents, gap preservation, and invalid input. Dashboard: pending full run.
+
+- P220.2: verified and closed P220. Full dashboard **OVERALL: GREEN**. Bundle contents, gap
+  preservation, and invalid input pass. Report: `notes/reports/p220-risk-bundle.md`; close-out:
+  `notes/reports/p220-closeout.md`. Design: `notes/design/ws4-risk-bundle.md`. PR: #1279.

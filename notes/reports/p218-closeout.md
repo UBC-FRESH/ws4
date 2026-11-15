@@ -37,4 +37,4 @@ Use the train/validation gap in the optimizer's process-risk verification output
 
 ## Pull request
 
-PR: #1274 is queued for maintainer approval. Do not merge without approval.
+Merged as `aca39df` (PR #1274); branch deleted.

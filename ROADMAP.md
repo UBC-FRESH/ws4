@@ -213,7 +213,8 @@ exists and the maintainer approves it.
 | P214 process fire-regime risk accounts | #1246 | `feature/p214-fire-risk-accounts` | complete |
 | P215 process fire-risk evaluation report | #1253 | `feature/p215-process-risk-report` | complete |
 | P216 process fire-risk report artifact | #1259 | `feature/p216-risk-report-artifact` | complete |
-| P218 process fire-risk train/validation | #1271 | `feature/p218-process-risk-validation` | pr-open |
+| P218 process fire-risk train/validation | #1271 | `feature/p218-process-risk-validation` | complete |
+| P220 combined optimizer/process risk verification bundle | #1276 | `feature/p220-risk-bundle` | pr-open |
 | P217 Re-wetting interval at 100 m | #1262 | `feature/p217-rewetting` | pr-open |
 | P201 Firebreak gap sensitivity pilot | #1185 | `feature/p201-firebreak-gap` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
@@ -6325,7 +6326,8 @@ Acceptance:
 
 Parent issue: #1271
 Branch: `feature/p218-process-risk-validation`
-Status: pr-open
+Status: complete
+Merge commit: `aca39df`
 Design note: `notes/design/ws4-process-risk-validation.md`
 Report: `notes/reports/p218-closeout.md`
 Validation report: `notes/reports/p218-process-risk-validation.md`
@@ -6341,4 +6343,27 @@ Acceptance:
 - Splits are deterministic and non-empty.
 - The gap is validation objective minus training objective.
 - Invalid fractions and too-few scenarios fail loudly.
+- Dashboard green.
+
+
+## Phase 220: combined optimizer/process risk verification bundle
+
+Parent issue: #1276
+Branch: `feature/p220-risk-bundle`
+Status: pr-open
+Design note: `notes/design/ws4-risk-bundle.md`
+Report: `notes/reports/p220-closeout.md`
+Bundle report: `notes/reports/p220-risk-bundle.md`
+PR: #1279
+
+Goal: write the optimizer risk summary and P218 process risk validation into one JSON bundle.
+
+- [x] P220.1 Implement the risk verification bundle (#1277)
+- [x] P220.2 Test and close out the bundle (#1278)
+
+Acceptance:
+
+- The bundle contains both summaries.
+- The process gap is preserved exactly.
+- Empty optimizer summaries fail loudly.
 - Dashboard green.
