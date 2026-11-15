@@ -103,3 +103,45 @@ def test_one_clearcut_matches_across_engines(tmp_path: Path) -> None:
     assert row["absolute_difference"] == pytest.approx(0.0)
     comparison.write(tmp_path / "comparison")
     assert (tmp_path / "comparison" / "account_comparison.json").is_file()
+
+
+def test_compiled_natural_curve_matches_the_estate(tmp_path: Path) -> None:
+    """The compiled natural curve reproduces the estate volume after CC."""
+    from ws4.ecosystem.bridge import age_volume_curves_from_frame
+
+    dataset = build_canonical_dataset(
+        _FIXTURE / "recipe.xml", _FIXTURE / "fragments.csv", tmp_path / "dataset"
+    )
+    curve_frame = pd.read_parquet(dataset / "curves.parquet")
+    curves = age_volume_curves_from_frame(curve_frame, {"PL": 2})
+    schedule_path = tmp_path / "schedule.csv"
+    pd.DataFrame({"block_id": [1], "treatment": ["CC"], "offset": [0]}).to_csv(
+        schedule_path, index=False
+    )
+    estate_values = Simulator.from_dataset(dataset).simulate(pd.read_csv(schedule_path), years=1)
+    process = evaluate_process_schedule(
+        _process_state(),
+        (),
+        {1: (("CC", 0),)},
+        {1: (1,), 2: (2,)},
+        horizon_years=1,
+        fire=FireConfig(ignition_rate_per_fragment_year=0.0),
+        regeneration=RegenerationConfig(establishment_probability=0.0),
+        bridge=VolumeBridgeConfig(
+            default_volume_m3_per_t=0.0,
+            merchantable_fraction=1.0,
+            age_volume_curves=curves,
+        ),
+        succession_process=_NoSuccession(),
+        seed=1,
+    )
+
+    comparison = compare_accounts(
+        process.accounts,
+        estate_values,
+        {"bridge.volume_m3": "feature.Volume"},
+    )
+    row = comparison.rows.iloc[0]
+    assert row["process_value"] == pytest.approx(340.0)
+    assert row["estate_value"] == pytest.approx(340.0)
+    assert row["absolute_difference"] == pytest.approx(0.0)

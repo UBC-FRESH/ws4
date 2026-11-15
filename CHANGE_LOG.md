@@ -5887,3 +5887,12 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P233.1: raised the quality, pre-commit and dashboard CI job timeouts to 30 minutes and removed the
   duplicate pytest runs from both jobs. The green-dashboard job remains the full test and
   coverage gate. Dashboard: **GREEN**.
+
+- P231 merged: age-based volume curves are on `main` as `a99a882`. Branch deleted; no tag,
+  release, or settings change.
+
+- P234.1: added `age_volume_curves_from_frame` for compiled curve tables with validation.
+
+- P234.3: verified and closed P234. Full dashboard **OVERALL: GREEN**. Compiled curve and shared
+  schedule both report 340 m3. Report: `notes/reports/p234-compiled-curves.md`; close-out:
+  `notes/reports/p234-closeout.md`. Design: `notes/design/ws4-compiled-curves.md`. PR: #1339.
