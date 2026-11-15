@@ -119,6 +119,8 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
      - One CFSDS event with hourly reanalysis weather and its uncalibrated overprediction result.
    * - :doc:`fire-containment`
      - Containment masks and the free-burn versus suppressed validation protocol.
+   * - :doc:`fire-treatment-evidence`
+     - Published fuel-treatment effect ranges and the deferred validation gate.
    * - :doc:`fire-wind`
      - WindNinja angle and velocity pairs, direction selection, and provenance.
    * - :doc:`fire-scene`
@@ -180,6 +182,7 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
    fire-corpus
    fire-reanalysis-case
    fire-containment
+   fire-treatment-evidence
    fire-wind
    fire-scene
    femic-hydrology
