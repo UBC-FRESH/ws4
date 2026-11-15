@@ -220,6 +220,7 @@ exists and the maintainer approves it.
 | P222 Gap-only dispatch queue feasibility | #1288 | `feature/p222-dispatch-queue` | pr-open |
 | P224 Water-source throughput lower bound | #1295 | `feature/p224-water-source` | pr-open |
 | P225 Water-source service utilization | #1300 | `feature/p225-source-service` | pr-open |
+| P226 Source queue and refill feasibility | #1304 | `feature/p226-source-queue` | pr-open |
 | P217 Re-wetting interval at 100 m | #1262 | `feature/p217-rewetting` | pr-open |
 | P201 Firebreak gap sensitivity pilot | #1185 | `feature/p201-firebreak-gap` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
@@ -6492,3 +6493,26 @@ Acceptance:
 - Minimum refill rates reported.
 - No calibration and no operational claim.
 - Dashboard green.
+
+## Phase 226: source queue and refill feasibility
+
+Parent issue: #1304
+Branch: `feature/p226-source-queue`
+Status: pr-open
+Report: `notes/reports/p226-source-queue.md`
+Manifest: `notes/reports/p226-source-queue.json`
+PR: #1307
+
+Goal: add source service time and queueing to the three-aircraft gap schedule.
+
+- [x] P226.1 Add source queue simulation (#1305)
+- [x] P226.2 Close out source queue (#1306)
+
+Result: 4,235 L/min peaks at 2.83 min source wait but stays feasible; 3,000 L/min fails.
+
+Acceptance:
+
+- Queue wait, lateness and cell gap reported.
+- Threshold and failure cases compared.
+- No calibration and no operational claim.
+- Dashboard green if repository gates permit it.

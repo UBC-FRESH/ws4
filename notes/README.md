@@ -100,6 +100,8 @@ Working notes for WS4. Notes are living: update them in the same change set as t
 - `reports/p224-water-source.json` — P224 source manifest.
 - `reports/p225-source-service.md` — P225 source service-time result.
 - `reports/p225-source-service.json` — P225 service manifest.
+- `reports/p226-source-queue.md` — P226 source queue and refill feasibility.
+- `reports/p226-source-queue.json` — P226 queue manifest.
 - `reports/p159-model-card.md` — P159.2 surrogate architecture, training data, losses, and
   limitations.
 - `reports/p159-evaluation.md` — P159.3 held-out synthetic and Dogrib OOD evaluation.
