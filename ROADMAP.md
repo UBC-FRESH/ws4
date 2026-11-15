@@ -6724,7 +6724,7 @@ Status: pr-open
 Design note: `notes/design/ws4-succession-offset.md`
 Report: `notes/reports/p235-closeout.md`
 Offset report: `notes/reports/p235-succession-offset.md`
-PR: #1343
+PR: #1350
 
 Goal: compare four- and five-transition process horizons with the five-year estate offset.
 

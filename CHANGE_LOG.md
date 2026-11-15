@@ -5906,4 +5906,4 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 
 - P235.2: verified and closed P235. Full dashboard **OVERALL: GREEN**. Four transitions match
   750; five are one step ahead. Report: `notes/reports/p235-succession-offset.md`; close-out:
-  `notes/reports/p235-closeout.md`. Design: `notes/design/ws4-succession-offset.md`. PR: #1343.
+  `notes/reports/p235-closeout.md`. Design: `notes/design/ws4-succession-offset.md`. PR: #1350.

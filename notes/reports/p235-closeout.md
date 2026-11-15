@@ -37,4 +37,4 @@ final offset.
 
 ## Pull request
 
-PR: #1343 is queued for maintainer approval. Do not merge without approval.
+PR: #1350 is queued for maintainer approval. Do not merge without approval.
