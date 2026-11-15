@@ -5816,4 +5816,4 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P221.2: verified and closed P221. Full dashboard **OVERALL: GREEN**. Bundle values, gap, and
   missing-file failure pass. Report: `notes/reports/p221-optimizer-bundle.md`; close-out:
   `notes/reports/p221-closeout.md`. Design: `notes/design/ws4-optimizer-risk-bundle.md`.
-  PR: #TBD.
+  PR: #1286.

@@ -6404,7 +6404,7 @@ Status: pr-open
 Design note: `notes/design/ws4-optimizer-risk-bundle.md`
 Report: `notes/reports/p221-closeout.md`
 Bundle report: `notes/reports/p221-optimizer-bundle.md`
-PR: #TBD
+PR: #1286
 
 Goal: bundle an optimizer's existing `risk_verification.json` with P218 process risk.
 
