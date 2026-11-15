@@ -5840,3 +5840,13 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P227.2: 4,235 L/min is feasible in 100/100 samples; 3,500 L/min fails in 100/100.
   Report: `notes/reports/p227-stochastic-source.md`. Dashboard: RED on unrelated mypy/test gates;
   P227 tests pass.
+
+- P221 merged: the optimizer risk verification bundle handoff is on `main` as `4ecf504`.
+  Branch deleted; no tag, release, or settings change.
+
+- P223.1: added explicit process-to-estate account comparison with final-period differences.
+
+- P223.2: verified and closed P223. Full dashboard **OVERALL: GREEN**. Exact differences,
+  scenario selection, missing accounts, and artifacts pass. Report:
+  `notes/reports/p223-account-comparison.md`; close-out: `notes/reports/p223-closeout.md`.
+  Design: `notes/design/ws4-account-comparison.md`. PR: #1298.

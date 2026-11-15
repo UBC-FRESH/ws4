@@ -53,3 +53,4 @@ Limits
   ``ProcessFireRiskValidation.write``.
 - Combined bundle: ``write_risk_verification_bundle``.
 - Existing optimizer output: ``bundle_existing_risk_verification``.
+- Explicit account comparison: ``ws4.opt.account_compare.compare_accounts``.

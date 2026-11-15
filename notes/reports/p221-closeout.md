@@ -38,4 +38,4 @@ Call the bundle after an optimizer run that has an associated process-risk valid
 
 ## Pull request
 
-PR: #1286 is queued for maintainer approval. Do not merge without approval.
+Merged as `4ecf504` (PR #1286); branch deleted.
