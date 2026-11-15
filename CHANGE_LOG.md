@@ -5855,3 +5855,8 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P229.2: confirmed `2003_96` is Alberta HWF113; nearest current waterbody is 3.29 ha at 0.38 km,
   with an 18.45 ha lake at 1.19 km. Report: `notes/reports/p229-alberta-water-source.md`.
   Dashboard: **GREEN**.
+
+- P230.1: added the source-distance and drawdown calculator with tests.
+- P230.2: the 18.45 ha lake at 1.19 km requires 50.3 km/h average and 2.60 mm equivalent
+  drawdown for the 480,000 L gap demand. Source geometry is not the blocker; refill/depth
+  remain unknown. Report: `notes/reports/p230-source-geometry.md`. Dashboard: **GREEN**.

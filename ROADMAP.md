@@ -224,6 +224,7 @@ exists and the maintainer approves it.
 | P226 Source queue and refill feasibility | #1304 | `feature/p226-source-queue` | pr-open |
 | P227 Stochastic source-queue envelope | #1308 | `feature/p227-stochastic-source` | pr-open |
 | P229 Alberta HWF113 water-source screen | #1316 | `feature/p229-alberta-water` | pr-open |
+| P230 HWF113 source-distance and drawdown closure | #1321 | `feature/p230-source-geometry` | pr-open |
 | P217 Re-wetting interval at 100 m | #1262 | `feature/p217-rewetting` | pr-open |
 | P201 Firebreak gap sensitivity pilot | #1185 | `feature/p201-firebreak-gap` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
@@ -6590,4 +6591,30 @@ Acceptance:
 - Jurisdiction and case identity are explicit.
 - Nearest source candidates are reproducible from the documented Alberta open query.
 - No calibration and no operational claim.
+- Dashboard green.
+
+## Phase 230: HWF113 source-distance and drawdown closure
+
+Parent issue: #1321
+Branch: `feature/p230-source-geometry`
+Status: pr-open
+Report: `notes/reports/p230-source-geometry.md`
+Manifest: `notes/reports/p230-source-geometry.json`
+PR: #1325
+
+Goal: test the P229 source candidates against the existing P217/P226 gap schedule.
+
+- [x] P230.1 Add source geometry calculator (#1322)
+- [x] P230.2 Close out HWF113 source geometry (#1323)
+
+Result: the 18.45 ha lake at 1.19 km requires only a 50.3 km/h average to preserve the
+4.25-minute cycle; the 480,000 L gap demand is 2.60 mm of equivalent depth. Source
+proximity and area are not the obvious geometric blockers. Refill rate, depth, drawdown,
+access and approval remain unknown.
+
+Acceptance:
+
+- Drawdown and required-speed calculations are explicit and reproducible.
+- Candidate sources are compared on the same schedule.
+- No new thresholds, calibration or operational claim.
 - Dashboard green.

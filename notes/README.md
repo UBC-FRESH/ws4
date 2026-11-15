@@ -106,6 +106,8 @@ Working notes for WS4. Notes are living: update them in the same change set as t
 - `reports/p227-stochastic-source.json` — P227 envelope manifest.
 - `reports/p229-alberta-water-source.md` — P229 HWF113 water-source screen.
 - `reports/p229-alberta-water-source.json` — P229 screen manifest.
+- `reports/p230-source-geometry.md` — P230 HWF113 source-distance and drawdown closure.
+- `reports/p230-source-geometry.json` — P230 geometry manifest.
 - `reports/p159-model-card.md` — P159.2 surrogate architecture, training data, losses, and
   limitations.
 - `reports/p159-evaluation.md` — P159.3 held-out synthetic and Dogrib OOD evaluation.
