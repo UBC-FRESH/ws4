@@ -5758,3 +5758,14 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P209.1: ran the P208 drop-depth pilot on the 100 m `2003_96` fixture. Cell depth reaches 1.18 mm,
   but two drops and a 60-minute decay do not hold the gap; final area is 146,191 ha vs 146,532 ha
   free burn. Report: `notes/reports/p209-fine-drop.md`. Dashboard: **GREEN**.
+
+- P215 merged: the process fire-risk evaluation report is on `main` as `9999530`. Branch
+  deleted; no tag, release, or settings change.
+
+- P216.1: added `ProcessFireRiskReport.write`, emitting values, aggregated rows, and a JSON
+  summary with targets and objective.
+
+- P216.2: verified and closed P216. Full dashboard **OVERALL: GREEN**. The artifact and
+  empty-report rejection pass. Report: `notes/reports/p216-risk-report-artifact.md`; close-out:
+  `notes/reports/p216-closeout.md`. Design: `notes/design/ws4-process-risk-artifact.md`.
+  PR: #1266.

@@ -48,3 +48,4 @@ Limits
 - Process ensemble integration: ``ProcessEnsembleResult.fire_regime_summaries``.
 - Optimizer account bridge: ``ws4.opt.fire_risk.fire_regime_account_values``.
 - Process risk report: ``ws4.opt.fire_risk.evaluate_process_fire_risk``.
+- Report artifact: ``ProcessFireRiskReport.write`` (values, aggregated, JSON).

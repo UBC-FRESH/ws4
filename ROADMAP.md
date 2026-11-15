@@ -211,7 +211,8 @@ exists and the maintainer approves it.
 | P212 process-ensemble fire-regime report | #1232 | `feature/p212-process-fire-regime` | complete |
 | P213 process-ensemble fire-regime artifact | #1241 | `feature/p213-ensemble-artifact` | complete |
 | P214 process fire-regime risk accounts | #1246 | `feature/p214-fire-risk-accounts` | complete |
-| P215 process fire-risk evaluation report | #1253 | `feature/p215-process-risk-report` | pr-open |
+| P215 process fire-risk evaluation report | #1253 | `feature/p215-process-risk-report` | complete |
+| P216 process fire-risk report artifact | #1259 | `feature/p216-risk-report-artifact` | pr-open |
 | P201 Firebreak gap sensitivity pilot | #1185 | `feature/p201-firebreak-gap` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
@@ -6246,7 +6247,8 @@ Acceptance:
 
 Parent issue: #1253
 Branch: `feature/p215-process-risk-report`
-Status: pr-open
+Status: complete
+Merge commit: `9999530`
 Design note: `notes/design/ws4-process-risk-report.md`
 Report: `notes/reports/p215-closeout.md`
 Evaluation report: `notes/reports/p215-process-risk-report.md`
@@ -6263,4 +6265,27 @@ Acceptance:
 - The report uses the existing risk aggregation and objective code.
 - Exact penalty and zero-penalty cases are tested.
 - Invalid inputs fail loudly.
+- Dashboard green.
+
+
+## Phase 216: process fire-risk report artifact
+
+Parent issue: #1259
+Branch: `feature/p216-risk-report-artifact`
+Status: pr-open
+Design note: `notes/design/ws4-process-risk-artifact.md`
+Report: `notes/reports/p216-closeout.md`
+Artifact report: `notes/reports/p216-risk-report-artifact.md`
+PR: #1266
+
+Goal: write the P215 process fire-risk report to a stable artifact directory.
+
+- [x] P216.1 Add the process fire-risk artifact writer (#1260)
+- [x] P216.2 Test and close out the artifact (#1261)
+
+Acceptance:
+
+- The artifact is stable and JSON-ready.
+- Targets and objective are recorded.
+- Empty reports are rejected.
 - Dashboard green.
