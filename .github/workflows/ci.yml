@@ -59,6 +59,7 @@ jobs:
   quality:
     name: Quality gates
     runs-on: ubuntu-24.04
+    timeout-minutes: 30
 
     steps:
       - name: Check out repository
@@ -87,7 +88,7 @@ jobs:
         run: python -m mypy
 
       - name: Tests with coverage gate
-        run: python -m pytest
+        run: python -m pytest -q
 
       - name: Validate workflow surfaces
         run: python scripts/check_workflow.py
@@ -145,6 +146,7 @@ jobs:
   pre-commit:
     name: Pre-commit parity
     runs-on: ubuntu-24.04
+    timeout-minutes: 30
 
     steps:
       - name: Check out repository

@@ -5870,3 +5870,6 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P232.2: the 18.45 ha lake at 1.19 km requires 50.3 km/h average and 2.60 mm equivalent
   drawdown for the 480,000 L gap demand. Source geometry is not the blocker; refill/depth
   remain unknown. Report: `notes/reports/p232-source-geometry.md`. Dashboard: **GREEN**.
+
+- P233.1: raised the quality and pre-commit CI job timeouts to 30 minutes and made the
+  quality pytest invocation quiet. No tests or coverage behavior changed. Dashboard: **GREEN**.
