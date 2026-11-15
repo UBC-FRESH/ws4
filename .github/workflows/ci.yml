@@ -165,5 +165,7 @@ jobs:
           python -m pip install -r requirements-dev.txt
           python -m pip install --index-url https://download.pytorch.org/whl/cpu --extra-index-url https://pypi.org/simple torch
 
-      - name: Run every pre-commit hook
-        run: pre-commit run --all-files --show-diff-on-failure
+      - name: Run non-test pre-commit hooks
+        # pytest runs in Quality gates and the dashboard; the pre-commit copy
+        # duplicates the full suite and is killed by the hosted runner.
+        run: SKIP=pytest pre-commit run --all-files --show-diff-on-failure
