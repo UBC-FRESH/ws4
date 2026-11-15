@@ -1,0 +1,1982 @@
+{
+  "2": {
+    "aircraft": 2,
+    "applications": 8,
+    "interval_min": 15.0,
+    "cycle_min": 4.25,
+    "cells": 5,
+    "drops_per_cell": 2,
+    "max_cell_gap_min": 12.75,
+    "max_start_lateness_min": 43.75,
+    "max_end_lateness_min": 45.75,
+    "sustains_interval": true,
+    "feasible": false,
+    "tasks": [
+      {
+        "application": 0,
+        "cell": 0,
+        "stack": 0,
+        "start_min": 0.0
+      },
+      {
+        "application": 0,
+        "cell": 1,
+        "stack": 0,
+        "start_min": 0.0
+      },
+      {
+        "application": 0,
+        "cell": 2,
+        "stack": 0,
+        "start_min": 4.25
+      },
+      {
+        "application": 0,
+        "cell": 3,
+        "stack": 0,
+        "start_min": 4.25
+      },
+      {
+        "application": 0,
+        "cell": 4,
+        "stack": 0,
+        "start_min": 8.5
+      },
+      {
+        "application": 0,
+        "cell": 0,
+        "stack": 1,
+        "start_min": 8.5
+      },
+      {
+        "application": 0,
+        "cell": 1,
+        "stack": 1,
+        "start_min": 12.75
+      },
+      {
+        "application": 0,
+        "cell": 2,
+        "stack": 1,
+        "start_min": 12.75
+      },
+      {
+        "application": 0,
+        "cell": 3,
+        "stack": 1,
+        "start_min": 17.0
+      },
+      {
+        "application": 0,
+        "cell": 4,
+        "stack": 1,
+        "start_min": 17.0
+      },
+      {
+        "application": 1,
+        "cell": 0,
+        "stack": 0,
+        "start_min": 21.25
+      },
+      {
+        "application": 1,
+        "cell": 1,
+        "stack": 0,
+        "start_min": 21.25
+      },
+      {
+        "application": 1,
+        "cell": 2,
+        "stack": 0,
+        "start_min": 25.5
+      },
+      {
+        "application": 1,
+        "cell": 3,
+        "stack": 0,
+        "start_min": 25.5
+      },
+      {
+        "application": 1,
+        "cell": 4,
+        "stack": 0,
+        "start_min": 29.75
+      },
+      {
+        "application": 1,
+        "cell": 0,
+        "stack": 1,
+        "start_min": 29.75
+      },
+      {
+        "application": 1,
+        "cell": 1,
+        "stack": 1,
+        "start_min": 34.0
+      },
+      {
+        "application": 1,
+        "cell": 2,
+        "stack": 1,
+        "start_min": 34.0
+      },
+      {
+        "application": 1,
+        "cell": 3,
+        "stack": 1,
+        "start_min": 38.25
+      },
+      {
+        "application": 1,
+        "cell": 4,
+        "stack": 1,
+        "start_min": 38.25
+      },
+      {
+        "application": 2,
+        "cell": 0,
+        "stack": 0,
+        "start_min": 42.5
+      },
+      {
+        "application": 2,
+        "cell": 1,
+        "stack": 0,
+        "start_min": 42.5
+      },
+      {
+        "application": 2,
+        "cell": 2,
+        "stack": 0,
+        "start_min": 46.75
+      },
+      {
+        "application": 2,
+        "cell": 3,
+        "stack": 0,
+        "start_min": 46.75
+      },
+      {
+        "application": 2,
+        "cell": 4,
+        "stack": 0,
+        "start_min": 51.0
+      },
+      {
+        "application": 2,
+        "cell": 0,
+        "stack": 1,
+        "start_min": 51.0
+      },
+      {
+        "application": 2,
+        "cell": 1,
+        "stack": 1,
+        "start_min": 55.25
+      },
+      {
+        "application": 2,
+        "cell": 2,
+        "stack": 1,
+        "start_min": 55.25
+      },
+      {
+        "application": 2,
+        "cell": 3,
+        "stack": 1,
+        "start_min": 59.5
+      },
+      {
+        "application": 2,
+        "cell": 4,
+        "stack": 1,
+        "start_min": 59.5
+      },
+      {
+        "application": 3,
+        "cell": 0,
+        "stack": 0,
+        "start_min": 63.75
+      },
+      {
+        "application": 3,
+        "cell": 1,
+        "stack": 0,
+        "start_min": 63.75
+      },
+      {
+        "application": 3,
+        "cell": 2,
+        "stack": 0,
+        "start_min": 68.0
+      },
+      {
+        "application": 3,
+        "cell": 3,
+        "stack": 0,
+        "start_min": 68.0
+      },
+      {
+        "application": 3,
+        "cell": 4,
+        "stack": 0,
+        "start_min": 72.25
+      },
+      {
+        "application": 3,
+        "cell": 0,
+        "stack": 1,
+        "start_min": 72.25
+      },
+      {
+        "application": 3,
+        "cell": 1,
+        "stack": 1,
+        "start_min": 76.5
+      },
+      {
+        "application": 3,
+        "cell": 2,
+        "stack": 1,
+        "start_min": 76.5
+      },
+      {
+        "application": 3,
+        "cell": 3,
+        "stack": 1,
+        "start_min": 80.75
+      },
+      {
+        "application": 3,
+        "cell": 4,
+        "stack": 1,
+        "start_min": 80.75
+      },
+      {
+        "application": 4,
+        "cell": 0,
+        "stack": 0,
+        "start_min": 85.0
+      },
+      {
+        "application": 4,
+        "cell": 1,
+        "stack": 0,
+        "start_min": 85.0
+      },
+      {
+        "application": 4,
+        "cell": 2,
+        "stack": 0,
+        "start_min": 89.25
+      },
+      {
+        "application": 4,
+        "cell": 3,
+        "stack": 0,
+        "start_min": 89.25
+      },
+      {
+        "application": 4,
+        "cell": 4,
+        "stack": 0,
+        "start_min": 93.5
+      },
+      {
+        "application": 4,
+        "cell": 0,
+        "stack": 1,
+        "start_min": 93.5
+      },
+      {
+        "application": 4,
+        "cell": 1,
+        "stack": 1,
+        "start_min": 97.75
+      },
+      {
+        "application": 4,
+        "cell": 2,
+        "stack": 1,
+        "start_min": 97.75
+      },
+      {
+        "application": 4,
+        "cell": 3,
+        "stack": 1,
+        "start_min": 102.0
+      },
+      {
+        "application": 4,
+        "cell": 4,
+        "stack": 1,
+        "start_min": 102.0
+      },
+      {
+        "application": 5,
+        "cell": 0,
+        "stack": 0,
+        "start_min": 106.25
+      },
+      {
+        "application": 5,
+        "cell": 1,
+        "stack": 0,
+        "start_min": 106.25
+      },
+      {
+        "application": 5,
+        "cell": 2,
+        "stack": 0,
+        "start_min": 110.5
+      },
+      {
+        "application": 5,
+        "cell": 3,
+        "stack": 0,
+        "start_min": 110.5
+      },
+      {
+        "application": 5,
+        "cell": 4,
+        "stack": 0,
+        "start_min": 114.75
+      },
+      {
+        "application": 5,
+        "cell": 0,
+        "stack": 1,
+        "start_min": 114.75
+      },
+      {
+        "application": 5,
+        "cell": 1,
+        "stack": 1,
+        "start_min": 119.0
+      },
+      {
+        "application": 5,
+        "cell": 2,
+        "stack": 1,
+        "start_min": 119.0
+      },
+      {
+        "application": 5,
+        "cell": 3,
+        "stack": 1,
+        "start_min": 123.25
+      },
+      {
+        "application": 5,
+        "cell": 4,
+        "stack": 1,
+        "start_min": 123.25
+      },
+      {
+        "application": 6,
+        "cell": 0,
+        "stack": 0,
+        "start_min": 127.5
+      },
+      {
+        "application": 6,
+        "cell": 1,
+        "stack": 0,
+        "start_min": 127.5
+      },
+      {
+        "application": 6,
+        "cell": 2,
+        "stack": 0,
+        "start_min": 131.75
+      },
+      {
+        "application": 6,
+        "cell": 3,
+        "stack": 0,
+        "start_min": 131.75
+      },
+      {
+        "application": 6,
+        "cell": 4,
+        "stack": 0,
+        "start_min": 136.0
+      },
+      {
+        "application": 6,
+        "cell": 0,
+        "stack": 1,
+        "start_min": 136.0
+      },
+      {
+        "application": 6,
+        "cell": 1,
+        "stack": 1,
+        "start_min": 140.25
+      },
+      {
+        "application": 6,
+        "cell": 2,
+        "stack": 1,
+        "start_min": 140.25
+      },
+      {
+        "application": 6,
+        "cell": 3,
+        "stack": 1,
+        "start_min": 144.5
+      },
+      {
+        "application": 6,
+        "cell": 4,
+        "stack": 1,
+        "start_min": 144.5
+      },
+      {
+        "application": 7,
+        "cell": 0,
+        "stack": 0,
+        "start_min": 148.75
+      },
+      {
+        "application": 7,
+        "cell": 1,
+        "stack": 0,
+        "start_min": 148.75
+      },
+      {
+        "application": 7,
+        "cell": 2,
+        "stack": 0,
+        "start_min": 153.0
+      },
+      {
+        "application": 7,
+        "cell": 3,
+        "stack": 0,
+        "start_min": 153.0
+      },
+      {
+        "application": 7,
+        "cell": 4,
+        "stack": 0,
+        "start_min": 157.25
+      },
+      {
+        "application": 7,
+        "cell": 0,
+        "stack": 1,
+        "start_min": 157.25
+      },
+      {
+        "application": 7,
+        "cell": 1,
+        "stack": 1,
+        "start_min": 161.5
+      },
+      {
+        "application": 7,
+        "cell": 2,
+        "stack": 1,
+        "start_min": 161.5
+      },
+      {
+        "application": 7,
+        "cell": 3,
+        "stack": 1,
+        "start_min": 165.75
+      },
+      {
+        "application": 7,
+        "cell": 4,
+        "stack": 1,
+        "start_min": 165.75
+      }
+    ]
+  },
+  "3": {
+    "aircraft": 3,
+    "applications": 8,
+    "interval_min": 15.0,
+    "cycle_min": 4.25,
+    "cells": 5,
+    "drops_per_cell": 2,
+    "max_cell_gap_min": 10.75,
+    "max_start_lateness_min": 0.0,
+    "max_end_lateness_min": -2.25,
+    "sustains_interval": true,
+    "feasible": true,
+    "tasks": [
+      {
+        "application": 0,
+        "cell": 0,
+        "stack": 0,
+        "start_min": 0.0
+      },
+      {
+        "application": 0,
+        "cell": 1,
+        "stack": 0,
+        "start_min": 0.0
+      },
+      {
+        "application": 0,
+        "cell": 2,
+        "stack": 0,
+        "start_min": 0.0
+      },
+      {
+        "application": 0,
+        "cell": 3,
+        "stack": 0,
+        "start_min": 4.25
+      },
+      {
+        "application": 0,
+        "cell": 4,
+        "stack": 0,
+        "start_min": 4.25
+      },
+      {
+        "application": 0,
+        "cell": 0,
+        "stack": 1,
+        "start_min": 4.25
+      },
+      {
+        "application": 0,
+        "cell": 1,
+        "stack": 1,
+        "start_min": 8.5
+      },
+      {
+        "application": 0,
+        "cell": 2,
+        "stack": 1,
+        "start_min": 8.5
+      },
+      {
+        "application": 0,
+        "cell": 3,
+        "stack": 1,
+        "start_min": 8.5
+      },
+      {
+        "application": 0,
+        "cell": 4,
+        "stack": 1,
+        "start_min": 12.75
+      },
+      {
+        "application": 1,
+        "cell": 0,
+        "stack": 0,
+        "start_min": 15.0
+      },
+      {
+        "application": 1,
+        "cell": 1,
+        "stack": 0,
+        "start_min": 15.0
+      },
+      {
+        "application": 1,
+        "cell": 2,
+        "stack": 0,
+        "start_min": 17.0
+      },
+      {
+        "application": 1,
+        "cell": 3,
+        "stack": 0,
+        "start_min": 19.25
+      },
+      {
+        "application": 1,
+        "cell": 4,
+        "stack": 0,
+        "start_min": 19.25
+      },
+      {
+        "application": 1,
+        "cell": 0,
+        "stack": 1,
+        "start_min": 21.25
+      },
+      {
+        "application": 1,
+        "cell": 1,
+        "stack": 1,
+        "start_min": 23.5
+      },
+      {
+        "application": 1,
+        "cell": 2,
+        "stack": 1,
+        "start_min": 23.5
+      },
+      {
+        "application": 1,
+        "cell": 3,
+        "stack": 1,
+        "start_min": 25.5
+      },
+      {
+        "application": 1,
+        "cell": 4,
+        "stack": 1,
+        "start_min": 27.75
+      },
+      {
+        "application": 2,
+        "cell": 0,
+        "stack": 0,
+        "start_min": 30.0
+      },
+      {
+        "application": 2,
+        "cell": 1,
+        "stack": 0,
+        "start_min": 30.0
+      },
+      {
+        "application": 2,
+        "cell": 2,
+        "stack": 0,
+        "start_min": 32.0
+      },
+      {
+        "application": 2,
+        "cell": 3,
+        "stack": 0,
+        "start_min": 34.25
+      },
+      {
+        "application": 2,
+        "cell": 4,
+        "stack": 0,
+        "start_min": 34.25
+      },
+      {
+        "application": 2,
+        "cell": 0,
+        "stack": 1,
+        "start_min": 36.25
+      },
+      {
+        "application": 2,
+        "cell": 1,
+        "stack": 1,
+        "start_min": 38.5
+      },
+      {
+        "application": 2,
+        "cell": 2,
+        "stack": 1,
+        "start_min": 38.5
+      },
+      {
+        "application": 2,
+        "cell": 3,
+        "stack": 1,
+        "start_min": 40.5
+      },
+      {
+        "application": 2,
+        "cell": 4,
+        "stack": 1,
+        "start_min": 42.75
+      },
+      {
+        "application": 3,
+        "cell": 0,
+        "stack": 0,
+        "start_min": 45.0
+      },
+      {
+        "application": 3,
+        "cell": 1,
+        "stack": 0,
+        "start_min": 45.0
+      },
+      {
+        "application": 3,
+        "cell": 2,
+        "stack": 0,
+        "start_min": 47.0
+      },
+      {
+        "application": 3,
+        "cell": 3,
+        "stack": 0,
+        "start_min": 49.25
+      },
+      {
+        "application": 3,
+        "cell": 4,
+        "stack": 0,
+        "start_min": 49.25
+      },
+      {
+        "application": 3,
+        "cell": 0,
+        "stack": 1,
+        "start_min": 51.25
+      },
+      {
+        "application": 3,
+        "cell": 1,
+        "stack": 1,
+        "start_min": 53.5
+      },
+      {
+        "application": 3,
+        "cell": 2,
+        "stack": 1,
+        "start_min": 53.5
+      },
+      {
+        "application": 3,
+        "cell": 3,
+        "stack": 1,
+        "start_min": 55.5
+      },
+      {
+        "application": 3,
+        "cell": 4,
+        "stack": 1,
+        "start_min": 57.75
+      },
+      {
+        "application": 4,
+        "cell": 0,
+        "stack": 0,
+        "start_min": 60.0
+      },
+      {
+        "application": 4,
+        "cell": 1,
+        "stack": 0,
+        "start_min": 60.0
+      },
+      {
+        "application": 4,
+        "cell": 2,
+        "stack": 0,
+        "start_min": 62.0
+      },
+      {
+        "application": 4,
+        "cell": 3,
+        "stack": 0,
+        "start_min": 64.25
+      },
+      {
+        "application": 4,
+        "cell": 4,
+        "stack": 0,
+        "start_min": 64.25
+      },
+      {
+        "application": 4,
+        "cell": 0,
+        "stack": 1,
+        "start_min": 66.25
+      },
+      {
+        "application": 4,
+        "cell": 1,
+        "stack": 1,
+        "start_min": 68.5
+      },
+      {
+        "application": 4,
+        "cell": 2,
+        "stack": 1,
+        "start_min": 68.5
+      },
+      {
+        "application": 4,
+        "cell": 3,
+        "stack": 1,
+        "start_min": 70.5
+      },
+      {
+        "application": 4,
+        "cell": 4,
+        "stack": 1,
+        "start_min": 72.75
+      },
+      {
+        "application": 5,
+        "cell": 0,
+        "stack": 0,
+        "start_min": 75.0
+      },
+      {
+        "application": 5,
+        "cell": 1,
+        "stack": 0,
+        "start_min": 75.0
+      },
+      {
+        "application": 5,
+        "cell": 2,
+        "stack": 0,
+        "start_min": 77.0
+      },
+      {
+        "application": 5,
+        "cell": 3,
+        "stack": 0,
+        "start_min": 79.25
+      },
+      {
+        "application": 5,
+        "cell": 4,
+        "stack": 0,
+        "start_min": 79.25
+      },
+      {
+        "application": 5,
+        "cell": 0,
+        "stack": 1,
+        "start_min": 81.25
+      },
+      {
+        "application": 5,
+        "cell": 1,
+        "stack": 1,
+        "start_min": 83.5
+      },
+      {
+        "application": 5,
+        "cell": 2,
+        "stack": 1,
+        "start_min": 83.5
+      },
+      {
+        "application": 5,
+        "cell": 3,
+        "stack": 1,
+        "start_min": 85.5
+      },
+      {
+        "application": 5,
+        "cell": 4,
+        "stack": 1,
+        "start_min": 87.75
+      },
+      {
+        "application": 6,
+        "cell": 0,
+        "stack": 0,
+        "start_min": 90.0
+      },
+      {
+        "application": 6,
+        "cell": 1,
+        "stack": 0,
+        "start_min": 90.0
+      },
+      {
+        "application": 6,
+        "cell": 2,
+        "stack": 0,
+        "start_min": 92.0
+      },
+      {
+        "application": 6,
+        "cell": 3,
+        "stack": 0,
+        "start_min": 94.25
+      },
+      {
+        "application": 6,
+        "cell": 4,
+        "stack": 0,
+        "start_min": 94.25
+      },
+      {
+        "application": 6,
+        "cell": 0,
+        "stack": 1,
+        "start_min": 96.25
+      },
+      {
+        "application": 6,
+        "cell": 1,
+        "stack": 1,
+        "start_min": 98.5
+      },
+      {
+        "application": 6,
+        "cell": 2,
+        "stack": 1,
+        "start_min": 98.5
+      },
+      {
+        "application": 6,
+        "cell": 3,
+        "stack": 1,
+        "start_min": 100.5
+      },
+      {
+        "application": 6,
+        "cell": 4,
+        "stack": 1,
+        "start_min": 102.75
+      },
+      {
+        "application": 7,
+        "cell": 0,
+        "stack": 0,
+        "start_min": 105.0
+      },
+      {
+        "application": 7,
+        "cell": 1,
+        "stack": 0,
+        "start_min": 105.0
+      },
+      {
+        "application": 7,
+        "cell": 2,
+        "stack": 0,
+        "start_min": 107.0
+      },
+      {
+        "application": 7,
+        "cell": 3,
+        "stack": 0,
+        "start_min": 109.25
+      },
+      {
+        "application": 7,
+        "cell": 4,
+        "stack": 0,
+        "start_min": 109.25
+      },
+      {
+        "application": 7,
+        "cell": 0,
+        "stack": 1,
+        "start_min": 111.25
+      },
+      {
+        "application": 7,
+        "cell": 1,
+        "stack": 1,
+        "start_min": 113.5
+      },
+      {
+        "application": 7,
+        "cell": 2,
+        "stack": 1,
+        "start_min": 113.5
+      },
+      {
+        "application": 7,
+        "cell": 3,
+        "stack": 1,
+        "start_min": 115.5
+      },
+      {
+        "application": 7,
+        "cell": 4,
+        "stack": 1,
+        "start_min": 117.75
+      }
+    ]
+  },
+  "4": {
+    "aircraft": 4,
+    "applications": 8,
+    "interval_min": 15.0,
+    "cycle_min": 4.25,
+    "cells": 5,
+    "drops_per_cell": 2,
+    "max_cell_gap_min": 10.75,
+    "max_start_lateness_min": 0.0,
+    "max_end_lateness_min": -6.5,
+    "sustains_interval": true,
+    "feasible": true,
+    "tasks": [
+      {
+        "application": 0,
+        "cell": 0,
+        "stack": 0,
+        "start_min": 0.0
+      },
+      {
+        "application": 0,
+        "cell": 1,
+        "stack": 0,
+        "start_min": 0.0
+      },
+      {
+        "application": 0,
+        "cell": 2,
+        "stack": 0,
+        "start_min": 0.0
+      },
+      {
+        "application": 0,
+        "cell": 3,
+        "stack": 0,
+        "start_min": 0.0
+      },
+      {
+        "application": 0,
+        "cell": 4,
+        "stack": 0,
+        "start_min": 4.25
+      },
+      {
+        "application": 0,
+        "cell": 0,
+        "stack": 1,
+        "start_min": 4.25
+      },
+      {
+        "application": 0,
+        "cell": 1,
+        "stack": 1,
+        "start_min": 4.25
+      },
+      {
+        "application": 0,
+        "cell": 2,
+        "stack": 1,
+        "start_min": 4.25
+      },
+      {
+        "application": 0,
+        "cell": 3,
+        "stack": 1,
+        "start_min": 8.5
+      },
+      {
+        "application": 0,
+        "cell": 4,
+        "stack": 1,
+        "start_min": 8.5
+      },
+      {
+        "application": 1,
+        "cell": 0,
+        "stack": 0,
+        "start_min": 15.0
+      },
+      {
+        "application": 1,
+        "cell": 1,
+        "stack": 0,
+        "start_min": 15.0
+      },
+      {
+        "application": 1,
+        "cell": 2,
+        "stack": 0,
+        "start_min": 15.0
+      },
+      {
+        "application": 1,
+        "cell": 3,
+        "stack": 0,
+        "start_min": 15.0
+      },
+      {
+        "application": 1,
+        "cell": 4,
+        "stack": 0,
+        "start_min": 19.25
+      },
+      {
+        "application": 1,
+        "cell": 0,
+        "stack": 1,
+        "start_min": 19.25
+      },
+      {
+        "application": 1,
+        "cell": 1,
+        "stack": 1,
+        "start_min": 19.25
+      },
+      {
+        "application": 1,
+        "cell": 2,
+        "stack": 1,
+        "start_min": 19.25
+      },
+      {
+        "application": 1,
+        "cell": 3,
+        "stack": 1,
+        "start_min": 23.5
+      },
+      {
+        "application": 1,
+        "cell": 4,
+        "stack": 1,
+        "start_min": 23.5
+      },
+      {
+        "application": 2,
+        "cell": 0,
+        "stack": 0,
+        "start_min": 30.0
+      },
+      {
+        "application": 2,
+        "cell": 1,
+        "stack": 0,
+        "start_min": 30.0
+      },
+      {
+        "application": 2,
+        "cell": 2,
+        "stack": 0,
+        "start_min": 30.0
+      },
+      {
+        "application": 2,
+        "cell": 3,
+        "stack": 0,
+        "start_min": 30.0
+      },
+      {
+        "application": 2,
+        "cell": 4,
+        "stack": 0,
+        "start_min": 34.25
+      },
+      {
+        "application": 2,
+        "cell": 0,
+        "stack": 1,
+        "start_min": 34.25
+      },
+      {
+        "application": 2,
+        "cell": 1,
+        "stack": 1,
+        "start_min": 34.25
+      },
+      {
+        "application": 2,
+        "cell": 2,
+        "stack": 1,
+        "start_min": 34.25
+      },
+      {
+        "application": 2,
+        "cell": 3,
+        "stack": 1,
+        "start_min": 38.5
+      },
+      {
+        "application": 2,
+        "cell": 4,
+        "stack": 1,
+        "start_min": 38.5
+      },
+      {
+        "application": 3,
+        "cell": 0,
+        "stack": 0,
+        "start_min": 45.0
+      },
+      {
+        "application": 3,
+        "cell": 1,
+        "stack": 0,
+        "start_min": 45.0
+      },
+      {
+        "application": 3,
+        "cell": 2,
+        "stack": 0,
+        "start_min": 45.0
+      },
+      {
+        "application": 3,
+        "cell": 3,
+        "stack": 0,
+        "start_min": 45.0
+      },
+      {
+        "application": 3,
+        "cell": 4,
+        "stack": 0,
+        "start_min": 49.25
+      },
+      {
+        "application": 3,
+        "cell": 0,
+        "stack": 1,
+        "start_min": 49.25
+      },
+      {
+        "application": 3,
+        "cell": 1,
+        "stack": 1,
+        "start_min": 49.25
+      },
+      {
+        "application": 3,
+        "cell": 2,
+        "stack": 1,
+        "start_min": 49.25
+      },
+      {
+        "application": 3,
+        "cell": 3,
+        "stack": 1,
+        "start_min": 53.5
+      },
+      {
+        "application": 3,
+        "cell": 4,
+        "stack": 1,
+        "start_min": 53.5
+      },
+      {
+        "application": 4,
+        "cell": 0,
+        "stack": 0,
+        "start_min": 60.0
+      },
+      {
+        "application": 4,
+        "cell": 1,
+        "stack": 0,
+        "start_min": 60.0
+      },
+      {
+        "application": 4,
+        "cell": 2,
+        "stack": 0,
+        "start_min": 60.0
+      },
+      {
+        "application": 4,
+        "cell": 3,
+        "stack": 0,
+        "start_min": 60.0
+      },
+      {
+        "application": 4,
+        "cell": 4,
+        "stack": 0,
+        "start_min": 64.25
+      },
+      {
+        "application": 4,
+        "cell": 0,
+        "stack": 1,
+        "start_min": 64.25
+      },
+      {
+        "application": 4,
+        "cell": 1,
+        "stack": 1,
+        "start_min": 64.25
+      },
+      {
+        "application": 4,
+        "cell": 2,
+        "stack": 1,
+        "start_min": 64.25
+      },
+      {
+        "application": 4,
+        "cell": 3,
+        "stack": 1,
+        "start_min": 68.5
+      },
+      {
+        "application": 4,
+        "cell": 4,
+        "stack": 1,
+        "start_min": 68.5
+      },
+      {
+        "application": 5,
+        "cell": 0,
+        "stack": 0,
+        "start_min": 75.0
+      },
+      {
+        "application": 5,
+        "cell": 1,
+        "stack": 0,
+        "start_min": 75.0
+      },
+      {
+        "application": 5,
+        "cell": 2,
+        "stack": 0,
+        "start_min": 75.0
+      },
+      {
+        "application": 5,
+        "cell": 3,
+        "stack": 0,
+        "start_min": 75.0
+      },
+      {
+        "application": 5,
+        "cell": 4,
+        "stack": 0,
+        "start_min": 79.25
+      },
+      {
+        "application": 5,
+        "cell": 0,
+        "stack": 1,
+        "start_min": 79.25
+      },
+      {
+        "application": 5,
+        "cell": 1,
+        "stack": 1,
+        "start_min": 79.25
+      },
+      {
+        "application": 5,
+        "cell": 2,
+        "stack": 1,
+        "start_min": 79.25
+      },
+      {
+        "application": 5,
+        "cell": 3,
+        "stack": 1,
+        "start_min": 83.5
+      },
+      {
+        "application": 5,
+        "cell": 4,
+        "stack": 1,
+        "start_min": 83.5
+      },
+      {
+        "application": 6,
+        "cell": 0,
+        "stack": 0,
+        "start_min": 90.0
+      },
+      {
+        "application": 6,
+        "cell": 1,
+        "stack": 0,
+        "start_min": 90.0
+      },
+      {
+        "application": 6,
+        "cell": 2,
+        "stack": 0,
+        "start_min": 90.0
+      },
+      {
+        "application": 6,
+        "cell": 3,
+        "stack": 0,
+        "start_min": 90.0
+      },
+      {
+        "application": 6,
+        "cell": 4,
+        "stack": 0,
+        "start_min": 94.25
+      },
+      {
+        "application": 6,
+        "cell": 0,
+        "stack": 1,
+        "start_min": 94.25
+      },
+      {
+        "application": 6,
+        "cell": 1,
+        "stack": 1,
+        "start_min": 94.25
+      },
+      {
+        "application": 6,
+        "cell": 2,
+        "stack": 1,
+        "start_min": 94.25
+      },
+      {
+        "application": 6,
+        "cell": 3,
+        "stack": 1,
+        "start_min": 98.5
+      },
+      {
+        "application": 6,
+        "cell": 4,
+        "stack": 1,
+        "start_min": 98.5
+      },
+      {
+        "application": 7,
+        "cell": 0,
+        "stack": 0,
+        "start_min": 105.0
+      },
+      {
+        "application": 7,
+        "cell": 1,
+        "stack": 0,
+        "start_min": 105.0
+      },
+      {
+        "application": 7,
+        "cell": 2,
+        "stack": 0,
+        "start_min": 105.0
+      },
+      {
+        "application": 7,
+        "cell": 3,
+        "stack": 0,
+        "start_min": 105.0
+      },
+      {
+        "application": 7,
+        "cell": 4,
+        "stack": 0,
+        "start_min": 109.25
+      },
+      {
+        "application": 7,
+        "cell": 0,
+        "stack": 1,
+        "start_min": 109.25
+      },
+      {
+        "application": 7,
+        "cell": 1,
+        "stack": 1,
+        "start_min": 109.25
+      },
+      {
+        "application": 7,
+        "cell": 2,
+        "stack": 1,
+        "start_min": 109.25
+      },
+      {
+        "application": 7,
+        "cell": 3,
+        "stack": 1,
+        "start_min": 113.5
+      },
+      {
+        "application": 7,
+        "cell": 4,
+        "stack": 1,
+        "start_min": 113.5
+      }
+    ]
+  },
+  "5": {
+    "aircraft": 5,
+    "applications": 8,
+    "interval_min": 15.0,
+    "cycle_min": 4.25,
+    "cells": 5,
+    "drops_per_cell": 2,
+    "max_cell_gap_min": 10.75,
+    "max_start_lateness_min": 0.0,
+    "max_end_lateness_min": -10.75,
+    "sustains_interval": true,
+    "feasible": true,
+    "tasks": [
+      {
+        "application": 0,
+        "cell": 0,
+        "stack": 0,
+        "start_min": 0.0
+      },
+      {
+        "application": 0,
+        "cell": 1,
+        "stack": 0,
+        "start_min": 0.0
+      },
+      {
+        "application": 0,
+        "cell": 2,
+        "stack": 0,
+        "start_min": 0.0
+      },
+      {
+        "application": 0,
+        "cell": 3,
+        "stack": 0,
+        "start_min": 0.0
+      },
+      {
+        "application": 0,
+        "cell": 4,
+        "stack": 0,
+        "start_min": 0.0
+      },
+      {
+        "application": 0,
+        "cell": 0,
+        "stack": 1,
+        "start_min": 4.25
+      },
+      {
+        "application": 0,
+        "cell": 1,
+        "stack": 1,
+        "start_min": 4.25
+      },
+      {
+        "application": 0,
+        "cell": 2,
+        "stack": 1,
+        "start_min": 4.25
+      },
+      {
+        "application": 0,
+        "cell": 3,
+        "stack": 1,
+        "start_min": 4.25
+      },
+      {
+        "application": 0,
+        "cell": 4,
+        "stack": 1,
+        "start_min": 4.25
+      },
+      {
+        "application": 1,
+        "cell": 0,
+        "stack": 0,
+        "start_min": 15.0
+      },
+      {
+        "application": 1,
+        "cell": 1,
+        "stack": 0,
+        "start_min": 15.0
+      },
+      {
+        "application": 1,
+        "cell": 2,
+        "stack": 0,
+        "start_min": 15.0
+      },
+      {
+        "application": 1,
+        "cell": 3,
+        "stack": 0,
+        "start_min": 15.0
+      },
+      {
+        "application": 1,
+        "cell": 4,
+        "stack": 0,
+        "start_min": 15.0
+      },
+      {
+        "application": 1,
+        "cell": 0,
+        "stack": 1,
+        "start_min": 19.25
+      },
+      {
+        "application": 1,
+        "cell": 1,
+        "stack": 1,
+        "start_min": 19.25
+      },
+      {
+        "application": 1,
+        "cell": 2,
+        "stack": 1,
+        "start_min": 19.25
+      },
+      {
+        "application": 1,
+        "cell": 3,
+        "stack": 1,
+        "start_min": 19.25
+      },
+      {
+        "application": 1,
+        "cell": 4,
+        "stack": 1,
+        "start_min": 19.25
+      },
+      {
+        "application": 2,
+        "cell": 0,
+        "stack": 0,
+        "start_min": 30.0
+      },
+      {
+        "application": 2,
+        "cell": 1,
+        "stack": 0,
+        "start_min": 30.0
+      },
+      {
+        "application": 2,
+        "cell": 2,
+        "stack": 0,
+        "start_min": 30.0
+      },
+      {
+        "application": 2,
+        "cell": 3,
+        "stack": 0,
+        "start_min": 30.0
+      },
+      {
+        "application": 2,
+        "cell": 4,
+        "stack": 0,
+        "start_min": 30.0
+      },
+      {
+        "application": 2,
+        "cell": 0,
+        "stack": 1,
+        "start_min": 34.25
+      },
+      {
+        "application": 2,
+        "cell": 1,
+        "stack": 1,
+        "start_min": 34.25
+      },
+      {
+        "application": 2,
+        "cell": 2,
+        "stack": 1,
+        "start_min": 34.25
+      },
+      {
+        "application": 2,
+        "cell": 3,
+        "stack": 1,
+        "start_min": 34.25
+      },
+      {
+        "application": 2,
+        "cell": 4,
+        "stack": 1,
+        "start_min": 34.25
+      },
+      {
+        "application": 3,
+        "cell": 0,
+        "stack": 0,
+        "start_min": 45.0
+      },
+      {
+        "application": 3,
+        "cell": 1,
+        "stack": 0,
+        "start_min": 45.0
+      },
+      {
+        "application": 3,
+        "cell": 2,
+        "stack": 0,
+        "start_min": 45.0
+      },
+      {
+        "application": 3,
+        "cell": 3,
+        "stack": 0,
+        "start_min": 45.0
+      },
+      {
+        "application": 3,
+        "cell": 4,
+        "stack": 0,
+        "start_min": 45.0
+      },
+      {
+        "application": 3,
+        "cell": 0,
+        "stack": 1,
+        "start_min": 49.25
+      },
+      {
+        "application": 3,
+        "cell": 1,
+        "stack": 1,
+        "start_min": 49.25
+      },
+      {
+        "application": 3,
+        "cell": 2,
+        "stack": 1,
+        "start_min": 49.25
+      },
+      {
+        "application": 3,
+        "cell": 3,
+        "stack": 1,
+        "start_min": 49.25
+      },
+      {
+        "application": 3,
+        "cell": 4,
+        "stack": 1,
+        "start_min": 49.25
+      },
+      {
+        "application": 4,
+        "cell": 0,
+        "stack": 0,
+        "start_min": 60.0
+      },
+      {
+        "application": 4,
+        "cell": 1,
+        "stack": 0,
+        "start_min": 60.0
+      },
+      {
+        "application": 4,
+        "cell": 2,
+        "stack": 0,
+        "start_min": 60.0
+      },
+      {
+        "application": 4,
+        "cell": 3,
+        "stack": 0,
+        "start_min": 60.0
+      },
+      {
+        "application": 4,
+        "cell": 4,
+        "stack": 0,
+        "start_min": 60.0
+      },
+      {
+        "application": 4,
+        "cell": 0,
+        "stack": 1,
+        "start_min": 64.25
+      },
+      {
+        "application": 4,
+        "cell": 1,
+        "stack": 1,
+        "start_min": 64.25
+      },
+      {
+        "application": 4,
+        "cell": 2,
+        "stack": 1,
+        "start_min": 64.25
+      },
+      {
+        "application": 4,
+        "cell": 3,
+        "stack": 1,
+        "start_min": 64.25
+      },
+      {
+        "application": 4,
+        "cell": 4,
+        "stack": 1,
+        "start_min": 64.25
+      },
+      {
+        "application": 5,
+        "cell": 0,
+        "stack": 0,
+        "start_min": 75.0
+      },
+      {
+        "application": 5,
+        "cell": 1,
+        "stack": 0,
+        "start_min": 75.0
+      },
+      {
+        "application": 5,
+        "cell": 2,
+        "stack": 0,
+        "start_min": 75.0
+      },
+      {
+        "application": 5,
+        "cell": 3,
+        "stack": 0,
+        "start_min": 75.0
+      },
+      {
+        "application": 5,
+        "cell": 4,
+        "stack": 0,
+        "start_min": 75.0
+      },
+      {
+        "application": 5,
+        "cell": 0,
+        "stack": 1,
+        "start_min": 79.25
+      },
+      {
+        "application": 5,
+        "cell": 1,
+        "stack": 1,
+        "start_min": 79.25
+      },
+      {
+        "application": 5,
+        "cell": 2,
+        "stack": 1,
+        "start_min": 79.25
+      },
+      {
+        "application": 5,
+        "cell": 3,
+        "stack": 1,
+        "start_min": 79.25
+      },
+      {
+        "application": 5,
+        "cell": 4,
+        "stack": 1,
+        "start_min": 79.25
+      },
+      {
+        "application": 6,
+        "cell": 0,
+        "stack": 0,
+        "start_min": 90.0
+      },
+      {
+        "application": 6,
+        "cell": 1,
+        "stack": 0,
+        "start_min": 90.0
+      },
+      {
+        "application": 6,
+        "cell": 2,
+        "stack": 0,
+        "start_min": 90.0
+      },
+      {
+        "application": 6,
+        "cell": 3,
+        "stack": 0,
+        "start_min": 90.0
+      },
+      {
+        "application": 6,
+        "cell": 4,
+        "stack": 0,
+        "start_min": 90.0
+      },
+      {
+        "application": 6,
+        "cell": 0,
+        "stack": 1,
+        "start_min": 94.25
+      },
+      {
+        "application": 6,
+        "cell": 1,
+        "stack": 1,
+        "start_min": 94.25
+      },
+      {
+        "application": 6,
+        "cell": 2,
+        "stack": 1,
+        "start_min": 94.25
+      },
+      {
+        "application": 6,
+        "cell": 3,
+        "stack": 1,
+        "start_min": 94.25
+      },
+      {
+        "application": 6,
+        "cell": 4,
+        "stack": 1,
+        "start_min": 94.25
+      },
+      {
+        "application": 7,
+        "cell": 0,
+        "stack": 0,
+        "start_min": 105.0
+      },
+      {
+        "application": 7,
+        "cell": 1,
+        "stack": 0,
+        "start_min": 105.0
+      },
+      {
+        "application": 7,
+        "cell": 2,
+        "stack": 0,
+        "start_min": 105.0
+      },
+      {
+        "application": 7,
+        "cell": 3,
+        "stack": 0,
+        "start_min": 105.0
+      },
+      {
+        "application": 7,
+        "cell": 4,
+        "stack": 0,
+        "start_min": 105.0
+      },
+      {
+        "application": 7,
+        "cell": 0,
+        "stack": 1,
+        "start_min": 109.25
+      },
+      {
+        "application": 7,
+        "cell": 1,
+        "stack": 1,
+        "start_min": 109.25
+      },
+      {
+        "application": 7,
+        "cell": 2,
+        "stack": 1,
+        "start_min": 109.25
+      },
+      {
+        "application": 7,
+        "cell": 3,
+        "stack": 1,
+        "start_min": 109.25
+      },
+      {
+        "application": 7,
+        "cell": 4,
+        "stack": 1,
+        "start_min": 109.25
+      }
+    ]
+  }
+}

@@ -5817,3 +5817,8 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   missing-file failure pass. Report: `notes/reports/p221-optimizer-bundle.md`; close-out:
   `notes/reports/p221-closeout.md`. Design: `notes/design/ws4-optimizer-risk-bundle.md`.
   PR: #1286.
+
+- P222.1: added a deterministic earliest-available aircraft queue for gap re-wetting.
+- P222.2: three aircraft sustain the 15-minute gap application with 2.25 min margin; two aircraft
+  accumulate 45.75 min of lateness. Report: `notes/reports/p222-dispatch-queue.md`.
+  Dashboard: **GREEN**.
