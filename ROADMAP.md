@@ -218,6 +218,7 @@ exists and the maintainer approves it.
 | P220 combined optimizer/process risk verification bundle | #1276 | `feature/p220-risk-bundle` | complete |
 | P221 bundle existing optimizer risk verification | #1281 | `feature/p221-optimizer-bundle` | pr-open |
 | P222 Gap-only dispatch queue feasibility | #1288 | `feature/p222-dispatch-queue` | pr-open |
+| P224 Water-source throughput lower bound | #1295 | `feature/p224-water-source` | pr-open |
 | P217 Re-wetting interval at 100 m | #1262 | `feature/p217-rewetting` | pr-open |
 | P201 Firebreak gap sensitivity pilot | #1185 | `feature/p201-firebreak-gap` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
@@ -6440,5 +6441,29 @@ Acceptance:
 
 - Application lateness and maximum cell gap reported.
 - Three, four and five aircraft compared.
+- No calibration and no operational claim.
+- Dashboard green.
+
+## Phase 224: water-source throughput lower bound
+
+Parent issue: #1295
+Branch: `feature/p224-water-source`
+Status: pr-open
+Report: `notes/reports/p224-water-source.md`
+Manifest: `notes/reports/p224-water-source.json`
+PR: #1299
+
+Goal: test whether the three-aircraft schedule survives a water-source throughput limit.
+
+- [x] P224.1 Add the source throughput calculator (#1296)
+- [x] P224.2 Close out water-source capacity (#1297)
+
+Result: 40 sorties/h needs 240,000 L/h. One source needs 4,000 L/min; two need 2,000 L/min each.
+Both are exactly saturated.
+
+Acceptance:
+
+- Required and supplied water rates explicit.
+- Source-limited sorties and utilization reported.
 - No calibration and no operational claim.
 - Dashboard green.

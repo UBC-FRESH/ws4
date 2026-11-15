@@ -5822,3 +5822,7 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P222.2: three aircraft sustain the 15-minute gap application with 2.25 min margin; two aircraft
   accumulate 45.75 min of lateness. Report: `notes/reports/p222-dispatch-queue.md`.
   Dashboard: **GREEN**.
+
+- P224.1: added a deterministic water-source throughput calculator.
+- P224.2: the P222 demand needs 4,000 L/min from one source, or 2,000 L/min per source for two;
+  both hit 100% utilization. Report: `notes/reports/p224-water-source.md`. Dashboard: **GREEN**.

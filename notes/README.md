@@ -96,6 +96,8 @@ Working notes for WS4. Notes are living: update them in the same change set as t
 - `reports/p219-rewetting-capacity.json` — P219 capacity manifest.
 - `reports/p222-dispatch-queue.md` — P222 three-aircraft queue feasibility.
 - `reports/p222-dispatch-queue.json` — P222 queue manifest.
+- `reports/p224-water-source.md` — P224 source-throughput lower bound.
+- `reports/p224-water-source.json` — P224 source manifest.
 - `reports/p159-model-card.md` — P159.2 surrogate architecture, training data, losses, and
   limitations.
 - `reports/p159-evaluation.md` — P159.3 held-out synthetic and Dogrib OOD evaluation.
