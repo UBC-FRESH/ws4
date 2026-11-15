@@ -218,12 +218,13 @@ exists and the maintainer approves it.
 | P220 combined optimizer/process risk verification bundle | #1276 | `feature/p220-risk-bundle` | complete |
 | P221 bundle existing optimizer risk verification | #1281 | `feature/p221-optimizer-bundle` | complete |
 | P222 Gap-only dispatch queue feasibility | #1288 | `feature/p222-dispatch-queue` | complete |
-| P223 process/estate account comparison | #1292 | `feature/p223-account-comparison` | pr-open |
+| P223 process/estate account comparison | #1292 | `feature/p223-account-comparison` | complete |
 | P224 Water-source throughput lower bound | #1295 | `feature/p224-water-source` | pr-open |
 | P225 Water-source service utilization | #1300 | `feature/p225-source-service` | pr-open |
 | P226 Source queue and refill feasibility | #1304 | `feature/p226-source-queue` | pr-open |
 | P227 Stochastic source-queue envelope | #1308 | `feature/p227-stochastic-source` | pr-open |
 | P229 Alberta HWF113 water-source screen | #1316 | `feature/p229-alberta-water` | pr-open |
+| P230 shared-schedule process/estate comparison | #1313 | `feature/p230-shared-schedule` | pr-open |
 | P217 Re-wetting interval at 100 m | #1262 | `feature/p217-rewetting` | pr-open |
 | P201 Firebreak gap sensitivity pilot | #1185 | `feature/p201-firebreak-gap` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
@@ -6454,7 +6455,8 @@ Acceptance:
 
 Parent issue: #1292
 Branch: `feature/p223-account-comparison`
-Status: pr-open
+Status: complete
+Merge commit: `15d9ec9`
 Design note: `notes/design/ws4-account-comparison.md`
 Report: `notes/reports/p223-closeout.md`
 Comparison report: `notes/reports/p223-account-comparison.md`
@@ -6590,4 +6592,26 @@ Acceptance:
 - Jurisdiction and case identity are explicit.
 - Nearest source candidates are reproducible from the documented Alberta open query.
 - No calibration and no operational claim.
+
+
+## Phase 230: shared-schedule process/estate comparison
+
+Parent issue: #1313
+Branch: `feature/p230-shared-schedule`
+Status: pr-open
+Design note: `notes/design/ws4-shared-schedule.md`
+Report: `notes/reports/p230-closeout.md`
+Comparison report: `notes/reports/p230-shared-schedule.md`
+PR: #TBD
+
+Goal: run one clearcut schedule through both engines and compare mapped final volume.
+
+- [x] P230.1 Run both engines on one schedule (#1314)
+- [x] P230.2 Compare and close out the shared schedule (#1315)
+
+Acceptance:
+
+- Both engines run the same schedule.
+- Final mapped volume matches exactly.
+- The comparison artifact reports zero difference.
 - Dashboard green.

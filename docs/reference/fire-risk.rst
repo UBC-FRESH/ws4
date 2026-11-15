@@ -54,3 +54,4 @@ Limits
 - Combined bundle: ``write_risk_verification_bundle``.
 - Existing optimizer output: ``bundle_existing_risk_verification``.
 - Explicit account comparison: ``ws4.opt.account_compare.compare_accounts``.
+- Shared-schedule integration test: ``tests/test_process_estate_shared_schedule.py``.
