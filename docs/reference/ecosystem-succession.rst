@@ -42,6 +42,7 @@ Yield bridge
 the schema version, and the calibration status/source. The default status is ``provisional``.
 An optional species ``age_volume_curves`` mapping overrides the biomass rate with age-based
 volume per hectare. Intermediate ages interpolate; ages outside the range clamp to the endpoint.
+``age_volume_curves_from_frame`` loads these curves from a compiled ``curves.parquet`` table.
 
 The bridge can attach ``volume_m3_ha`` and ``volume_m3`` to a management frame keyed by
 ``fragment_id``.

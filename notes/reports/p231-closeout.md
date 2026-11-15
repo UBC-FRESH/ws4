@@ -38,4 +38,4 @@ Load the compiled estate yield curves into the bridge instead of the test curve.
 
 ## Pull request
 
-PR: #1331 is queued for maintainer approval. Do not merge without approval.
+Merged as `a99a882` (PR #1331); branch deleted.

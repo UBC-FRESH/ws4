@@ -5883,3 +5883,15 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P232.2: the 18.45 ha lake at 1.19 km requires 50.3 km/h average and 2.60 mm equivalent
   drawdown for the 480,000 L gap demand. Source geometry is not the blocker; refill/depth
   remain unknown. Report: `notes/reports/p232-source-geometry.md`. Dashboard: **GREEN**.
+
+- P231 merged: age-based volume curves are on `main` as `a99a882`. Branch deleted; no tag,
+  release, or settings change.
+
+- P234.1: added `age_volume_curves_from_frame` for compiled curve tables with validation.
+
+- P234.2: used the compiled natural curve in the shared schedule; both engines still report 340 m3.
+  Dashboard: pending full run.
+
+- P234.3: verified and closed P234. Full dashboard **OVERALL: GREEN**. Compiled curve and shared
+  schedule both report 340 m3. Report: `notes/reports/p234-compiled-curves.md`; close-out:
+  `notes/reports/p234-closeout.md`. Design: `notes/design/ws4-compiled-curves.md`. PR: #TBD.

@@ -277,3 +277,52 @@ class SpeciesVolumeBridge:
         return management.copy(deep=True).merge(
             self.table(state), on="fragment_id", how="left", validate="one_to_one"
         )
+
+
+def age_volume_curves_from_frame(
+    frame: pd.DataFrame, species_curves: Mapping[str, int]
+) -> dict[str, dict[int, float]]:
+    """Build validated age-volume curves from a compiled curves table.
+
+    Parameters
+    ----------
+    frame : pandas.DataFrame
+        Curve table with ``curve_id``, ``x``, and ``y`` columns.
+    species_curves : mapping of str to int
+        Species label to compiled curve id.
+
+    Returns
+    -------
+    dict
+        Species to age-to-volume-per-hectare mapping.
+
+    Raises
+    ------
+    BridgeError
+        If columns are missing, a curve is absent, an age is not a non-negative integer,
+        a volume is invalid, or an age is duplicated.
+    """
+    for column in ("curve_id", "x", "y"):
+        if column not in frame.columns:
+            raise BridgeError(f"curve table needs a {column!r} column")
+    curves: dict[str, dict[int, float]] = {}
+    for species, curve_id in species_curves.items():
+        if not isinstance(species, str) or not species.strip():
+            raise BridgeError("species names must be non-empty strings")
+        subset = frame.loc[frame["curve_id"] == curve_id]
+        if subset.empty:
+            raise BridgeError(f"curve {curve_id} for {species!r} is missing")
+        curve: dict[int, float] = {}
+        for row in subset.itertuples(index=False):
+            raw_x = float(str(row.x))
+            raw_y = float(str(row.y))
+            if not raw_x.is_integer() or raw_x < 0.0:
+                raise BridgeError("curve ages must be non-negative integers")
+            age = int(raw_x)
+            if age in curve:
+                raise BridgeError(f"curve {curve_id} has duplicate age {age}")
+            if not math.isfinite(raw_y) or raw_y < 0.0:
+                raise BridgeError("curve volumes must be finite and non-negative")
+            curve[age] = raw_y
+        curves[species.strip()] = dict(sorted(curve.items()))
+    return curves
