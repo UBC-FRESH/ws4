@@ -227,6 +227,7 @@ exists and the maintainer approves it.
 | P230 shared-schedule process/estate comparison | #1313 | `feature/p230-shared-schedule` | complete |
 | P231 age-based volume curves | #1326 | `feature/p231-age-curves` | pr-open |
 | P232 HWF113 source-distance and drawdown closure | #1321 | `feature/p232-source-geometry` | pr-open |
+| P233 Harden full-suite CI job timeouts | #1332 | `feature/p233-ci-timeouts` | pr-open |
 | P217 Re-wetting interval at 100 m | #1262 | `feature/p217-rewetting` | pr-open |
 | P201 Firebreak gap sensitivity pilot | #1185 | `feature/p201-firebreak-gap` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
@@ -6666,3 +6667,24 @@ Acceptance:
 - Candidate sources are compared on the same schedule.
 - No new thresholds, calibration or operational claim.
 - Dashboard green.
+
+## Phase 233: harden full-suite CI job timeouts
+
+Parent issue: #1332
+Branch: `feature/p233-ci-timeouts`
+Status: pr-open
+PR: #1334
+
+Goal: stop the quality job from being canceled before the full test suite finishes.
+
+- [x] P233.1 Raise quality-job timeout and quiet pytest (#1333)
+
+Result: quality, pre-commit and dashboard jobs now have an explicit 30-minute timeout. The duplicate
+quality test step and the pre-commit pytest hook are skipped in CI; the green dashboard runs
+the full suite and coverage gate. The test set and coverage gate are unchanged.
+
+Acceptance:
+
+- Quality job completes the full suite.
+- Dashboard remains green.
+- No test or coverage behavior changes.
