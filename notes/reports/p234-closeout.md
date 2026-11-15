@@ -39,4 +39,4 @@ shared schedule.
 
 ## Pull request
 
-PR: #1339 is queued for maintainer approval. Do not merge without approval.
+Merged as `a99a882` (PR #1331); branch deleted.
