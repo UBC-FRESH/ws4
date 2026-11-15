@@ -214,6 +214,7 @@ exists and the maintainer approves it.
 | P215 process fire-risk evaluation report | #1253 | `feature/p215-process-risk-report` | complete |
 | P216 process fire-risk report artifact | #1259 | `feature/p216-risk-report-artifact` | complete |
 | P218 process fire-risk train/validation | #1271 | `feature/p218-process-risk-validation` | complete |
+| P219 Re-wetting sortie and fleet lower bound | #1280 | `feature/p219-rewetting-capacity` | pr-open |
 | P220 combined optimizer/process risk verification bundle | #1276 | `feature/p220-risk-bundle` | pr-open |
 | P217 Re-wetting interval at 100 m | #1262 | `feature/p217-rewetting` | pr-open |
 | P201 Firebreak gap sensitivity pilot | #1185 | `feature/p201-firebreak-gap` | pr-open |
@@ -6345,6 +6346,30 @@ Acceptance:
 - Invalid fractions and too-few scenarios fail loudly.
 - Dashboard green.
 
+
+## Phase 219: re-wetting sortie and fleet lower bound
+
+Parent issue: #1280
+Branch: `feature/p219-rewetting-capacity`
+Status: pr-open
+Report: `notes/reports/p219-rewetting-capacity.md`
+Manifest: `notes/reports/p219-rewetting-capacity.json`
+PR: #1287
+
+Goal: translate the P217 15-minute re-wetting interval into sorties, water and aircraft.
+
+- [x] P219.1 Add the capacity calculator (#1284)
+- [x] P219.2 Close out capacity lower bound (#1285)
+
+Result: gap-only needs 10 sorties/application, 40 sorties/h and 3 aircraft; full line needs 150,
+600/h and 43 aircraft. Lower bounds under perfect dispatch.
+
+Acceptance:
+
+- Sorties, water and aircraft are explicit.
+- Gap-only and full-line cases are separated.
+- No calibration and no operational claim.
+- Dashboard green.
 
 ## Phase 220: combined optimizer/process risk verification bundle
 
