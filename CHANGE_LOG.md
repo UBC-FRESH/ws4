@@ -5850,3 +5850,16 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   scenario selection, missing accounts, and artifacts pass. Report:
   `notes/reports/p223-account-comparison.md`; close-out: `notes/reports/p223-closeout.md`.
   Design: `notes/design/ws4-account-comparison.md`. PR: #1298.
+
+- P223 merged: the process/estate account comparison is on `main` as `15d9ec9`. Branch deleted;
+  no tag, release, or settings change.
+
+- P228.1: ran the same synthetic CC schedule through the estate simulator and the process engine;
+  both report 340 m3 final volume.
+
+- P228.2: compared the mapped accounts with P223 and wrote the zero-difference artifact. Dashboard:
+  pending full run.
+
+- P228.2: verified and closed P228. Full dashboard **OVERALL: GREEN**. Both engines report 340 m3
+  and the P223 comparison is zero. Report: `notes/reports/p228-shared-schedule.md`; close-out:
+  `notes/reports/p228-closeout.md`. Design: `notes/design/ws4-shared-schedule.md`. PR: #TBD.

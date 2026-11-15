@@ -218,7 +218,8 @@ exists and the maintainer approves it.
 | P220 combined optimizer/process risk verification bundle | #1276 | `feature/p220-risk-bundle` | complete |
 | P221 bundle existing optimizer risk verification | #1281 | `feature/p221-optimizer-bundle` | complete |
 | P222 Gap-only dispatch queue feasibility | #1288 | `feature/p222-dispatch-queue` | complete |
-| P223 process/estate account comparison | #1292 | `feature/p223-account-comparison` | pr-open |
+| P223 process/estate account comparison | #1292 | `feature/p223-account-comparison` | complete |
+| P228 shared-schedule process/estate comparison | #1313 | `feature/p228-shared-schedule` | pr-open |
 | P224 Water-source throughput lower bound | #1295 | `feature/p224-water-source` | pr-open |
 | P225 Water-source service utilization | #1300 | `feature/p225-source-service` | pr-open |
 | P226 Source queue and refill feasibility | #1304 | `feature/p226-source-queue` | pr-open |
@@ -6453,7 +6454,8 @@ Acceptance:
 
 Parent issue: #1292
 Branch: `feature/p223-account-comparison`
-Status: pr-open
+Status: complete
+Merge commit: `15d9ec9`
 Design note: `notes/design/ws4-account-comparison.md`
 Report: `notes/reports/p223-closeout.md`
 Comparison report: `notes/reports/p223-account-comparison.md`
@@ -6565,3 +6567,26 @@ Acceptance:
 - Threshold and failure cases compared.
 - No calibration and no operational claim.
 - Dashboard green if repository gates permit it.
+
+
+## Phase 228: shared-schedule process/estate comparison
+
+Parent issue: #1313
+Branch: `feature/p228-shared-schedule`
+Status: pr-open
+Design note: `notes/design/ws4-shared-schedule.md`
+Report: `notes/reports/p228-closeout.md`
+Comparison report: `notes/reports/p228-shared-schedule.md`
+PR: #TBD
+
+Goal: run one clearcut schedule through both engines and compare mapped final volume.
+
+- [x] P228.1 Run both engines on one schedule (#1314)
+- [x] P228.2 Compare and close out the shared schedule (#1315)
+
+Acceptance:
+
+- Both engines run the same schedule.
+- Final mapped volume matches exactly.
+- The comparison artifact reports zero difference.
+- Dashboard green.
