@@ -228,6 +228,7 @@ exists and the maintainer approves it.
 | P231 age-based volume curves | #1326 | `feature/p231-age-curves` | complete |
 | P234 compiled yield curves in the process bridge | #1335 | `feature/p234-compiled-curves` | pr-open |
 | P235 five-year succession offset comparison | #1340 | `feature/p235-succession-offset` | pr-open |
+| P236 five-year harvest and track-change comparison | #1344 | `feature/p236-harvest-track` | pr-open |
 | P232 HWF113 source-distance and drawdown closure | #1321 | `feature/p232-source-geometry` | complete |
 | P217 Re-wetting interval at 100 m | #1262 | `feature/p217-rewetting` | pr-open |
 | P201 Firebreak gap sensitivity pilot | #1185 | `feature/p201-firebreak-gap` | pr-open |
@@ -6714,4 +6715,27 @@ Acceptance:
 - The four-transition horizon matches the estate final offset.
 - The five-transition horizon reports the one-step offset.
 - Both differences are tested.
+- Dashboard green.
+
+
+## Phase 236: five-year harvest and track-change comparison
+
+Parent issue: #1344
+Branch: `feature/p236-harvest-track`
+Status: pr-open
+Design note: `notes/design/ws4-harvest-track.md`
+Report: `notes/reports/p236-closeout.md`
+Comparison report: `notes/reports/p236-harvest-track.md`
+PR: #TBD
+
+Goal: quantify the track-change gap when a harvest occurs inside a five-year run.
+
+- [x] P236.1 Run the timed harvest comparison (#1345)
+- [x] P236.2 Pin the track-change gap and close out (#1346)
+
+Acceptance:
+
+- Estate and both process horizons are exact.
+- The mismatch is attributed to track changes and the offset.
+- The test pins the current behavior.
 - Dashboard green.

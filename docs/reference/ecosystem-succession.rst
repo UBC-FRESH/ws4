@@ -62,3 +62,11 @@ Offset convention
 An estate ``simulate(..., years=N)`` writes offsets 0 to N-1 and ages cohorts to ``N-1`` annual
 steps. The process executor's ``horizon_years`` counts transitions. For a five-year estate run,
 four process transitions match the final offset; five transitions are one annual step ahead.
+
+
+Track-change limit
+------------------
+
+The process bridge has no track identity. It applies one curve per species, so a harvested block
+cannot switch from the natural curve to the managed curve. A five-year CC comparison reports 360
+m3 from the process vs 390 m3 from the estate; the 30 m3 gap is the managed age-2 contribution.

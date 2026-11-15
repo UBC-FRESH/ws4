@@ -5904,3 +5904,13 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P235.2: verified and closed P235. Full dashboard **OVERALL: GREEN**. Four transitions match
   750; five are one step ahead. Report: `notes/reports/p235-succession-offset.md`; close-out:
   `notes/reports/p235-closeout.md`. Design: `notes/design/ws4-succession-offset.md`. PR: #1343.
+
+- P236.1: ran five estate years with CC at offset 2 against four- and five-transition process
+  horizons.
+
+- P236.2: pinned the track-change gap: estate 390, process 360/365; the 30/25 m3 gaps come from
+  the missing managed-curve state and the horizon offset. Dashboard: pending full run.
+
+- P236.2: verified and closed P236. Full dashboard **OVERALL: GREEN**. Timed harvest gap pinned
+  at -30/-25 m3. Report: `notes/reports/p236-harvest-track.md`; close-out:
+  `notes/reports/p236-closeout.md`. Design: `notes/design/ws4-harvest-track.md`. PR: #TBD.
