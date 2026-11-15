@@ -13,25 +13,18 @@ this project follows. Project-specific rules go at the end, each with its reason
 
 ## Session start
 
-Before you change anything, read in this order:
-
-1. This file.
-2. `ROADMAP.md`: the active phase and its "Detailed Next Steps Notes".
-3. The latest entries in `CHANGE_LOG.md`.
-4. The notes your task names, in `notes/`.
-5. The docs pages that govern your task, in `docs/`.
-
-Cite the pages you relied on in your report.
+Read this file, then the code, tests, and docs that govern the change. The roadmap and
+changelog are release context, not a prerequisite for every small fix.
 
 ## Working principles
 
 - **Evidence over trust.** Cite command output, diffs, commit hashes, and URLs.
-- **One bounded move at a time.** Stop and report after each one.
+- **Ship the smallest useful change.** Do not turn one task into a phase tree.
 - **No oracle, no capability.** A new agent-facing capability needs a validator that can fail.
-- **Workflow as scaffold.** Create the parent issue, the branch, and the roadmap entry before the work.
-- **Structured handoff.** Issues, the roadmap, notes, and the changelog carry the state.
+- **Workflow as scaffold.** Default to one branch and one PR. Create an issue only for work
+  spanning sessions or needing a decision.
+- **Structured handoff.** The PR body, changed tests, and result artifact carry the state.
 - **Preserve uncertainty.** Say what you did not verify, and why.
-- **Scope discipline.** Stay inside the active phase and task.
 - **Sanitized output.** Keep private data, credentials, raw transcripts, third-party
   documentation, and personal paths out of tracked files.
 
@@ -62,37 +55,36 @@ gate, the workflow validator, and the docs build with warnings as errors.
 
 ## CI and merges
 
-- CI runs every gate on every pull request, and on every push to `main`.
-- No pull request merges while CI is red.
-- A merge happens only as part of an approved phase close-out. Queue the pull request, write the report
-  in `notes/reports/`, and wait for the maintainer's approval.
+- Keep the PR gate fast: lint, format, strict types, and the tests affected by the change.
+- The full suite runs once before merge when it fits the budget, and nightly otherwise.
+- No pull request merges while required CI is red.
+- Merge a green pull request when the maintainer says go. Internal changes do not need a phase
+  close-out report.
 
 ## Planning workflow
 
-- One phase is one GitHub parent issue and one feature branch, `feature/p<n>-<slug>`.
-- One task is one child issue, linked to the parent as a sub-issue.
-- A subtask is a checklist item in the child issue body. Three levels at most.
-- Keep `ROADMAP.md`, `CHANGE_LOG.md`, `notes/`, issue bodies, and PR descriptions in step.
+- Default: one branch and one pull request. No parent/child issue tree.
+- Use a phase only for multi-session evidence work or a public claim change.
+- Update `ROADMAP.md` and `CHANGE_LOG.md` at release, or when a public claim changes. Do not edit them
+  for routine internal changes.
+- Write a report only when the result changes evidence or a public claim. Otherwise the PR body and
+  the test/artifact output are enough.
 
 ## Approval gates
 
-You may, within the active phase: create and commit to its branch, push that branch, open and update
-its issues and pull requests, and run local checks.
+You may create and commit to a branch, push it, open and update a pull request, and run local checks.
 
-After the maintainer approves a phase close-out, carry out what the report recommends: squash-merge the
-pull request, delete its branch, close the parent issue, and launch the next phase. Name every settings
-change, tag, release, or external account in the report, with its exact command, and wait for approval.
-
-You must wait for an explicit approval before you: create a tag or a release; change repository
+Merge a green pull request after an explicit go. Do not require a close-out report for routine work.
+You must still wait for explicit approval before you: create a tag or a release; change repository
 visibility, settings, or branch protection; create an external account, repository, or server; touch
-private data or credentials; or delete anything beyond the branch that an approved report names.
+private data or credentials; or delete anything beyond the merged branch.
 
 ## GitHub hygiene
 
-- Audit read-only first: `gh issue list`, `gh issue view <n>`, `gh pr list`.
-- Write bodies and comments to files, and post them with `--body-file`. Never build them from escaped strings.
-- Read back every comment or edit with `gh issue view` before you report it as posted.
-- Post a progress comment when a task or phase milestone completes, and a closeout comment before you close an issue.
+- Check existing issues and pull requests before opening a duplicate.
+- Write long bodies and comments to files and post them with `--body-file`.
+- Read back a comment or edit when the exact posted text matters. Do not post progress
+  comments for routine work.
 
 ## Formatting
 
@@ -103,14 +95,9 @@ private data or credentials; or delete anything beyond the branch that an approv
 
 ## Verification
 
-Run the local checks before you report a change as done. Once the workflow tooling task lands:
-
-```bash
-python scripts/dashboard.py
-```
-
-Until then, use the package checks in `pyproject.toml` (`ruff`, `mypy`, `pytest`).
-Record the result in the changelog entry for the milestone.
+Run the checks that govern the change: targeted tests plus `ruff` and `mypy`. Run the full
+dashboard once before a merge when it fits the budget; otherwise let nightly CI run it.
+Do not repeat the full suite three times in one workflow.
 
 ## Public safety
 

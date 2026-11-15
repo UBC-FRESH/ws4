@@ -105,6 +105,8 @@ jobs:
     name: Green dashboard summary
     runs-on: ubuntu-24.04
     timeout-minutes: 30
+    env:
+      PYTEST_ADDOPTS: "-n 4"
 
     steps:
       - name: Check out repository
