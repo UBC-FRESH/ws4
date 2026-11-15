@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
+import pandas as pd
 import pytest
 from ws4.ecosystem.ensemble import ProcessEnsembleConfig, run_process_ensemble
 from ws4.ecosystem.fire import FireConfig, synthetic_grid
@@ -158,3 +162,49 @@ def test_process_fire_risk_report_requires_targets() -> None:
 
     with pytest.raises(ProcessFireRiskError, match="target"):
         evaluate_process_fire_risk({}, years=1, targets=())
+
+
+def test_process_fire_risk_report_artifact(tmp_path: Path) -> None:
+    result = _ensemble()
+    from ws4.ecosystem.ensemble import ProcessEnsembleResult
+    from ws4.opt.fire_risk import evaluate_process_fire_risk
+
+    assert isinstance(result, ProcessEnsembleResult)
+    summaries = result.fire_regime_summaries(years=2, burnable_area_ha=160.0, cell_size_ha=10.0)
+    report = evaluate_process_fire_risk(
+        summaries,
+        years=2,
+        targets=(
+            Target(
+                account="fire.regime.annual_burn_rate",
+                period=1,
+                period_width=2,
+                aggregation="mean",
+                minimum=0.0,
+            ),
+        ),
+        scenario_ids=("one", "two"),
+        weights={"one": 0.5, "two": 0.5},
+    )
+    report.write(tmp_path / "risk")
+
+    payload = json.loads((tmp_path / "risk" / "process_fire_risk.json").read_text())
+    assert payload["schema_version"] == "ws4.process-fire-risk-accounts.v1"
+    assert payload["scenarios"] == ["one", "two"]
+    assert payload["targets"] == ["risk.mean.0.fire.regime.annual_burn_rate"]
+    assert payload["objective"] == 0.0
+    assert (tmp_path / "risk" / "process_fire_risk_values.csv").is_file()
+    assert (tmp_path / "risk" / "process_fire_risk_aggregated.csv").is_file()
+
+
+def test_empty_process_fire_risk_report_is_rejected(tmp_path: Path) -> None:
+    from ws4.opt.fire_risk import ProcessFireRiskReport
+
+    report = ProcessFireRiskReport(
+        values=pd.DataFrame(columns=["offset", "account", "value", "scenario"]),
+        aggregated=pd.DataFrame(),
+        targets=(),
+        objective=0.0,
+    )
+    with pytest.raises(ProcessFireRiskError, match="empty"):
+        report.write(tmp_path / "empty")

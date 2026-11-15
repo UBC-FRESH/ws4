@@ -37,4 +37,4 @@ Wire the report into the optimizer's risk verification path for a process scenar
 
 ## Pull request
 
-PR: #1257 is queued for maintainer approval. Do not merge without approval.
+Merged as `9999530` (PR #1257); branch deleted.

@@ -7,9 +7,11 @@ not change the optimizer search or calibrate the fire model.
 
 from __future__ import annotations
 
+import json
 import math
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Final
 
 import pandas as pd
@@ -176,8 +178,32 @@ class ProcessFireRiskReport:
             "schema_version": PROCESS_FIRE_RISK_VERSION,
             "scenarios": sorted(self.values["scenario"].unique().tolist()),
             "aggregated_accounts": len(self.aggregated),
+            "targets": [target.account for target in self.targets],
             "objective": self.objective,
         }
+
+    def write(self, out_dir: Path) -> None:
+        """Write values, aggregated rows, and the summary.
+
+        Parameters
+        ----------
+        out_dir : Path
+            Output directory, created when missing.
+
+        Raises
+        ------
+        ProcessFireRiskError
+            If the report has no account values.
+        """
+        if self.values.empty:
+            raise ProcessFireRiskError("cannot write an empty fire-risk report")
+        target = Path(out_dir)
+        target.mkdir(parents=True, exist_ok=True)
+        self.values.to_csv(target / "process_fire_risk_values.csv", index=False)
+        self.aggregated.to_csv(target / "process_fire_risk_aggregated.csv", index=False)
+        (target / "process_fire_risk.json").write_text(
+            json.dumps(self.summary(), indent=2, sort_keys=True) + "\n", encoding="utf-8"
+        )
 
 
 def evaluate_process_fire_risk(
