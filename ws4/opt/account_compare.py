@@ -100,8 +100,8 @@ class AccountComparison:
                     "absolute_difference": float(str(row.absolute_difference)),
                     "relative_difference": (
                         None
-                        if pd.isna(row.relative_difference)
-                        else float(str(row.relative_difference))
+                        if row.relative_difference is None
+                        else _number(row.relative_difference, "relative difference")
                     ),
                 }
                 for row in self.rows.itertuples(index=False)
