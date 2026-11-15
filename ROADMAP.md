@@ -223,6 +223,7 @@ exists and the maintainer approves it.
 | P225 Water-source service utilization | #1300 | `feature/p225-source-service` | pr-open |
 | P226 Source queue and refill feasibility | #1304 | `feature/p226-source-queue` | pr-open |
 | P227 Stochastic source-queue envelope | #1308 | `feature/p227-stochastic-source` | pr-open |
+| P229 Alberta HWF113 water-source screen | #1316 | `feature/p229-alberta-water` | pr-open |
 | P217 Re-wetting interval at 100 m | #1262 | `feature/p217-rewetting` | pr-open |
 | P201 Firebreak gap sensitivity pilot | #1185 | `feature/p201-firebreak-gap` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
@@ -6565,3 +6566,28 @@ Acceptance:
 - Threshold and failure cases compared.
 - No calibration and no operational claim.
 - Dashboard green if repository gates permit it.
+
+## Phase 229: Alberta HWF113 water-source screen
+
+Parent issue: #1316
+Branch: `feature/p229-alberta-water`
+Status: pr-open
+Report: `notes/reports/p229-alberta-water-source.md`
+Manifest: `notes/reports/p229-alberta-water-source.json`
+PR: #1319
+
+Goal: use Alberta open waterbody data for the actual P217 case, which is HWF113 in Alberta.
+
+- [x] P229.1 Add Alberta waterbody source screen (#1317)
+- [x] P229.2 Run HWF113 water-source screen (#1318)
+
+Result: `2003_96` is Alberta HWF113. The nearest current waterbody is a 3.29 ha perennial lake
+0.38 km from the gap centre; an 18.45 ha perennial lake is 1.19 km away. Source proximity is not
+the limiting assumption. Refill rate, depth, drawdown, access and approval remain unknown.
+
+Acceptance:
+
+- Jurisdiction and case identity are explicit.
+- Nearest source candidates are reproducible from the documented Alberta open query.
+- No calibration and no operational claim.
+- Dashboard green.

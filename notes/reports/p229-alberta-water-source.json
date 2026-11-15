@@ -1,0 +1,2887 @@
+{
+  "gap_utm": {
+    "x": 636250.0,
+    "y": 6572250.0,
+    "crs": 32611
+  },
+  "parameters": {
+    "min_area_ha": 1.0,
+    "max_distance_km": 20.0
+  },
+  "feature_count": 718,
+  "candidate_count": 405,
+  "sources": [
+    {
+      "object_id": 186246,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 3.2949112230638655,
+      "distance_km": 0.3801915343673115
+    },
+    {
+      "object_id": 29055,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 4.704763382031041,
+      "distance_km": 0.7566463029251442
+    },
+    {
+      "object_id": 138849,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.947928884764685,
+      "distance_km": 0.8795599713195594
+    },
+    {
+      "object_id": 29013,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 2.8666671967409125,
+      "distance_km": 0.995234572403706
+    },
+    {
+      "object_id": 29031,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 18.448863902123463,
+      "distance_km": 1.187543634011853
+    },
+    {
+      "object_id": 30372,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 2.4582542457823804,
+      "distance_km": 1.2355459314911241
+    },
+    {
+      "object_id": 138869,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 2.324097031677748,
+      "distance_km": 1.23995987760484
+    },
+    {
+      "object_id": 138720,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 2.5779423380740596,
+      "distance_km": 1.3143093995093944
+    },
+    {
+      "object_id": 252279,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.4860380829040059,
+      "distance_km": 1.6804969584028466
+    },
+    {
+      "object_id": 29051,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 2.3893876895540287,
+      "distance_km": 1.7568614169573797
+    },
+    {
+      "object_id": 27425,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 11.525533153849075,
+      "distance_km": 1.9938317299433108
+    },
+    {
+      "object_id": 30587,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 4.0816488740682395,
+      "distance_km": 2.126512723996491
+    },
+    {
+      "object_id": 34775,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.1608745910036853,
+      "distance_km": 2.2609175230844256
+    },
+    {
+      "object_id": 27339,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 6.613727399577545,
+      "distance_km": 2.277763996760632
+    },
+    {
+      "object_id": 27588,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 13.071268785548353,
+      "distance_km": 2.441247601443192
+    },
+    {
+      "object_id": 186185,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 13.249823158202533,
+      "distance_km": 2.7820297422775786
+    },
+    {
+      "object_id": 138981,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 5.331673758600601,
+      "distance_km": 3.127122050428115
+    },
+    {
+      "object_id": 30467,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 81.0889427164762,
+      "distance_km": 3.1509053625978454
+    },
+    {
+      "object_id": 27632,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 2.7253386558229207,
+      "distance_km": 3.1769462417473413
+    },
+    {
+      "object_id": 25908,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.5203640728301893,
+      "distance_km": 3.4758727511966123
+    },
+    {
+      "object_id": 33475,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 6.432554066845219,
+      "distance_km": 3.5432377984244634
+    },
+    {
+      "object_id": 186208,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 14.036175757285672,
+      "distance_km": 4.216746784301402
+    },
+    {
+      "object_id": 1960,
+      "feature_type": "RIV-MAJ",
+      "name": "Buffalo River",
+      "area_ha": 200.83431248435872,
+      "distance_km": 4.347131866207436
+    },
+    {
+      "object_id": 138936,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 3.1681026463201514,
+      "distance_km": 4.368908946782049
+    },
+    {
+      "object_id": 35083,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.0151548200476843,
+      "distance_km": 4.4036168425993
+    },
+    {
+      "object_id": 34903,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 24.736514204481463,
+      "distance_km": 4.525890232746554
+    },
+    {
+      "object_id": 187712,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 5.744860269229452,
+      "distance_km": 4.664960571808395
+    },
+    {
+      "object_id": 140109,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.1717747267319567,
+      "distance_km": 4.676609125794075
+    },
+    {
+      "object_id": 235046,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 3.2498938685801417,
+      "distance_km": 4.801237940148954
+    },
+    {
+      "object_id": 187669,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 7.373164170949468,
+      "distance_km": 4.80434340413713
+    },
+    {
+      "object_id": 24441,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 3.629741861067138,
+      "distance_km": 4.870513285115802
+    },
+    {
+      "object_id": 33347,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 8.865632556530882,
+      "distance_km": 4.897449868892075
+    },
+    {
+      "object_id": 34803,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 5.608174145954403,
+      "distance_km": 4.977623099477435
+    },
+    {
+      "object_id": 36544,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 3.86989294813263,
+      "distance_km": 4.978704973070806
+    },
+    {
+      "object_id": 30525,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 8.646490020816302,
+      "distance_km": 5.039778901284548
+    },
+    {
+      "object_id": 30409,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.8359725278192875,
+      "distance_km": 5.125161278958801
+    },
+    {
+      "object_id": 33579,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 4.60748021692169,
+      "distance_km": 5.17366421951451
+    },
+    {
+      "object_id": 186346,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 19.20650993556427,
+      "distance_km": 5.204244478607904
+    },
+    {
+      "object_id": 37879,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 45.137405065678294,
+      "distance_km": 5.4094254006042375
+    },
+    {
+      "object_id": 30641,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.5908290957678903,
+      "distance_km": 5.549390152340069
+    },
+    {
+      "object_id": 36223,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 55.4256378046494,
+      "distance_km": 5.554574572284202
+    },
+    {
+      "object_id": 252058,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 3.162600260874521,
+      "distance_km": 5.572627670045947
+    },
+    {
+      "object_id": 22980,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.0161404419732192,
+      "distance_km": 5.583290846987429
+    },
+    {
+      "object_id": 39177,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 5.117477948893586,
+      "distance_km": 5.703638675591429
+    },
+    {
+      "object_id": 44942,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 3.472737785781074,
+      "distance_km": 5.841194471588787
+    },
+    {
+      "object_id": 36362,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 17.352385144474752,
+      "distance_km": 5.891978012619884
+    },
+    {
+      "object_id": 236675,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 5.667540954110535,
+      "distance_km": 5.910778860639946
+    },
+    {
+      "object_id": 138746,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.3101621360195,
+      "distance_km": 5.924619802904874
+    },
+    {
+      "object_id": 45032,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.981031001697293,
+      "distance_km": 5.943853940614817
+    },
+    {
+      "object_id": 30439,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 8.305954197104285,
+      "distance_km": 5.984343499100943
+    },
+    {
+      "object_id": 140234,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 2.1294240704860647,
+      "distance_km": 6.030881782706441
+    },
+    {
+      "object_id": 42239,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 2.6453144722952797,
+      "distance_km": 6.071278993348796
+    },
+    {
+      "object_id": 27428,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.2060276115344564,
+      "distance_km": 6.0839468184762735
+    },
+    {
+      "object_id": 39493,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 7.231545655130487,
+      "distance_km": 6.116794961497429
+    },
+    {
+      "object_id": 23177,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 2.7179154011275433,
+      "distance_km": 6.140413462666095
+    },
+    {
+      "object_id": 36455,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.4326534336547654,
+      "distance_km": 6.228521307667074
+    },
+    {
+      "object_id": 187820,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 4.818351619040715,
+      "distance_km": 6.261676516915852
+    },
+    {
+      "object_id": 37957,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 16.502258834896768,
+      "distance_km": 6.295662823612523
+    },
+    {
+      "object_id": 39277,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 2.0448278299032827,
+      "distance_km": 6.306688728742621
+    },
+    {
+      "object_id": 44988,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 9.835510171698397,
+      "distance_km": 6.329241441980863
+    },
+    {
+      "object_id": 44869,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 3.3409191791716433,
+      "distance_km": 6.371121624657946
+    },
+    {
+      "object_id": 30360,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.3143310898392977,
+      "distance_km": 6.394399126176651
+    },
+    {
+      "object_id": 34894,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.1626805294024476,
+      "distance_km": 6.450758109065626
+    },
+    {
+      "object_id": 137243,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 5.077656408129711,
+      "distance_km": 6.543923541538303
+    },
+    {
+      "object_id": 140116,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 3.5783960348218096,
+      "distance_km": 6.564593737970535
+    },
+    {
+      "object_id": 39214,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 2.02968751533012,
+      "distance_km": 6.605164751574709
+    },
+    {
+      "object_id": 235268,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.6555631207690567,
+      "distance_km": 6.607307629707081
+    },
+    {
+      "object_id": 30424,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 3.3979309960846833,
+      "distance_km": 6.626665431637806
+    },
+    {
+      "object_id": 184950,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 11.75061529806651,
+      "distance_km": 6.65144480720251
+    },
+    {
+      "object_id": 140414,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 3.572150169651478,
+      "distance_km": 6.655249358066565
+    },
+    {
+      "object_id": 31921,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 2.7427982487539153,
+      "distance_km": 6.746990325195209
+    },
+    {
+      "object_id": 43861,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.281089666203568,
+      "distance_km": 6.79999973105943
+    },
+    {
+      "object_id": 39355,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 2.5076444585268916,
+      "distance_km": 6.85994189238914
+    },
+    {
+      "object_id": 137397,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 8.754902299228227,
+      "distance_km": 6.917499199856339
+    },
+    {
+      "object_id": 138852,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.1312766249754085,
+      "distance_km": 7.050865785984995
+    },
+    {
+      "object_id": 30547,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 2.552882379033949,
+      "distance_km": 7.167440959924248
+    },
+    {
+      "object_id": 235360,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.4733584455916615,
+      "distance_km": 7.223763740358028
+    },
+    {
+      "object_id": 43507,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 6.686973516329858,
+      "distance_km": 7.243098496265018
+    },
+    {
+      "object_id": 43389,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 10.362866776343399,
+      "distance_km": 7.322880050330092
+    },
+    {
+      "object_id": 39364,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 27.378555226802263,
+      "distance_km": 7.390902314359095
+    },
+    {
+      "object_id": 44732,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.1731722096485233,
+      "distance_km": 7.410336000371
+    },
+    {
+      "object_id": 236548,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.0700105191961218,
+      "distance_km": 7.4481357534595585
+    },
+    {
+      "object_id": 186333,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.3687438799831544,
+      "distance_km": 7.464605673631466
+    },
+    {
+      "object_id": 138713,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.5239390556049877,
+      "distance_km": 7.548761130126925
+    },
+    {
+      "object_id": 45233,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.6986729082164977,
+      "distance_km": 7.565536596793327
+    },
+    {
+      "object_id": 43960,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.5660806599107795,
+      "distance_km": 7.612504109903874
+    },
+    {
+      "object_id": 184848,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 2.826953555344131,
+      "distance_km": 7.867588772476542
+    },
+    {
+      "object_id": 30603,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 2.9354986491825086,
+      "distance_km": 7.893753933660212
+    },
+    {
+      "object_id": 43393,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 2.7148652467033245,
+      "distance_km": 8.09082866815717
+    },
+    {
+      "object_id": 237896,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 8.630010319783617,
+      "distance_km": 8.094695131293985
+    },
+    {
+      "object_id": 27545,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.7567446299747196,
+      "distance_km": 8.148216825115846
+    },
+    {
+      "object_id": 140139,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 3.259141810638178,
+      "distance_km": 8.16279097441143
+    },
+    {
+      "object_id": 237900,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 4.574779999216141,
+      "distance_km": 8.197004607456778
+    },
+    {
+      "object_id": 44864,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 9.495360624995746,
+      "distance_km": 8.209263682535736
+    },
+    {
+      "object_id": 253700,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.8661287760292595,
+      "distance_km": 8.287930706388568
+    },
+    {
+      "object_id": 253661,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 30.171149382827675,
+      "distance_km": 8.461585119207346
+    },
+    {
+      "object_id": 252318,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.9196354384971404,
+      "distance_km": 8.672455448252396
+    },
+    {
+      "object_id": 41945,
+      "feature_type": "OXBOW-PER",
+      "name": null,
+      "area_ha": 1.3706031762985387,
+      "distance_km": 8.725303634963579
+    },
+    {
+      "object_id": 238012,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 12.381372013570186,
+      "distance_km": 8.869486949484427
+    },
+    {
+      "object_id": 235369,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 10.981463987672361,
+      "distance_km": 8.938650393254175
+    },
+    {
+      "object_id": 31802,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.3597702495570396,
+      "distance_km": 8.973052517082552
+    },
+    {
+      "object_id": 137447,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 5.392142657742684,
+      "distance_km": 8.975919635870378
+    },
+    {
+      "object_id": 41931,
+      "feature_type": "OXBOW-PER",
+      "name": null,
+      "area_ha": 1.1548247842899004,
+      "distance_km": 9.017652604640492
+    },
+    {
+      "object_id": 140222,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 10.084199877271809,
+      "distance_km": 9.059198774406163
+    },
+    {
+      "object_id": 238077,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 4.307541293467548,
+      "distance_km": 9.096718669655203
+    },
+    {
+      "object_id": 21993,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.840130980259464,
+      "distance_km": 9.10493721063453
+    },
+    {
+      "object_id": 186291,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.7685590550330639,
+      "distance_km": 9.119450992805586
+    },
+    {
+      "object_id": 250940,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 2.6270153854887854,
+      "distance_km": 9.141304609382498
+    },
+    {
+      "object_id": 250694,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 3.2850805187431162,
+      "distance_km": 9.17858032683815
+    },
+    {
+      "object_id": 41971,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.3411559020836739,
+      "distance_km": 9.197607416694334
+    },
+    {
+      "object_id": 36318,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.666016329738628,
+      "distance_km": 9.23166401521957
+    },
+    {
+      "object_id": 44794,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 2.028117382723136,
+      "distance_km": 9.346945087755277
+    },
+    {
+      "object_id": 40587,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 16.12203776674027,
+      "distance_km": 9.357409273211381
+    },
+    {
+      "object_id": 45310,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.310250268188689,
+      "distance_km": 9.50207803770245
+    },
+    {
+      "object_id": 42308,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 2.0084031580321278,
+      "distance_km": 9.543820926411003
+    },
+    {
+      "object_id": 186161,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 7.1033584902410905,
+      "distance_km": 9.544049155911479
+    },
+    {
+      "object_id": 40428,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 3.251328916464878,
+      "distance_km": 9.572332816614779
+    },
+    {
+      "object_id": 26483,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 36.19574249339526,
+      "distance_km": 9.592876341571184
+    },
+    {
+      "object_id": 40295,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 6.923580329534225,
+      "distance_km": 9.669427658168571
+    },
+    {
+      "object_id": 24789,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.2986838049964697,
+      "distance_km": 9.748890768859427
+    },
+    {
+      "object_id": 26110,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 3.0155299322898,
+      "distance_km": 9.799650323835795
+    },
+    {
+      "object_id": 253826,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 9.65787202329953,
+      "distance_km": 9.861946293645836
+    },
+    {
+      "object_id": 26422,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 2.481467572953899,
+      "distance_km": 9.885028753425686
+    },
+    {
+      "object_id": 235228,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 7.185693526682022,
+      "distance_km": 10.066661927457627
+    },
+    {
+      "object_id": 189361,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 12.032763576262738,
+      "distance_km": 10.06975131056406
+    },
+    {
+      "object_id": 42365,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 16.02181897687787,
+      "distance_km": 10.169294226835634
+    },
+    {
+      "object_id": 38945,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 5.1475406751102994,
+      "distance_km": 10.20021555844626
+    },
+    {
+      "object_id": 184761,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 2.2744672807752178,
+      "distance_km": 10.21814488452429
+    },
+    {
+      "object_id": 138778,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 3.5243488738896835,
+      "distance_km": 10.238157139769562
+    },
+    {
+      "object_id": 26026,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 40.87458432929092,
+      "distance_km": 10.274315613421658
+    },
+    {
+      "object_id": 37826,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 20.92192351840549,
+      "distance_km": 10.355325273173074
+    },
+    {
+      "object_id": 28808,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 6.460116578376248,
+      "distance_km": 10.44075035437945
+    },
+    {
+      "object_id": 21822,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 7.30355123242206,
+      "distance_km": 10.622721217124226
+    },
+    {
+      "object_id": 29194,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.1205641526549726,
+      "distance_km": 10.62907734773676
+    },
+    {
+      "object_id": 183514,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 8.414330273479127,
+      "distance_km": 10.647441287925306
+    },
+    {
+      "object_id": 27477,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.240704152724138,
+      "distance_km": 10.72888414478908
+    },
+    {
+      "object_id": 249478,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 3.4575050706512367,
+      "distance_km": 10.760037112673912
+    },
+    {
+      "object_id": 29370,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 18.512922107960033,
+      "distance_km": 10.786398377553413
+    },
+    {
+      "object_id": 237987,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.047308197933522,
+      "distance_km": 10.792500487061208
+    },
+    {
+      "object_id": 253523,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 3.103343566324002,
+      "distance_km": 10.796720863704104
+    },
+    {
+      "object_id": 190482,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.7986121269437725,
+      "distance_km": 10.814724351538917
+    },
+    {
+      "object_id": 26245,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 2.156615660188452,
+      "distance_km": 10.825541928113307
+    },
+    {
+      "object_id": 186146,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 2.110535531773427,
+      "distance_km": 10.829066269858238
+    },
+    {
+      "object_id": 29303,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.9378997923960375,
+      "distance_km": 10.855216857480391
+    },
+    {
+      "object_id": 186313,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 2.062652698463844,
+      "distance_km": 10.881318449791818
+    },
+    {
+      "object_id": 249454,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 5.710751770660784,
+      "distance_km": 10.897489934968839
+    },
+    {
+      "object_id": 28046,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.882430315683497,
+      "distance_km": 10.926999815530607
+    },
+    {
+      "object_id": 36270,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 5.751320041463385,
+      "distance_km": 10.929752247976554
+    },
+    {
+      "object_id": 43523,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 25.302422681743884,
+      "distance_km": 10.937140534097914
+    },
+    {
+      "object_id": 135922,
+      "feature_type": "OXBOW-PER",
+      "name": null,
+      "area_ha": 1.2294592105818265,
+      "distance_km": 11.005756683013434
+    },
+    {
+      "object_id": 39533,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 9.713798272957243,
+      "distance_km": 11.014705645452366
+    },
+    {
+      "object_id": 26234,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 13.292965653621705,
+      "distance_km": 11.025784726205526
+    },
+    {
+      "object_id": 253729,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 11.238565905686732,
+      "distance_km": 11.08127551255398
+    },
+    {
+      "object_id": 22010,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 3.7366920791773324,
+      "distance_km": 11.124194882821095
+    },
+    {
+      "object_id": 30543,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.7219749979516301,
+      "distance_km": 11.125572984672463
+    },
+    {
+      "object_id": 238112,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.2929360862698647,
+      "distance_km": 11.189130322431328
+    },
+    {
+      "object_id": 208459,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 15.427418907795715,
+      "distance_km": 11.226491631399478
+    },
+    {
+      "object_id": 235215,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 31.629241859606147,
+      "distance_km": 11.328972065375787
+    },
+    {
+      "object_id": 37533,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.1243915144823915,
+      "distance_km": 11.357902434415347
+    },
+    {
+      "object_id": 25915,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 18.543633908909648,
+      "distance_km": 11.42294725215606
+    },
+    {
+      "object_id": 37513,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.1785137087866566,
+      "distance_km": 11.449190186558674
+    },
+    {
+      "object_id": 237927,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 10.022769098894477,
+      "distance_km": 11.452088817335623
+    },
+    {
+      "object_id": 45456,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 2.928889101927384,
+      "distance_km": 11.460612658964905
+    },
+    {
+      "object_id": 187640,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 10.300847674790143,
+      "distance_km": 11.52413501211645
+    },
+    {
+      "object_id": 37352,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 6.333256919594197,
+      "distance_km": 11.549043744403445
+    },
+    {
+      "object_id": 38917,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 2.8224021370701635,
+      "distance_km": 11.59168111024163
+    },
+    {
+      "object_id": 43590,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 2.828821655562477,
+      "distance_km": 11.622429581248442
+    },
+    {
+      "object_id": 24483,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 3.088839950828831,
+      "distance_km": 11.644197286566408
+    },
+    {
+      "object_id": 29421,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 6.628981731012974,
+      "distance_km": 11.65402855669089
+    },
+    {
+      "object_id": 238035,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 8.126381645000423,
+      "distance_km": 11.68171010653377
+    },
+    {
+      "object_id": 43895,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 13.007116023756238,
+      "distance_km": 11.692894355703412
+    },
+    {
+      "object_id": 238245,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 2.299138170048313,
+      "distance_km": 11.714753530791398
+    },
+    {
+      "object_id": 40417,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.8583915710313816,
+      "distance_km": 11.739327293938564
+    },
+    {
+      "object_id": 26032,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 14.068830539497164,
+      "distance_km": 11.803733148855452
+    },
+    {
+      "object_id": 189186,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 27.829969427172596,
+      "distance_km": 11.880416264143504
+    },
+    {
+      "object_id": 184838,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.5385824544238265,
+      "distance_km": 11.924910045976764
+    },
+    {
+      "object_id": 140292,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 6.684663355213471,
+      "distance_km": 11.965538348045131
+    },
+    {
+      "object_id": 21950,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 9.300221698116625,
+      "distance_km": 11.992779011379305
+    },
+    {
+      "object_id": 40373,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.482613337595883,
+      "distance_km": 12.048178799663866
+    },
+    {
+      "object_id": 189093,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.8806070932056667,
+      "distance_km": 12.200392201749803
+    },
+    {
+      "object_id": 30400,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 8.163251582887884,
+      "distance_km": 12.244750837631273
+    },
+    {
+      "object_id": 30994,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 4.911467932563565,
+      "distance_km": 12.269183907875556
+    },
+    {
+      "object_id": 252292,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 13.583206946351426,
+      "distance_km": 12.3179165895513
+    },
+    {
+      "object_id": 239460,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.720005143410742,
+      "distance_km": 12.37165006039775
+    },
+    {
+      "object_id": 235365,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 7.823521201748501,
+      "distance_km": 12.400604496469583
+    },
+    {
+      "object_id": 30733,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 3.2698280932522676,
+      "distance_km": 12.40372756896878
+    },
+    {
+      "object_id": 208610,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 3.0476766716317205,
+      "distance_km": 12.50209536031182
+    },
+    {
+      "object_id": 35008,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.0892699787072628,
+      "distance_km": 12.528778401170719
+    },
+    {
+      "object_id": 236466,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.5947396757654713,
+      "distance_km": 12.598379273016624
+    },
+    {
+      "object_id": 30416,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 2.56022249467422,
+      "distance_km": 12.601759202502434
+    },
+    {
+      "object_id": 38837,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 7.015706486868424,
+      "distance_km": 12.623157974101774
+    },
+    {
+      "object_id": 27584,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 7.353266615273369,
+      "distance_km": 12.625849343394052
+    },
+    {
+      "object_id": 239509,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 3.9819153083500214,
+      "distance_km": 12.685068441254014
+    },
+    {
+      "object_id": 250901,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.683411885689549,
+      "distance_km": 12.72349470809626
+    },
+    {
+      "object_id": 32489,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 8.938672426699563,
+      "distance_km": 12.802338310663712
+    },
+    {
+      "object_id": 27894,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 23.221404611291955,
+      "distance_km": 12.819592082104702
+    },
+    {
+      "object_id": 30366,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 2.6276403422592525,
+      "distance_km": 12.89660776884454
+    },
+    {
+      "object_id": 44977,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 7.0547372713116365,
+      "distance_km": 12.997873769665661
+    },
+    {
+      "object_id": 208381,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 4.59032328186302,
+      "distance_km": 13.009925823550011
+    },
+    {
+      "object_id": 249468,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 5.872371993769585,
+      "distance_km": 13.074279135445716
+    },
+    {
+      "object_id": 184926,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 19.293333275212518,
+      "distance_km": 13.092758420424515
+    },
+    {
+      "object_id": 24803,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 2.644968690313297,
+      "distance_km": 13.094831955878675
+    },
+    {
+      "object_id": 33725,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 5.842722037783889,
+      "distance_km": 13.11728869550028
+    },
+    {
+      "object_id": 37428,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 3.3105529139576584,
+      "distance_km": 13.149769791329419
+    },
+    {
+      "object_id": 182037,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 2.13835684233866,
+      "distance_km": 13.187842978241376
+    },
+    {
+      "object_id": 27582,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 12.324874387339879,
+      "distance_km": 13.252288700638145
+    },
+    {
+      "object_id": 186239,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 16.931914818986055,
+      "distance_km": 13.298601760169852
+    },
+    {
+      "object_id": 27840,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 4.495301505930451,
+      "distance_km": 13.30611688667265
+    },
+    {
+      "object_id": 208570,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.8620952492786804,
+      "distance_km": 13.357568033504286
+    },
+    {
+      "object_id": 236586,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 3.8512539635515757,
+      "distance_km": 13.436833505787057
+    },
+    {
+      "object_id": 33792,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 2.8978225120619086,
+      "distance_km": 13.464885327084463
+    },
+    {
+      "object_id": 27968,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 14.26998127225153,
+      "distance_km": 13.474121540907877
+    },
+    {
+      "object_id": 189122,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 7.0434543898089705,
+      "distance_km": 13.556284138600832
+    },
+    {
+      "object_id": 29343,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.6297609527970973,
+      "distance_km": 13.56357964073701
+    },
+    {
+      "object_id": 184863,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.8571266686455383,
+      "distance_km": 13.57099190313709
+    },
+    {
+      "object_id": 26351,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 8.079946813072596,
+      "distance_km": 13.626178694427082
+    },
+    {
+      "object_id": 250814,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 7.815006114605398,
+      "distance_km": 13.6304163218923
+    },
+    {
+      "object_id": 34651,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 3.578630606074886,
+      "distance_km": 13.647331122654721
+    },
+    {
+      "object_id": 29258,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 6.619852095703906,
+      "distance_km": 13.680929247104775
+    },
+    {
+      "object_id": 239530,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 2.010000988599488,
+      "distance_km": 13.687677737108608
+    },
+    {
+      "object_id": 138699,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 3.8023647702702634,
+      "distance_km": 13.706617649749832
+    },
+    {
+      "object_id": 25003,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 8.544974021739764,
+      "distance_km": 13.72792205164435
+    },
+    {
+      "object_id": 252301,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 444.5914775153096,
+      "distance_km": 13.975338498581474
+    },
+    {
+      "object_id": 37893,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 2.319669085730008,
+      "distance_km": 13.977418961931846
+    },
+    {
+      "object_id": 239594,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 3.9825113595443007,
+      "distance_km": 14.005752770579369
+    },
+    {
+      "object_id": 22959,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 2.0375040551680557,
+      "distance_km": 14.00774166197395
+    },
+    {
+      "object_id": 30731,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 2.8300929285894303,
+      "distance_km": 14.12040893140663
+    },
+    {
+      "object_id": 35252,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 2.3664909187999763,
+      "distance_km": 14.160326638422733
+    },
+    {
+      "object_id": 27591,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 51.48096877979292,
+      "distance_km": 14.189135802840456
+    },
+    {
+      "object_id": 33634,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 15.450542621378933,
+      "distance_km": 14.19232517235538
+    },
+    {
+      "object_id": 29301,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 6.318979081309305,
+      "distance_km": 14.22510166437245
+    },
+    {
+      "object_id": 236591,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 3.4807544189408604,
+      "distance_km": 14.252022448236247
+    },
+    {
+      "object_id": 190769,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 5.875737484099917,
+      "distance_km": 14.264303922337453
+    },
+    {
+      "object_id": 26095,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 10.623344930565985,
+      "distance_km": 14.331542531120247
+    },
+    {
+      "object_id": 33849,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 10.843759939271212,
+      "distance_km": 14.359775017789532
+    },
+    {
+      "object_id": 208390,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.8408106373499988,
+      "distance_km": 14.368738904321146
+    },
+    {
+      "object_id": 33620,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 3.3149803274790313,
+      "distance_km": 14.385216893946824
+    },
+    {
+      "object_id": 24650,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 7.893093593027509,
+      "distance_km": 14.487590119082508
+    },
+    {
+      "object_id": 137544,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 2.1430489779256408,
+      "distance_km": 14.498934191067622
+    },
+    {
+      "object_id": 27816,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 2.6853728966184933,
+      "distance_km": 14.51646633061654
+    },
+    {
+      "object_id": 23372,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 3.2106256699860336,
+      "distance_km": 14.526012388661036
+    },
+    {
+      "object_id": 43269,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 5.114446768132249,
+      "distance_km": 14.532476375191617
+    },
+    {
+      "object_id": 44890,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.0688295655086117,
+      "distance_km": 14.53570116214536
+    },
+    {
+      "object_id": 34364,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 45.22480984194739,
+      "distance_km": 14.603243681105353
+    },
+    {
+      "object_id": 238071,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 9.903683779749128,
+      "distance_km": 14.631490179930124
+    },
+    {
+      "object_id": 33460,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 3.785790232638477,
+      "distance_km": 14.633100599526955
+    },
+    {
+      "object_id": 139007,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.191767111275884,
+      "distance_km": 14.638698686121273
+    },
+    {
+      "object_id": 34462,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.2919859762392563,
+      "distance_km": 14.678067346569945
+    },
+    {
+      "object_id": 38016,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 5.211845966965439,
+      "distance_km": 14.686784502604867
+    },
+    {
+      "object_id": 44752,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 3.3390881702870785,
+      "distance_km": 14.692989425806392
+    },
+    {
+      "object_id": 238182,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 37.81086542367804,
+      "distance_km": 14.741371107963923
+    },
+    {
+      "object_id": 37886,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 3.0735063174762827,
+      "distance_km": 14.793534404016336
+    },
+    {
+      "object_id": 29288,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 4.858713975859525,
+      "distance_km": 14.813225768861157
+    },
+    {
+      "object_id": 36419,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 2.2195889249572773,
+      "distance_km": 14.85622423715093
+    },
+    {
+      "object_id": 252167,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 3.4471674784128497,
+      "distance_km": 14.896668601921139
+    },
+    {
+      "object_id": 238024,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 4.026918130696708,
+      "distance_km": 14.898587958950658
+    },
+    {
+      "object_id": 29363,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 2.173442500782695,
+      "distance_km": 14.902084782740287
+    },
+    {
+      "object_id": 35456,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 14.150625967976053,
+      "distance_km": 14.903188551289908
+    },
+    {
+      "object_id": 209725,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 3.668206059642551,
+      "distance_km": 14.92149322929912
+    },
+    {
+      "object_id": 137223,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 2.1015014441687345,
+      "distance_km": 14.983937162261526
+    },
+    {
+      "object_id": 236811,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.7059487593968667,
+      "distance_km": 15.030591118894385
+    },
+    {
+      "object_id": 208377,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 4.674542215106961,
+      "distance_km": 15.07098088564556
+    },
+    {
+      "object_id": 21928,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.8844430815502786,
+      "distance_km": 15.093040134442823
+    },
+    {
+      "object_id": 40705,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 3.3716667697683964,
+      "distance_km": 15.109055999942075
+    },
+    {
+      "object_id": 36745,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.5172346826816034,
+      "distance_km": 15.111918380942004
+    },
+    {
+      "object_id": 34953,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 23.554672586038645,
+      "distance_km": 15.153347396391197
+    },
+    {
+      "object_id": 33976,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 8.145953071029783,
+      "distance_km": 15.192782170572864
+    },
+    {
+      "object_id": 33857,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 40.21872980049391,
+      "distance_km": 15.252585054593899
+    },
+    {
+      "object_id": 33960,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 31.543937544381798,
+      "distance_km": 15.253206203995733
+    },
+    {
+      "object_id": 30951,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.322753778675878,
+      "distance_km": 15.325540254860853
+    },
+    {
+      "object_id": 33218,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.7571272850629502,
+      "distance_km": 15.335026118073145
+    },
+    {
+      "object_id": 24722,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 177.23687343040416,
+      "distance_km": 15.34923296054075
+    },
+    {
+      "object_id": 190621,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.28582736102901,
+      "distance_km": 15.360427655452785
+    },
+    {
+      "object_id": 30413,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 17.797172514221103,
+      "distance_km": 15.370005259108819
+    },
+    {
+      "object_id": 236587,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.2794986005184228,
+      "distance_km": 15.402392067094189
+    },
+    {
+      "object_id": 33021,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 5.625615222708284,
+      "distance_km": 15.451764254803713
+    },
+    {
+      "object_id": 32453,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 3.006852677217101,
+      "distance_km": 15.464346187174078
+    },
+    {
+      "object_id": 36883,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 3.164628352018954,
+      "distance_km": 15.522800938674889
+    },
+    {
+      "object_id": 24687,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.2654098178614024,
+      "distance_km": 15.55097228160415
+    },
+    {
+      "object_id": 29540,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.003934117386832,
+      "distance_km": 15.600441652987492
+    },
+    {
+      "object_id": 183391,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 6.64400565251251,
+      "distance_km": 15.605158161582219
+    },
+    {
+      "object_id": 33294,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.167610727506789,
+      "distance_km": 15.626743541027212
+    },
+    {
+      "object_id": 250674,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 3.984248858853071,
+      "distance_km": 15.651581934419909
+    },
+    {
+      "object_id": 138845,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 2.231308445697318,
+      "distance_km": 15.74232399033351
+    },
+    {
+      "object_id": 236801,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.0437030234055842,
+      "distance_km": 15.7433002812173
+    },
+    {
+      "object_id": 190625,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 5.180678882981089,
+      "distance_km": 15.7483856222381
+    },
+    {
+      "object_id": 42101,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.7708940564051245,
+      "distance_km": 15.761267445547734
+    },
+    {
+      "object_id": 38108,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 50.94372262649321,
+      "distance_km": 15.810828141545826
+    },
+    {
+      "object_id": 33196,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 31.210912261586135,
+      "distance_km": 15.825546098937133
+    },
+    {
+      "object_id": 208331,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 3.1589614715598526,
+      "distance_km": 15.859342519087324
+    },
+    {
+      "object_id": 32491,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 8.394650295403467,
+      "distance_km": 15.88987929117108
+    },
+    {
+      "object_id": 236601,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 2.12011732623548,
+      "distance_km": 15.917406729293814
+    },
+    {
+      "object_id": 140159,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.2250251315426035,
+      "distance_km": 15.927363740717048
+    },
+    {
+      "object_id": 192013,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 8.280773106703522,
+      "distance_km": 15.937837515029925
+    },
+    {
+      "object_id": 43405,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 2.7855102211443925,
+      "distance_km": 16.016385836995937
+    },
+    {
+      "object_id": 40345,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 4.199514185102003,
+      "distance_km": 16.018628706442257
+    },
+    {
+      "object_id": 32408,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 5.253366937378781,
+      "distance_km": 16.054953114219582
+    },
+    {
+      "object_id": 189214,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 7.318901874421821,
+      "distance_km": 16.090933764683605
+    },
+    {
+      "object_id": 40887,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 5.465264951099144,
+      "distance_km": 16.128121615406645
+    },
+    {
+      "object_id": 250761,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 2.54931665654999,
+      "distance_km": 16.173459099718855
+    },
+    {
+      "object_id": 239652,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 26.379498016806767,
+      "distance_km": 16.17757111206009
+    },
+    {
+      "object_id": 242126,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 3.1557669809519235,
+      "distance_km": 16.181177604473902
+    },
+    {
+      "object_id": 184806,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 8.112414493166542,
+      "distance_km": 16.205491775406692
+    },
+    {
+      "object_id": 138937,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 5.265830589100901,
+      "distance_km": 16.282680622435645
+    },
+    {
+      "object_id": 32914,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 2.219659399721915,
+      "distance_km": 16.284421290987922
+    },
+    {
+      "object_id": 24581,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 5.068726742510384,
+      "distance_km": 16.287000897625806
+    },
+    {
+      "object_id": 23204,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 5.303695045271583,
+      "distance_km": 16.318413073057698
+    },
+    {
+      "object_id": 181798,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 3.1321179070653296,
+      "distance_km": 16.348968633917238
+    },
+    {
+      "object_id": 31598,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 5.254890834173785,
+      "distance_km": 16.383539954565503
+    },
+    {
+      "object_id": 209916,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 5.921805311581602,
+      "distance_km": 16.383580266627984
+    },
+    {
+      "object_id": 28762,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 192.58313348342213,
+      "distance_km": 16.41482314062429
+    },
+    {
+      "object_id": 38222,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 3.4082141281566374,
+      "distance_km": 16.51628123300352
+    },
+    {
+      "object_id": 38248,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 4.59781037202507,
+      "distance_km": 16.535612631795793
+    },
+    {
+      "object_id": 38262,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 3.107325525120388,
+      "distance_km": 16.5385151605397
+    },
+    {
+      "object_id": 24671,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.4598048867244662,
+      "distance_km": 16.61452288056579
+    },
+    {
+      "object_id": 36916,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 2.5581799634528735,
+      "distance_km": 16.631328831423293
+    },
+    {
+      "object_id": 191992,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.1271422690933588,
+      "distance_km": 16.638381485721762
+    },
+    {
+      "object_id": 36463,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 90.30683847497122,
+      "distance_km": 16.638817958779146
+    },
+    {
+      "object_id": 183262,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 10.727143972413577,
+      "distance_km": 16.643843948562527
+    },
+    {
+      "object_id": 24493,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 4.030417891377715,
+      "distance_km": 16.678283297763397
+    },
+    {
+      "object_id": 37667,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 2.3055887909744266,
+      "distance_km": 16.70879330384382
+    },
+    {
+      "object_id": 249527,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 2.111976286708539,
+      "distance_km": 16.711418135385117
+    },
+    {
+      "object_id": 31787,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 14.617527154398221,
+      "distance_km": 16.766123706536447
+    },
+    {
+      "object_id": 25958,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 5.122355275444971,
+      "distance_km": 16.850656627399488
+    },
+    {
+      "object_id": 249360,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.0809772629076526,
+      "distance_km": 16.91092161890265
+    },
+    {
+      "object_id": 36189,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 27.32084068934716,
+      "distance_km": 16.91214873360117
+    },
+    {
+      "object_id": 34902,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 7.933924044189222,
+      "distance_km": 16.989477468101715
+    },
+    {
+      "object_id": 238212,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 16.29890859730282,
+      "distance_km": 17.060600503245606
+    },
+    {
+      "object_id": 24593,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.428783020572434,
+      "distance_km": 17.1313074691501
+    },
+    {
+      "object_id": 249169,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.1983950201539184,
+      "distance_km": 17.15849999339173
+    },
+    {
+      "object_id": 38177,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 3.879965134477509,
+      "distance_km": 17.1587764430748
+    },
+    {
+      "object_id": 250610,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 7.429541299054701,
+      "distance_km": 17.20398861128196
+    },
+    {
+      "object_id": 38242,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.7534725915275649,
+      "distance_km": 17.251834791834213
+    },
+    {
+      "object_id": 38211,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.4466700320781911,
+      "distance_km": 17.295114346820647
+    },
+    {
+      "object_id": 235127,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 2.3276046005794675,
+      "distance_km": 17.356684269261834
+    },
+    {
+      "object_id": 24680,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 2.6801151966236514,
+      "distance_km": 17.44869565505956
+    },
+    {
+      "object_id": 23143,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.2595817308947639,
+      "distance_km": 17.46642451695724
+    },
+    {
+      "object_id": 38215,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.0115445654605149,
+      "distance_km": 17.477244531663484
+    },
+    {
+      "object_id": 192046,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.8476187549642535,
+      "distance_km": 17.547702791956006
+    },
+    {
+      "object_id": 43502,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 4.9169277368031254,
+      "distance_km": 17.554979000156855
+    },
+    {
+      "object_id": 242248,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.6923491307680372,
+      "distance_km": 17.55902153238201
+    },
+    {
+      "object_id": 41807,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.8146306449485796,
+      "distance_km": 17.564848178274193
+    },
+    {
+      "object_id": 26967,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 121.33888201604667,
+      "distance_km": 17.568628733688772
+    },
+    {
+      "object_id": 192097,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.564701380759412,
+      "distance_km": 17.68463507344567
+    },
+    {
+      "object_id": 39675,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 4.672531321809167,
+      "distance_km": 17.71351571763113
+    },
+    {
+      "object_id": 134372,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 15.615609103787621,
+      "distance_km": 17.73298914629983
+    },
+    {
+      "object_id": 140232,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 3.2515467803156572,
+      "distance_km": 17.740818441527686
+    },
+    {
+      "object_id": 27402,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 6.013567937584408,
+      "distance_km": 17.792859169461252
+    },
+    {
+      "object_id": 192111,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 9.918750987188561,
+      "distance_km": 17.856499374750637
+    },
+    {
+      "object_id": 29344,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 2.1471661485740396,
+      "distance_km": 17.91693579643229
+    },
+    {
+      "object_id": 209931,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 2.978712608865942,
+      "distance_km": 17.97879940039462
+    },
+    {
+      "object_id": 30771,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 8.750093314424168,
+      "distance_km": 17.985729766403047
+    },
+    {
+      "object_id": 249358,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 9.217590306699373,
+      "distance_km": 17.990771041716883
+    },
+    {
+      "object_id": 186133,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 34.19093289084501,
+      "distance_km": 18.012720142715335
+    },
+    {
+      "object_id": 208437,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 6.389587211773363,
+      "distance_km": 18.082673387706343
+    },
+    {
+      "object_id": 155549,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 4.33851918763368,
+      "distance_km": 18.126979852962826
+    },
+    {
+      "object_id": 28738,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 12.662593443498642,
+      "distance_km": 18.227880885765423
+    },
+    {
+      "object_id": 39586,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 2.6405585276725034,
+      "distance_km": 18.278446233229964
+    },
+    {
+      "object_id": 39691,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.7221717799393947,
+      "distance_km": 18.28496950837649
+    },
+    {
+      "object_id": 242286,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 3.4653333238008317,
+      "distance_km": 18.328160100426896
+    },
+    {
+      "object_id": 248073,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 14.130570877137012,
+      "distance_km": 18.350574107898893
+    },
+    {
+      "object_id": 180547,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 24.509895368905898,
+      "distance_km": 18.495100883407343
+    },
+    {
+      "object_id": 190505,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 5.81647844342725,
+      "distance_km": 18.51227058516188
+    },
+    {
+      "object_id": 40767,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 2.163109834476919,
+      "distance_km": 18.548473247687806
+    },
+    {
+      "object_id": 242231,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 3.608248136016257,
+      "distance_km": 18.58869591656608
+    },
+    {
+      "object_id": 37427,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 2.154024580955075,
+      "distance_km": 18.60831676209598
+    },
+    {
+      "object_id": 211075,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 5.385109406139475,
+      "distance_km": 18.608387350963334
+    },
+    {
+      "object_id": 34402,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 24.53411379105517,
+      "distance_km": 18.63984252944171
+    },
+    {
+      "object_id": 28670,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 3.1221454650895417,
+      "distance_km": 18.801373135873327
+    },
+    {
+      "object_id": 39564,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 5.507458799083811,
+      "distance_km": 18.80396582473915
+    },
+    {
+      "object_id": 27381,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.7916451390356727,
+      "distance_km": 18.81932151753743
+    },
+    {
+      "object_id": 41021,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 3.5956817911547296,
+      "distance_km": 18.88488225645472
+    },
+    {
+      "object_id": 192108,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.3084605485857947,
+      "distance_km": 18.961753126038275
+    },
+    {
+      "object_id": 39607,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.7309344002462512,
+      "distance_km": 19.020726379128018
+    },
+    {
+      "object_id": 41067,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 2.5831992884250896,
+      "distance_km": 19.03146977786383
+    },
+    {
+      "object_id": 29181,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 27.192386295725278,
+      "distance_km": 19.059033254278056
+    },
+    {
+      "object_id": 235129,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.2044066103373972,
+      "distance_km": 19.087336803863725
+    },
+    {
+      "object_id": 33183,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.4720255961269115,
+      "distance_km": 19.115939475524293
+    },
+    {
+      "object_id": 38005,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 109.16143373685927,
+      "distance_km": 19.125835582919
+    },
+    {
+      "object_id": 23496,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 10.189166795393808,
+      "distance_km": 19.19537047714378
+    },
+    {
+      "object_id": 155485,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 4.324880800183928,
+      "distance_km": 19.19929946524166
+    },
+    {
+      "object_id": 42252,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.0486654944578695,
+      "distance_km": 19.226912368379526
+    },
+    {
+      "object_id": 41143,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 11.298282243949386,
+      "distance_km": 19.23528675607136
+    },
+    {
+      "object_id": 33946,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 2.0954915840048014,
+      "distance_km": 19.237707385289372
+    },
+    {
+      "object_id": 39705,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 9.459032478800044,
+      "distance_km": 19.242796621269314
+    },
+    {
+      "object_id": 134585,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 12.296283470889689,
+      "distance_km": 19.332149017144168
+    },
+    {
+      "object_id": 32961,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.75356343429948,
+      "distance_km": 19.378515551378005
+    },
+    {
+      "object_id": 25819,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 2.1201002024679374,
+      "distance_km": 19.449699679657293
+    },
+    {
+      "object_id": 27094,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 22.87951980427512,
+      "distance_km": 19.474192439624264
+    },
+    {
+      "object_id": 39822,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.1174406322008412,
+      "distance_km": 19.502378475511918
+    },
+    {
+      "object_id": 27603,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 3.3425011534856646,
+      "distance_km": 19.508307393238233
+    },
+    {
+      "object_id": 134302,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 4.5211902617513875,
+      "distance_km": 19.511029369425874
+    },
+    {
+      "object_id": 41049,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 3.966127609306843,
+      "distance_km": 19.54038559613053
+    },
+    {
+      "object_id": 250680,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.1839312973391851,
+      "distance_km": 19.591537103323482
+    },
+    {
+      "object_id": 140447,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.6288767065081011,
+      "distance_km": 19.61757547792393
+    },
+    {
+      "object_id": 242298,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 1.5673953384958068,
+      "distance_km": 19.62991823095596
+    },
+    {
+      "object_id": 24933,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 4.2708717119704565,
+      "distance_km": 19.691760986675728
+    },
+    {
+      "object_id": 242342,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 2.0256702870396164,
+      "distance_km": 19.708573784981922
+    },
+    {
+      "object_id": 41243,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 2.553994782625572,
+      "distance_km": 19.735450423815973
+    },
+    {
+      "object_id": 140327,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 3.1784764055623107,
+      "distance_km": 19.75371617477486
+    },
+    {
+      "object_id": 192160,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 18.02871110548833,
+      "distance_km": 19.792383814844634
+    },
+    {
+      "object_id": 27374,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 9.253414115132264,
+      "distance_km": 19.810785452605096
+    },
+    {
+      "object_id": 35168,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 29.00758347947231,
+      "distance_km": 19.909642189390546
+    },
+    {
+      "object_id": 31725,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 2.7556778842134646,
+      "distance_km": 19.951730027374907
+    },
+    {
+      "object_id": 28806,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 3.523947936472118,
+      "distance_km": 19.95359454046778
+    }
+  ],
+  "nearest_by_min_area": {
+    "1_ha": {
+      "object_id": 186246,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 3.2949112230638655,
+      "distance_km": 0.3801915343673115
+    },
+    "5_ha": {
+      "object_id": 29031,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 18.448863902123463,
+      "distance_km": 1.187543634011853
+    },
+    "10_ha": {
+      "object_id": 29031,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 18.448863902123463,
+      "distance_km": 1.187543634011853
+    },
+    "50_ha": {
+      "object_id": 30467,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 81.0889427164762,
+      "distance_km": 3.1509053625978454
+    },
+    "100_ha": {
+      "object_id": 1960,
+      "feature_type": "RIV-MAJ",
+      "name": "Buffalo River",
+      "area_ha": 200.83431248435872,
+      "distance_km": 4.347131866207436
+    }
+  }
+}
