@@ -217,6 +217,7 @@ exists and the maintainer approves it.
 | P219 Re-wetting sortie and fleet lower bound | #1280 | `feature/p219-rewetting-capacity` | pr-open |
 | P220 combined optimizer/process risk verification bundle | #1276 | `feature/p220-risk-bundle` | complete |
 | P221 bundle existing optimizer risk verification | #1281 | `feature/p221-optimizer-bundle` | pr-open |
+| P222 Gap-only dispatch queue feasibility | #1288 | `feature/p222-dispatch-queue` | pr-open |
 | P217 Re-wetting interval at 100 m | #1262 | `feature/p217-rewetting` | pr-open |
 | P201 Firebreak gap sensitivity pilot | #1185 | `feature/p201-firebreak-gap` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
@@ -6416,4 +6417,28 @@ Acceptance:
 - The bundle uses the optimizer's written verification values.
 - Missing or invalid risk verification files fail loudly.
 - The process gap is preserved.
+- Dashboard green.
+
+## Phase 222: gap-only dispatch queue feasibility
+
+Parent issue: #1288
+Branch: `feature/p222-dispatch-queue`
+Status: pr-open
+Report: `notes/reports/p222-dispatch-queue.md`
+Manifest: `notes/reports/p222-dispatch-queue.json`
+PR: #1291
+
+Goal: test whether the P219 lower bound survives a simple round-robin dispatch queue.
+
+- [x] P222.1 Add the dispatch queue simulation (#1289)
+- [x] P222.2 Run and close out queue feasibility (#1290)
+
+Result: three aircraft sustain the 15-minute gap application with 2.25 min margin; two aircraft
+accumulate lateness and fail. Go for the three-aircraft queue result; no-go for operational claims.
+
+Acceptance:
+
+- Application lateness and maximum cell gap reported.
+- Three, four and five aircraft compared.
+- No calibration and no operational claim.
 - Dashboard green.
