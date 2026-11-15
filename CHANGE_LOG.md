@@ -5835,3 +5835,8 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P226.2: at 4,235 L/min the source queue peaks at 2.83 min but the schedule remains feasible;
   3,000 L/min fails with 36.25 min of end lateness. Report:
   `notes/reports/p226-source-queue.md`. Dashboard: RED on unrelated existing mypy/test gates; P226 tests pass.
+
+- P227.1: added seeded service-time and cycle jitter to the source queue.
+- P227.2: 4,235 L/min is feasible in 100/100 samples; 3,500 L/min fails in 100/100.
+  Report: `notes/reports/p227-stochastic-source.md`. Dashboard: RED on unrelated mypy/test gates;
+  P227 tests pass.

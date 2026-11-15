@@ -102,6 +102,8 @@ Working notes for WS4. Notes are living: update them in the same change set as t
 - `reports/p225-source-service.json` — P225 service manifest.
 - `reports/p226-source-queue.md` — P226 source queue and refill feasibility.
 - `reports/p226-source-queue.json` — P226 queue manifest.
+- `reports/p227-stochastic-source.md` — P227 variability envelope.
+- `reports/p227-stochastic-source.json` — P227 envelope manifest.
 - `reports/p159-model-card.md` — P159.2 surrogate architecture, training data, losses, and
   limitations.
 - `reports/p159-evaluation.md` — P159.3 held-out synthetic and Dogrib OOD evaluation.

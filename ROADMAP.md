@@ -221,6 +221,7 @@ exists and the maintainer approves it.
 | P224 Water-source throughput lower bound | #1295 | `feature/p224-water-source` | pr-open |
 | P225 Water-source service utilization | #1300 | `feature/p225-source-service` | pr-open |
 | P226 Source queue and refill feasibility | #1304 | `feature/p226-source-queue` | pr-open |
+| P227 Stochastic source-queue envelope | #1308 | `feature/p227-stochastic-source` | pr-open |
 | P217 Re-wetting interval at 100 m | #1262 | `feature/p217-rewetting` | pr-open |
 | P201 Firebreak gap sensitivity pilot | #1185 | `feature/p201-firebreak-gap` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
@@ -6513,6 +6514,30 @@ Result: 4,235 L/min peaks at 2.83 min source wait but stays feasible; 3,000 L/mi
 Acceptance:
 
 - Queue wait, lateness and cell gap reported.
+- Threshold and failure cases compared.
+- No calibration and no operational claim.
+- Dashboard green if repository gates permit it.
+
+## Phase 227: stochastic source-queue envelope
+
+Parent issue: #1308
+Branch: `feature/p227-stochastic-source`
+Status: pr-open
+Report: `notes/reports/p227-stochastic-source.md`
+Manifest: `notes/reports/p227-stochastic-source.json`
+PR: #1311
+
+Goal: stress the P226 source queue with seeded service/cycle jitter.
+
+- [x] P227.1 Add stochastic source jitter (#1309)
+- [x] P227.2 Run the stochastic source envelope (#1310)
+
+Result: 4,235 L/min is feasible in 100/100 samples; 3,500 L/min fails in 100/100. The jitter
+envelope does not overturn the deterministic threshold.
+
+Acceptance:
+
+- Feasible fraction and p95 metrics reported.
 - Threshold and failure cases compared.
 - No calibration and no operational claim.
 - Dashboard green if repository gates permit it.
