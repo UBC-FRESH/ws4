@@ -1,0 +1,47 @@
+{
+  "parameters": {
+    "volume_l": 480000.0,
+    "cycle_min": 4.25,
+    "payload_l": 6000.0,
+    "refill_l_min": 4235.294,
+    "travel_budget_min": 2.8333332939814806
+  },
+  "sources": [
+    {
+      "object_id": 186246,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 3.2949112230638655,
+      "distance_km": 0.3801915343673115,
+      "drawdown_mm": 14.567919057729833,
+      "required_speed_kmh": 16.102229914492927
+    },
+    {
+      "object_id": 29031,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 18.448863902123463,
+      "distance_km": 1.187543634011853,
+      "drawdown_mm": 2.6017862267646303,
+      "required_speed_kmh": 50.29596637435123
+    },
+    {
+      "object_id": 30467,
+      "feature_type": "LAKE-PER",
+      "name": null,
+      "area_ha": 81.0889427164762,
+      "distance_km": 3.1509053625978454,
+      "drawdown_mm": 0.5919426051444501,
+      "required_speed_kmh": 133.45011132820608
+    },
+    {
+      "object_id": 1960,
+      "feature_type": "RIV-MAJ",
+      "name": "Buffalo River",
+      "area_ha": 200.83431248435872,
+      "distance_km": 4.347131866207436,
+      "drawdown_mm": 0.23900298413269552,
+      "required_speed_kmh": 184.11382277298082
+    }
+  ]
+}

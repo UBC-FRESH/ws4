@@ -5865,3 +5865,8 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P230.2: verified and closed P230. Full dashboard **OVERALL: GREEN**. Both engines report 340 m3
   and the P223 comparison is zero. Report: `notes/reports/p230-shared-schedule.md`; close-out:
   `notes/reports/p230-closeout.md`. Design: `notes/design/ws4-shared-schedule.md`. PR: #1324.
+
+- P232.1: added the source-distance and drawdown calculator with tests.
+- P232.2: the 18.45 ha lake at 1.19 km requires 50.3 km/h average and 2.60 mm equivalent
+  drawdown for the 480,000 L gap demand. Source geometry is not the blocker; refill/depth
+  remain unknown. Report: `notes/reports/p232-source-geometry.md`. Dashboard: **GREEN**.
