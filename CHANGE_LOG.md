@@ -5913,4 +5913,4 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 
 - P236.2: verified and closed P236. Full dashboard **OVERALL: GREEN**. Timed harvest gap pinned
   at -30/-25 m3. Report: `notes/reports/p236-harvest-track.md`; close-out:
-  `notes/reports/p236-closeout.md`. Design: `notes/design/ws4-harvest-track.md`. PR: #TBD.
+  `notes/reports/p236-closeout.md`. Design: `notes/design/ws4-harvest-track.md`. PR: #1347.

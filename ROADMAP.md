@@ -6726,7 +6726,7 @@ Status: pr-open
 Design note: `notes/design/ws4-harvest-track.md`
 Report: `notes/reports/p236-closeout.md`
 Comparison report: `notes/reports/p236-harvest-track.md`
-PR: #TBD
+PR: #1347
 
 Goal: quantify the track-change gap when a harvest occurs inside a five-year run.
 

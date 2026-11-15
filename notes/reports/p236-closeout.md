@@ -29,4 +29,4 @@ Add track/curve identity to process cohorts or the bridge, then re-run this case
 
 ## Pull request
 
-PR: #TBD is queued for maintainer approval. Do not merge without approval.
+PR: #1347 is queued for maintainer approval. Do not merge without approval.
