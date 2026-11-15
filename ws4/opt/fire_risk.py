@@ -256,3 +256,139 @@ def evaluate_process_fire_risk(
         targets=tuple(effective),
         objective=objective(aggregated, effective),
     )
+
+
+@dataclass(frozen=True)
+class ProcessFireRiskValidation:
+    """Train/validation comparison for process fire risk.
+
+    Attributes
+    ----------
+    train : ProcessFireRiskReport
+        Training-scenario report.
+    validation : ProcessFireRiskReport
+        Held-out report.
+    train_fraction : float
+        Fraction of scenarios assigned to training.
+    """
+
+    train: ProcessFireRiskReport
+    validation: ProcessFireRiskReport
+    train_fraction: float
+
+    @property
+    def gap(self) -> float:
+        """Return validation objective minus training objective.
+
+        Returns
+        -------
+        float
+            The generalization gap; positive means validation is worse.
+        """
+        return self.validation.objective - self.train.objective
+
+    def summary(self) -> dict[str, object]:
+        """Return a stable train/validation summary.
+
+        Returns
+        -------
+        dict
+            Train fraction, scenario counts, objectives, and gap.
+        """
+        return {
+            "schema_version": PROCESS_FIRE_RISK_VERSION,
+            "train_fraction": self.train_fraction,
+            "train_scenarios": sorted(self.train.values["scenario"].unique().tolist()),
+            "validation_scenarios": sorted(self.validation.values["scenario"].unique().tolist()),
+            "train_objective": self.train.objective,
+            "validation_objective": self.validation.objective,
+            "generalization_gap": self.gap,
+        }
+
+    def write(self, out_dir: Path) -> None:
+        """Write train/validation values and summary.
+
+        Parameters
+        ----------
+        out_dir : Path
+            Output directory, created when missing.
+        """
+        target = Path(out_dir)
+        target.mkdir(parents=True, exist_ok=True)
+        self.train.values.to_csv(target / "process_fire_risk_train_values.csv", index=False)
+        self.validation.values.to_csv(
+            target / "process_fire_risk_validation_values.csv", index=False
+        )
+        (target / "process_fire_risk_validation.json").write_text(
+            json.dumps(self.summary(), indent=2, sort_keys=True) + "\n", encoding="utf-8"
+        )
+
+
+def evaluate_process_fire_risk_validation(
+    summaries: Mapping[str, FireRegimeRiskSummary],
+    *,
+    years: int,
+    targets: Sequence[Target],
+    train_fraction: float,
+    weights: Mapping[str, float] | None = None,
+) -> ProcessFireRiskValidation:
+    """Split scenarios and compare training and validation risk objectives.
+
+    Parameters
+    ----------
+    summaries : mapping of str to FireRegimeRiskSummary
+        Per-scenario summaries.
+    years : int
+        Number of simulated years.
+    targets : sequence of Target
+        Risk-aggregated targets.
+    train_fraction : float
+        Fraction in (0, 1) assigned to training. The split is deterministic by sorted id.
+    weights : mapping of str to float or None, optional
+        Scenario weights. Missing weights use the aggregation defaults.
+
+    Returns
+    -------
+    ProcessFireRiskValidation
+        Training and validation reports plus the generalization gap.
+
+    Raises
+    ------
+    ProcessFireRiskError
+        If there are fewer than two scenarios or the fraction is invalid.
+    """
+    if not isinstance(train_fraction, (int, float)) or isinstance(train_fraction, bool):
+        raise ProcessFireRiskError("train_fraction must be a number")
+    fraction = float(train_fraction)
+    if not 0.0 < fraction < 1.0:
+        raise ProcessFireRiskError("train_fraction must be between 0 and 1")
+    ids = sorted(summaries)
+    if len(ids) < 2:
+        raise ProcessFireRiskError("at least two scenarios are required")
+    count = max(1, min(len(ids) - 1, int(len(ids) * fraction)))
+    train_ids = tuple(ids[:count])
+    validation_ids = tuple(ids[count:])
+
+    def weights_for(selected: Sequence[str]) -> Mapping[str, float] | None:
+        if weights is None:
+            return None
+        missing = sorted(set(selected) - set(weights))
+        if missing:
+            raise ProcessFireRiskError(f"missing weights for: {', '.join(missing)}")
+        return {scenario: float(weights[scenario]) for scenario in selected}
+
+    train = evaluate_process_fire_risk(
+        {scenario: summaries[scenario] for scenario in train_ids},
+        years=years,
+        targets=targets,
+        scenario_ids=train_ids,
+        weights=weights_for(train_ids),
+    )
+    validation = evaluate_process_fire_risk(
+        {scenario: summaries[scenario] for scenario in validation_ids},
+        years=years,
+        targets=targets,
+        scenario_ids=validation_ids,
+        weights=weights_for(validation_ids),
+    )
+    return ProcessFireRiskValidation(train=train, validation=validation, train_fraction=fraction)
