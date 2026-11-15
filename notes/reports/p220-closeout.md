@@ -38,4 +38,4 @@ Use the bundle in the optimizer's risk verification output path.
 
 ## Pull request
 
-PR: #TBD is queued for maintainer approval. Do not merge without approval.
+PR: #1279 is queued for maintainer approval. Do not merge without approval.

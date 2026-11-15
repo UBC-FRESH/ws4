@@ -6354,7 +6354,7 @@ Status: pr-open
 Design note: `notes/design/ws4-risk-bundle.md`
 Report: `notes/reports/p220-closeout.md`
 Bundle report: `notes/reports/p220-risk-bundle.md`
-PR: #TBD
+PR: #1279
 
 Goal: write the optimizer risk summary and P218 process risk validation into one JSON bundle.
 
