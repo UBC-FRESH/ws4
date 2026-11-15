@@ -20,6 +20,7 @@ from ws4.fire.growth import (
     GrowthConfig,
     SiteGrid,
     WeatherStep,
+    _wet_depth_at,
     directional_ros,
     effective_wind,
     fragment_ignition_events,
@@ -580,3 +581,14 @@ def test_wet_depth_requires_matching_shape() -> None:
                 wet_depth_mm=np.zeros((4, 4)),
             ),
         )
+
+
+def test_wet_interval_resets_depth_age() -> None:
+    depth = np.full((3, 3), 2.0)
+    assert _wet_depth_at(depth, 0.0, 60.0, None, 1.0, 1, 1, 65.0) is False
+    assert _wet_depth_at(depth, 0.0, 60.0, 30.0, 1.0, 1, 1, 65.0) is True
+
+
+def test_wet_interval_must_be_positive() -> None:
+    with pytest.raises(FireFuelError, match="wet_interval_min"):
+        GrowthConfig(ignition_cells=((2, 2),), wet_interval_min=0.0)

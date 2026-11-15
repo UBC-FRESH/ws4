@@ -213,6 +213,7 @@ exists and the maintainer approves it.
 | P214 process fire-regime risk accounts | #1246 | `feature/p214-fire-risk-accounts` | complete |
 | P215 process fire-risk evaluation report | #1253 | `feature/p215-process-risk-report` | complete |
 | P216 process fire-risk report artifact | #1259 | `feature/p216-risk-report-artifact` | pr-open |
+| P217 Re-wetting interval at 100 m | #1262 | `feature/p217-rewetting` | pr-open |
 | P201 Firebreak gap sensitivity pilot | #1185 | `feature/p201-firebreak-gap` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
@@ -6288,4 +6289,31 @@ Acceptance:
 - The artifact is stable and JSON-ready.
 - Targets and objective are recorded.
 - Empty reports are rejected.
+- Dashboard green.
+
+## Phase 217: re-wetting interval at 100 m
+
+Parent issue: #1262
+Branch: `feature/p217-rewetting`
+Status: pr-open
+Report: `notes/reports/p217-rewetting.md`
+Manifest: `notes/reports/p217-rewetting-15.json`
+PR: #1267
+
+Goal: test whether perfect re-wetting preserves the 100 m drop-depth line through arrival.
+
+- [x] P217.1 Add periodic re-wetting (#1263)
+- [x] P217.2 Run the re-wetting pilot (#1264)
+- [x] P217.3 Close out re-wetting (#1265)
+
+Result: 15-minute re-wetting contains at 92,722 ha; 30-minute re-wetting crosses; 60-minute run
+exceeded the execution budget. Go for 15-minute persistence as a diagnostic; no-go for operational
+claims.
+
+Acceptance:
+
+- Depth age resets at the re-wetting interval.
+- Free-burn default unchanged.
+- Final area, crossing and runtime reported.
+- No calibration and no operational claim.
 - Dashboard green.

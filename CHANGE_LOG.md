@@ -5769,3 +5769,9 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   empty-report rejection pass. Report: `notes/reports/p216-risk-report-artifact.md`; close-out:
   `notes/reports/p216-closeout.md`. Design: `notes/design/ws4-process-risk-artifact.md`.
   PR: #1266.
+
+- P217.1: added an optional `wet_interval_min` re-wetting interval to the depth field.
+- P217.2: at 100 m, perfect 15-minute re-wetting contains the gap at 92,722 ha; 30-minute
+  re-wetting crosses. The 60-minute run exceeded the execution budget.
+- P217.3: closed P217 with a go for 15-minute persistence as a diagnostic mechanism and a no-go for
+  operational claims. Report: `notes/reports/p217-rewetting.md`. Dashboard: **GREEN**.
