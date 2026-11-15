@@ -5855,3 +5855,13 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P229.2: confirmed `2003_96` is Alberta HWF113; nearest current waterbody is 3.29 ha at 0.38 km,
   with an 18.45 ha lake at 1.19 km. Report: `notes/reports/p229-alberta-water-source.md`.
   Dashboard: **GREEN**.
+
+- P223 merged: the process/estate account comparison is on `main` as `15d9ec9`. Branch deleted;
+  no tag, release, or settings change.
+
+- P230.1: ran the same synthetic CC schedule through the estate simulator and the process engine;
+  both report 340 m3 final volume.
+
+- P230.2: verified and closed P230. Full dashboard **OVERALL: GREEN**. Both engines report 340 m3
+  and the P223 comparison is zero. Report: `notes/reports/p230-shared-schedule.md`; close-out:
+  `notes/reports/p230-closeout.md`. Design: `notes/design/ws4-shared-schedule.md`. PR: #1324.
