@@ -5800,3 +5800,9 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P220.2: verified and closed P220. Full dashboard **OVERALL: GREEN**. Bundle contents, gap
   preservation, and invalid input pass. Report: `notes/reports/p220-risk-bundle.md`; close-out:
   `notes/reports/p220-closeout.md`. Design: `notes/design/ws4-risk-bundle.md`. PR: #1279.
+
+- P219.1: added a deterministic re-wetting capacity calculator for sorties, water rate and aircraft
+  lower bound.
+- P219.2: gap-only 15-minute re-wetting needs 10 sorties/application, 40 sorties/h and 3 aircraft;
+  the full 75-cell line needs 43 aircraft and 3.6 million L/h. Report:
+  `notes/reports/p219-rewetting-capacity.md`. Dashboard: **GREEN**.
