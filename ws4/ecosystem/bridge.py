@@ -7,6 +7,7 @@ does not overwrite the compiled dataset and it is not calibrated to observed dat
 
 from __future__ import annotations
 
+import itertools
 import json
 import math
 from collections.abc import Mapping
@@ -53,6 +54,8 @@ class VolumeBridgeConfig:
         Status label, default ``provisional``.
     calibration_source : str
         Provenance note.
+    age_volume_curves : mapping of str to mapping of int to float, optional
+        Species age-to-volume-per-hectare curves. These override the biomass rate.
     """
 
     volume_m3_per_t: Mapping[str, float] = field(default_factory=dict)
@@ -61,6 +64,7 @@ class VolumeBridgeConfig:
     bridge_id: str = "volume-bridge"
     calibration_status: str = "provisional"
     calibration_source: str = "Default coefficients; not fitted to observed data."
+    age_volume_curves: Mapping[str, Mapping[int, float]] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         """Validate and canonicalize the parameters."""
@@ -85,6 +89,21 @@ class VolumeBridgeConfig:
             raise BridgeError("bridge_id must be non-empty")
         if not self.calibration_status.strip():
             raise BridgeError("calibration_status must be non-empty")
+        if not isinstance(self.age_volume_curves, Mapping):
+            raise BridgeError("age_volume_curves must be a mapping")
+        curves: dict[str, dict[int, float]] = {}
+        for species, raw_curve in self.age_volume_curves.items():
+            if not isinstance(species, str) or not species.strip():
+                raise BridgeError("age curve species names must be non-empty strings")
+            if not isinstance(raw_curve, Mapping) or not raw_curve:
+                raise BridgeError(f"age curve for {species!r} must be a non-empty mapping")
+            curve: dict[int, float] = {}
+            for raw_age, raw_volume in raw_curve.items():
+                if isinstance(raw_age, bool) or not isinstance(raw_age, int) or raw_age < 0:
+                    raise BridgeError("age curve keys must be non-negative integers")
+                curve[raw_age] = _volume_rate(raw_volume, f"age curve {species!r} at {raw_age}")
+            curves[species.strip()] = dict(sorted(curve.items()))
+        object.__setattr__(self, "age_volume_curves", curves)
 
     def rate(self, species: str) -> float:
         """Return the volume rate for one species.
@@ -107,7 +126,7 @@ class VolumeBridgeConfig:
         Returns
         -------
         dict
-            Version, coefficients, status, and provenance.
+            Version, coefficients, age curves, status, and provenance.
         """
         return {
             "schema_version": BRIDGE_VERSION,
@@ -115,9 +134,42 @@ class VolumeBridgeConfig:
             "volume_m3_per_t": dict(sorted(self.volume_m3_per_t.items())),
             "default_volume_m3_per_t": self.default_volume_m3_per_t,
             "merchantable_fraction": self.merchantable_fraction,
+            "age_volume_curves": {
+                species: dict(sorted(curve.items()))
+                for species, curve in sorted(self.age_volume_curves.items())
+            },
             "calibration_status": self.calibration_status,
             "calibration_source": self.calibration_source,
         }
+
+    def age_volume(self, species: str, age: float) -> float | None:
+        """Return interpolated volume per hectare from an age curve.
+
+        Parameters
+        ----------
+        species : str
+            Species label.
+        age : float
+            Cohort age in years.
+
+        Returns
+        -------
+        float or None
+            Interpolated volume, or None when the species has no age curve.
+        """
+        curve = self.age_volume_curves.get(species)
+        if not curve:
+            return None
+        ages = sorted(curve)
+        if age <= ages[0]:
+            return curve[ages[0]]
+        if age >= ages[-1]:
+            return curve[ages[-1]]
+        for lower, upper in itertools.pairwise(ages):
+            if lower <= age <= upper:
+                fraction = (age - lower) / (upper - lower)
+                return curve[lower] + fraction * (curve[upper] - curve[lower])
+        return curve[ages[-1]]
 
     def write(self, path: str | Path) -> Path:
         """Write the parameter table to JSON.
@@ -178,13 +230,17 @@ class SpeciesVolumeBridge:
             volume = 0.0
             for _, row in group.iterrows():
                 species = str(row["species"])
-                volume += (
-                    float(row["biomass_t_ha"])
-                    * float(row["area_fraction"])
-                    * area
-                    * self.config.rate(species)
-                    * self.config.merchantable_fraction
-                )
+                age_volume = self.config.age_volume(species, float(row["age"]))
+                if age_volume is None:
+                    volume += (
+                        float(row["biomass_t_ha"])
+                        * float(row["area_fraction"])
+                        * area
+                        * self.config.rate(species)
+                        * self.config.merchantable_fraction
+                    )
+                else:
+                    volume += float(row["area_fraction"]) * area * age_volume
             rows.append(
                 {
                     "fragment_id": fragment_id,

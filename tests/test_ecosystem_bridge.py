@@ -80,3 +80,38 @@ def test_bridge_parameters_are_versioned_and_written(tmp_path: Path) -> None:
     assert payload["schema_version"] == BRIDGE_VERSION
     assert payload["calibration_status"] == "provisional"
     assert payload["volume_m3_per_t"] == {"PL": 1.2}
+
+
+def test_age_curves_override_biomass_and_interpolate() -> None:
+    _schema, state, _edges = synthetic_grid(1, 2)
+    frame = state.cohorts.copy()
+    frame["species"] = "PL"
+    frame["age"] = [40, 60]
+    frame["biomass_t_ha"] = [1000.0, 1000.0]
+    state = CohortState(
+        cohorts=frame.reset_index(drop=True),
+        schema=state.schema,
+        fragment_areas={1: 3.0, 2: 2.0},
+    )
+    config = VolumeBridgeConfig(
+        default_volume_m3_per_t=0.0,
+        age_volume_curves={"PL": {0: 0.0, 40: 120.0, 60: 170.0}},
+    )
+    bridge = SpeciesVolumeBridge(config)
+
+    table = bridge.table(state)
+
+    assert table["volume_m3"].tolist() == pytest.approx([360.0, 340.0])
+    assert config.age_volume("PL", 50.0) == pytest.approx(145.0)
+    assert config.age_volume("PL", 80.0) == pytest.approx(170.0)
+    assert config.age_volume("XX", 50.0) is None
+
+
+def test_age_curves_are_serialized_and_validated(tmp_path: Path) -> None:
+    config = VolumeBridgeConfig(age_volume_curves={"PL": {60: 170.0, 40: 120.0}})
+    payload = json.loads(config.write(tmp_path / "bridge.json").read_text())
+    assert payload["age_volume_curves"] == {"PL": {"40": 120.0, "60": 170.0}}
+    with pytest.raises(BridgeError, match="non-empty"):
+        VolumeBridgeConfig(age_volume_curves={"PL": {}})
+    with pytest.raises(BridgeError, match="non-negative"):
+        VolumeBridgeConfig(age_volume_curves={"PL": {-1: 1.0}})

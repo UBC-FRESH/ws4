@@ -40,6 +40,9 @@ Yield bridge
 
 ``VolumeBridgeConfig`` records species rates, the default rate, the merchantable fraction,
 the schema version, and the calibration status/source. The default status is ``provisional``.
+An optional species ``age_volume_curves`` mapping overrides the biomass rate with age-based
+volume per hectare. Intermediate ages interpolate; ages outside the range clamp to the endpoint.
+
 The bridge can attach ``volume_m3_ha`` and ``volume_m3`` to a management frame keyed by
 ``fragment_id``.
 

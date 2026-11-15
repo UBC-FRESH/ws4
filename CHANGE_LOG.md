@@ -5866,6 +5866,19 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   and the P223 comparison is zero. Report: `notes/reports/p230-shared-schedule.md`; close-out:
   `notes/reports/p230-closeout.md`. Design: `notes/design/ws4-shared-schedule.md`. PR: #1324.
 
+- P230 merged: the shared-schedule comparison is on `main` as `e510397`. Branch deleted; no
+  tag, release, or settings change.
+
+- P231.1: added species age-to-volume curves to the provisional bridge, with interpolation,
+  endpoint clamping, serialization, and validation.
+
+- P231.2: switched the shared-schedule test to the natural curve; both engines still report 340 m3.
+  Dashboard: pending full run.
+
+- P231.3: verified and closed P231. Full dashboard **OVERALL: GREEN**. Age-curve bridge and shared
+  schedule both report 340 m3. Report: `notes/reports/p231-age-curves.md`; close-out:
+  `notes/reports/p231-closeout.md`. Design: `notes/design/ws4-age-volume-curves.md`. PR: #TBD.
+
 - P232.1: added the source-distance and drawdown calculator with tests.
 - P232.2: the 18.45 ha lake at 1.19 km requires 50.3 km/h average and 2.60 mm equivalent
   drawdown for the 480,000 L gap demand. Source geometry is not the blocker; refill/depth
