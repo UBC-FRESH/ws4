@@ -5826,3 +5826,7 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P224.1: added a deterministic water-source throughput calculator.
 - P224.2: the P222 demand needs 4,000 L/min from one source, or 2,000 L/min per source for two;
   both hit 100% utilization. Report: `notes/reports/p224-water-source.md`. Dashboard: **GREEN**.
+
+- P225.1: added source service-time utilization to the capacity model.
+- P225.2: a 4,000 L/min single source is 1.059x oversubscribed; the minimum is 4,235 L/min. Two
+  sources need 2,118 L/min each. Report: `notes/reports/p225-source-service.md`. Dashboard: RED on unrelated mypy/test gates.
