@@ -1,0 +1,41 @@
+[
+  {
+    "aircraft": 3,
+    "sources": 1,
+    "refill_l_min": 4235.294,
+    "applications": 8,
+    "interval_min": 15.0,
+    "cycle_min": 4.25,
+    "payload_l": 6000.0,
+    "max_cell_gap_min": 9.916666824074078,
+    "max_end_lateness_min": -2.2499997638888694,
+    "max_source_wait_min": 2.833333412037039,
+    "feasible": true
+  },
+  {
+    "aircraft": 3,
+    "sources": 1,
+    "refill_l_min": 5000.0,
+    "applications": 8,
+    "interval_min": 15.0,
+    "cycle_min": 4.25,
+    "payload_l": 6000.0,
+    "max_cell_gap_min": 9.7,
+    "max_end_lateness_min": -2.25,
+    "max_source_wait_min": 2.4000000000000004,
+    "feasible": true
+  },
+  {
+    "aircraft": 3,
+    "sources": 1,
+    "refill_l_min": 6000.0,
+    "applications": 8,
+    "interval_min": 15.0,
+    "cycle_min": 4.25,
+    "payload_l": 6000.0,
+    "max_cell_gap_min": 9.5,
+    "max_end_lateness_min": -2.25,
+    "max_source_wait_min": 2.0,
+    "feasible": true
+  }
+]

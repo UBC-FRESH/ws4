@@ -5830,3 +5830,8 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P225.1: added source service-time utilization to the capacity model.
 - P225.2: a 4,000 L/min single source is 1.059x oversubscribed; the minimum is 4,235 L/min. Two
   sources need 2,118 L/min each. Report: `notes/reports/p225-source-service.md`. Dashboard: RED on unrelated mypy/test gates.
+
+- P226.1: added a deterministic source queue and refill simulation for the gap schedule.
+- P226.2: at 4,235 L/min the source queue peaks at 2.83 min but the schedule remains feasible;
+  3,000 L/min fails with 36.25 min of end lateness. Report:
+  `notes/reports/p226-source-queue.md`. Dashboard: RED on unrelated existing mypy/test gates; P226 tests pass.
