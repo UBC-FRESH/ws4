@@ -79,6 +79,24 @@ def test_cohort_state_fills_blank_numbers_from_the_default() -> None:
     assert state.cohorts.loc[0, "biomass_t_ha"] == 0.0
 
 
+def test_cohort_state_preserves_optional_track_id() -> None:
+    frame = raw_cohorts()
+    frame["track_id"] = ["1", "2"]
+
+    state = CohortState.from_tables(frame, make_schema(), {1: 10.0})
+
+    assert "track_id" in state.cohorts.columns
+    assert state.cohorts["track_id"].tolist() == [1, 2]
+
+
+def test_cohort_state_rejects_a_negative_track_id() -> None:
+    frame = raw_cohorts()
+    frame["track_id"] = ["-1", "2"]
+
+    with pytest.raises(CohortStateError, match="track_id must be non-negative"):
+        CohortState.from_tables(frame, make_schema(), {1: 10.0})
+
+
 def test_empty_cohort_state_has_stable_frames() -> None:
     state = CohortState.from_tables(pd.DataFrame(columns=COLUMNS), make_schema(), {1: 10.0})
 

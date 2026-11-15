@@ -162,6 +162,17 @@ def test_fire_effect_preserves_area_and_creates_snags() -> None:
     updated.check_area_conservation()
 
 
+def test_fire_effect_preserves_track_identity() -> None:
+    _, state, edges = synthetic_grid(1, 1)
+    state.cohorts["track_id"] = 1
+    process = FireProcess(FireConfig(mortality_factor=1.0), edges, RandomTape(1), "s")
+
+    updated = process.apply(state, fire_event(severity=0.8, mortality=0.8))
+
+    assert pd.api.types.is_integer_dtype(updated.cohorts["track_id"])
+    assert updated.cohorts["track_id"].tolist() == [1, 1]
+
+
 def test_salvage_removes_snags_and_records_a_volume() -> None:
     _, state, edges = synthetic_grid(1, 1)
     config = FireConfig(mortality_factor=1.0, snag_fraction=0.1, salvage_delay_years=1)

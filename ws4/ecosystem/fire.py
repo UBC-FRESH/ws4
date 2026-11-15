@@ -659,6 +659,7 @@ class FireProcess:
         if group.empty:
             return state
         next_id = int(group["cohort_id"].max()) + 1
+        has_track = "track_id" in frame.columns
         drop: list[int] = []
         new_rows: list[dict[str, object]] = []
         for index, row in group.iterrows():
@@ -670,19 +671,21 @@ class FireProcess:
             else:
                 drop.append(int(str(index)))
             if killed > 1e-12:
-                new_rows.append(
-                    {
-                        "fragment_id": fragment,
-                        "cohort_id": next_id,
-                        "species": str(row["species"]),
-                        "age": 0,
-                        "area_fraction": killed,
-                        "biomass_t_ha": 0.0,
-                        "fuel_t_ha": 0.0,
-                        "snag_t_ha": float(row["biomass_t_ha"]) * self.config.snag_fraction,
-                        "attributes_json": "{}",
-                    }
-                )
+                new_row: dict[str, object] = {
+                    "fragment_id": fragment,
+                    "cohort_id": next_id,
+                    "species": str(row["species"]),
+                    "age": 0,
+                    "area_fraction": killed,
+                    "biomass_t_ha": 0.0,
+                    "fuel_t_ha": 0.0,
+                    "snag_t_ha": float(row["biomass_t_ha"]) * self.config.snag_fraction,
+                    "attributes_json": "{}",
+                }
+                if has_track:
+                    raw_track = row["track_id"]
+                    new_row["track_id"] = 0 if pd.isna(raw_track) else int(float(str(raw_track)))
+                new_rows.append(new_row)
                 next_id += 1
         if drop:
             frame = frame.drop(index=drop)

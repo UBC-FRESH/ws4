@@ -62,3 +62,18 @@ Offset convention
 An estate ``simulate(..., years=N)`` writes offsets 0 to N-1 and ages cohorts to ``N-1`` annual
 steps. The process executor's ``horizon_years`` counts transitions. For a five-year estate run,
 four process transitions match the final offset; five transitions are one annual step ahead.
+
+
+Track change
+------------
+
+Cohorts carry an optional ``track_id``. The treatment source records the compiled
+``(source_track, treatment)`` to target-track transition, and new cohorts take the target track.
+The volume bridge prefers that track's compiled age curve and falls back to the species curve when
+the cohort has no track curve. A five-year CC comparison now matches the estate at 390 m3: the
+harvested block contributes the managed age-2 volume instead of staying on the natural curve.
+
+Within a year, treatments run before growth. This matches the estate's treatment-then-age order
+and lets a cohort created by a treatment reach the same age as the estate's final offset. The
+process horizon still uses the offset convention above: four process transitions match a five-year
+estate run.

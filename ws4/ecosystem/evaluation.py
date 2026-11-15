@@ -336,6 +336,7 @@ def evaluate_process_schedule(
     succession_process: Process | None = None,
     targets: Sequence[Target] = (),
     harvest_fraction: float = 1.0,
+    track_transitions: Mapping[tuple[int, str], int] | None = None,
     scenario_id: str = "process-schedule",
     seed: int = 0,
 ) -> ProcessScheduleEvaluation:
@@ -368,6 +369,9 @@ def evaluate_process_schedule(
         accumulating, unknown-account, and non-final-period targets are rejected.
     harvest_fraction : float, optional
         Fraction of each live cohort removed by a harvest (default 1.0).
+    track_transitions : mapping of (int, str) to int or None, optional
+        Compiled ``(source_track, treatment)`` to target track transitions. Newly created
+        cohorts take the target track.
     scenario_id : str, optional
         Scenario id stamped on events (default ``process-schedule``).
     seed : int, optional
@@ -393,6 +397,7 @@ def evaluate_process_schedule(
         schedule,
         block_fragments,
         harvest_fraction=harvest_fraction,
+        track_transitions=track_transitions or {},
         scenario_id=scenario_id,
     )
     bridge_config = bridge or VolumeBridgeConfig()

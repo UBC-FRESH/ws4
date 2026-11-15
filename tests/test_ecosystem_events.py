@@ -273,8 +273,8 @@ def test_event_phases_are_ordered_as_documented() -> None:
         "ignition",
         "propagation",
         "effect",
-        "growth",
         "treatment",
+        "growth",
         "regeneration",
         "accounting",
     )

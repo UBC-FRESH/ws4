@@ -85,8 +85,9 @@ An event is one state transition at a known time and place:
      - Additional JSON-scalar attributes, sorted by key.
 
 The canonical phases, in execution order, are ``forcing``, ``ignition``, ``propagation``,
-``effect``, ``growth``, ``treatment``, ``regeneration``, and ``accounting``. A new phase is a
-schema-version change, not a free label, because the phase is part of the execution order.
+``effect``, ``treatment``, ``growth``, ``regeneration``, and ``accounting``. Disturbance and
+management therefore happen before annual growth, and regeneration happens after it. A new phase
+is a schema-version change, not a free label, because the phase is part of the execution order.
 
 The ordering key is:
 
