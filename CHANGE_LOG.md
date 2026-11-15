@@ -5775,3 +5775,9 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   re-wetting crosses. The 60-minute run exceeded the execution budget.
 - P217.3: closed P217 with a go for 15-minute persistence as a diagnostic mechanism and a no-go for
   operational claims. Report: `notes/reports/p217-rewetting.md`. Dashboard: **GREEN**.
+
+- P218.1: added a deterministic re-wetting capacity calculator for sorties, water rate and aircraft
+  lower bound.
+- P218.2: gap-only 15-minute re-wetting needs 10 sorties/application, 40 sorties/h and 3 aircraft;
+  the full 75-cell line needs 43 aircraft and 3.6 million L/h. Report:
+  `notes/reports/p218-rewetting-capacity.md`. Dashboard: **GREEN**.
