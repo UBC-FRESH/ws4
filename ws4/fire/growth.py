@@ -593,6 +593,8 @@ class GrowthConfig:
         Time of the depth field in minutes (default 0).
     wet_decay_min : float, optional
         Linear decay duration of the depth field (default 60).
+    wet_interval_min : float or None, optional
+        Perfect re-wetting interval for the depth field. None means no re-wetting.
     wet_required_mm : float, optional
         Suppression threshold for the depth field (default 0.75).
     fire_stopping_precipitation_mm : float or None, optional
@@ -623,6 +625,7 @@ class GrowthConfig:
     wet_depth_mm: np.ndarray | None = None
     wet_start_min: float = 0.0
     wet_decay_min: float = 60.0
+    wet_interval_min: float | None = None
     wet_required_mm: float = 0.75
     fire_stopping_precipitation_mm: float | None = None
     fire_stopping_window_min: float = 7200.0
@@ -680,6 +683,8 @@ class GrowthConfig:
             raise FireFuelError("fire_stopping_window_min must be positive")
         if self.wet_decay_min <= 0.0:
             raise FireFuelError("wet_decay_min must be positive")
+        if self.wet_interval_min is not None and self.wet_interval_min <= 0.0:
+            raise FireFuelError("wet_interval_min must be positive")
         if self.wet_required_mm <= 0.0:
             raise FireFuelError("wet_required_mm must be positive")
         if self.spotting is not None:
@@ -1135,6 +1140,7 @@ def _wet_depth_at(
     depth: np.ndarray | None,
     start_min: float,
     decay_min: float,
+    interval_min: float | None,
     required_mm: float,
     row: int,
     col: int,
@@ -1144,7 +1150,11 @@ def _wet_depth_at(
     if depth is None:
         return False
     age = time_min - start_min
-    if age < 0.0 or age > decay_min:
+    if age < 0.0:
+        return False
+    if interval_min is not None:
+        age = age % interval_min
+    if age > decay_min:
         return False
     value = float(depth[row, col]) * max(0.0, 1.0 - age / decay_min)
     return value >= required_mm
@@ -1154,6 +1164,7 @@ def _line_has_wet_depth(
     depth: np.ndarray | None,
     start_min: float,
     decay_min: float,
+    interval_min: float | None,
     required_mm: float,
     row: int,
     col: int,
@@ -1169,7 +1180,14 @@ def _line_has_wet_depth(
         check_row = row + round(drow * step / steps)
         check_col = col + round(dcol * step / steps)
         if _wet_depth_at(
-            depth, start_min, decay_min, required_mm, check_row, check_col, arrival_min
+            depth,
+            start_min,
+            decay_min,
+            interval_min,
+            required_mm,
+            check_row,
+            check_col,
+            arrival_min,
         ):
             return True
     return False
@@ -1616,6 +1634,7 @@ def _grow_fire_time_dependent(grid: SiteGrid, config: GrowthConfig) -> GrowthRes
                     config.wet_depth_mm,
                     config.wet_start_min,
                     config.wet_decay_min,
+                    config.wet_interval_min,
                     config.wet_required_mm,
                     nrow,
                     ncol,
@@ -1625,6 +1644,7 @@ def _grow_fire_time_dependent(grid: SiteGrid, config: GrowthConfig) -> GrowthRes
                     config.wet_depth_mm,
                     config.wet_start_min,
                     config.wet_decay_min,
+                    config.wet_interval_min,
                     config.wet_required_mm,
                     row,
                     col,
@@ -1760,6 +1780,7 @@ def grow_fire(grid: SiteGrid, config: GrowthConfig) -> GrowthResult:
                     config.wet_depth_mm,
                     config.wet_start_min,
                     config.wet_decay_min,
+                    config.wet_interval_min,
                     config.wet_required_mm,
                     nrow,
                     ncol,
@@ -1769,6 +1790,7 @@ def grow_fire(grid: SiteGrid, config: GrowthConfig) -> GrowthResult:
                     config.wet_depth_mm,
                     config.wet_start_min,
                     config.wet_decay_min,
+                    config.wet_interval_min,
                     config.wet_required_mm,
                     row,
                     col,

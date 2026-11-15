@@ -148,6 +148,7 @@ def main() -> None:
     parser.add_argument(
         "--members", default="", help="comma-separated member names; empty uses all"
     )
+    parser.add_argument("--wet-interval", type=float, default=None)
     args = parser.parse_args()
     fixture = args.fixture or args.ws4_root / "tests/fixtures/fire/large_2003_96"
     sys.path.insert(0, str(args.ws4_root))
@@ -211,6 +212,7 @@ def main() -> None:
                 wet_depth_mm=depth,
                 wet_start_min=drop_time,
                 wet_decay_min=60.0,
+                wet_interval_min=args.wet_interval,
                 wet_required_mm=0.75,
                 snapshot_interval_min=60.0,
                 neighbor_radius=2,

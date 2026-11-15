@@ -90,6 +90,8 @@ Working notes for WS4. Notes are living: update them in the same change set as t
 - `reports/p208-drop-depth.json` — P208 drop-depth manifest.
 - `reports/p209-fine-drop.md` — P209 100 m drop-depth and persistence result.
 - `reports/p209-fine-drop.json` — P209 100 m manifest.
+- `reports/p217-rewetting.md` — P217 re-wetting interval and 15-minute containment.
+- `reports/p217-rewetting-15.json` — P217 positive-case manifest.
 - `reports/p159-model-card.md` — P159.2 surrogate architecture, training data, losses, and
   limitations.
 - `reports/p159-evaluation.md` — P159.3 held-out synthetic and Dogrib OOD evaluation.

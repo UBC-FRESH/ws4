@@ -857,6 +857,7 @@ def run_observed_case(
     wet_depth_mm: np.ndarray | None = None,
     wet_start_min: float = 0.0,
     wet_decay_min: float = 60.0,
+    wet_interval_min: float | None = None,
     wet_required_mm: float = 0.75,
     fire_stopping_precipitation_mm: float | None = None,
     fire_stopping_window_min: float = 7200.0,
@@ -904,6 +905,8 @@ def run_observed_case(
         Time of the depth field in minutes.
     wet_decay_min : float, optional
         Linear decay duration of the depth field in minutes.
+    wet_interval_min : float or None, optional
+        Perfect re-wetting interval for the depth field.
     wet_required_mm : float, optional
         Suppression threshold for the depth field.
     fire_stopping_precipitation_mm : float or None, optional
@@ -1014,6 +1017,7 @@ def run_observed_case(
             wet_depth_mm=wet_depth_mm,
             wet_start_min=wet_start_min,
             wet_decay_min=wet_decay_min,
+            wet_interval_min=wet_interval_min,
             wet_required_mm=wet_required_mm,
             fire_stopping_precipitation_mm=fire_stopping_precipitation_mm,
             fire_stopping_window_min=fire_stopping_window_min,
