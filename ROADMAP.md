@@ -219,6 +219,7 @@ exists and the maintainer approves it.
 | P221 bundle existing optimizer risk verification | #1281 | `feature/p221-optimizer-bundle` | pr-open |
 | P222 Gap-only dispatch queue feasibility | #1288 | `feature/p222-dispatch-queue` | pr-open |
 | P224 Water-source throughput lower bound | #1295 | `feature/p224-water-source` | pr-open |
+| P225 Water-source service utilization | #1300 | `feature/p225-source-service` | pr-open |
 | P217 Re-wetting interval at 100 m | #1262 | `feature/p217-rewetting` | pr-open |
 | P201 Firebreak gap sensitivity pilot | #1185 | `feature/p201-firebreak-gap` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
@@ -6465,5 +6466,29 @@ Acceptance:
 
 - Required and supplied water rates explicit.
 - Source-limited sorties and utilization reported.
+- No calibration and no operational claim.
+- Dashboard green.
+
+## Phase 225: water-source service utilization
+
+Parent issue: #1300
+Branch: `feature/p225-source-service`
+Status: pr-open
+Report: `notes/reports/p225-source-service.md`
+Manifest: `notes/reports/p225-source-service.json`
+PR: #1303
+
+Goal: test whether the P224 throughput threshold survives source service time.
+
+- [x] P225.1 Add source service utilization (#1301)
+- [x] P225.2 Close out source service (#1302)
+
+Result: a 4,000 L/min source is 1.059x oversubscribed; minimum is 4,235 L/min. Two sources need
+2,118 L/min each.
+
+Acceptance:
+
+- Service time and utilization explicit.
+- Minimum refill rates reported.
 - No calibration and no operational claim.
 - Dashboard green.
