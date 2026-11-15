@@ -212,7 +212,8 @@ exists and the maintainer approves it.
 | P213 process-ensemble fire-regime artifact | #1241 | `feature/p213-ensemble-artifact` | complete |
 | P214 process fire-regime risk accounts | #1246 | `feature/p214-fire-risk-accounts` | complete |
 | P215 process fire-risk evaluation report | #1253 | `feature/p215-process-risk-report` | complete |
-| P216 process fire-risk report artifact | #1259 | `feature/p216-risk-report-artifact` | pr-open |
+| P216 process fire-risk report artifact | #1259 | `feature/p216-risk-report-artifact` | complete |
+| P218 process fire-risk train/validation | #1271 | `feature/p218-process-risk-validation` | pr-open |
 | P217 Re-wetting interval at 100 m | #1262 | `feature/p217-rewetting` | pr-open |
 | P201 Firebreak gap sensitivity pilot | #1185 | `feature/p201-firebreak-gap` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
@@ -6273,7 +6274,8 @@ Acceptance:
 
 Parent issue: #1259
 Branch: `feature/p216-risk-report-artifact`
-Status: pr-open
+Status: complete
+Merge commit: `217ad60`
 Design note: `notes/design/ws4-process-risk-artifact.md`
 Report: `notes/reports/p216-closeout.md`
 Artifact report: `notes/reports/p216-risk-report-artifact.md`
@@ -6316,4 +6318,27 @@ Acceptance:
 - Free-burn default unchanged.
 - Final area, crossing and runtime reported.
 - No calibration and no operational claim.
+- Dashboard green.
+
+
+## Phase 218: process fire-risk train/validation
+
+Parent issue: #1271
+Branch: `feature/p218-process-risk-validation`
+Status: pr-open
+Design note: `notes/design/ws4-process-risk-validation.md`
+Report: `notes/reports/p218-closeout.md`
+Validation report: `notes/reports/p218-process-risk-validation.md`
+PR: #1274
+
+Goal: split process scenarios into train/validation and report the risk generalization gap.
+
+- [x] P218.1 Implement process risk validation (#1272)
+- [x] P218.2 Test and close out process risk validation (#1273)
+
+Acceptance:
+
+- Splits are deterministic and non-empty.
+- The gap is validation objective minus training objective.
+- Invalid fractions and too-few scenarios fail loudly.
 - Dashboard green.

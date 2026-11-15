@@ -208,3 +208,97 @@ def test_empty_process_fire_risk_report_is_rejected(tmp_path: Path) -> None:
     )
     with pytest.raises(ProcessFireRiskError, match="empty"):
         report.write(tmp_path / "empty")
+
+
+def test_process_fire_risk_validation_split_and_gap() -> None:
+    _schema, state, edges = synthetic_grid(4, 4)
+    scenarios = ScenarioSet(
+        tuple(
+            Scenario(name, seed, weight=1.0)
+            for name, seed in (("a", 1), ("b", 2), ("c", 3), ("d", 4))
+        )
+    )
+    result = run_process_ensemble(
+        state,
+        edges,
+        ProcessEnsembleConfig(
+            horizon_years=2,
+            fire=FireConfig(ignition_rate_per_fragment_year=1.0),
+        ),
+        scenarios,
+    )
+    from ws4.ecosystem.ensemble import ProcessEnsembleResult
+    from ws4.opt.fire_risk import evaluate_process_fire_risk_validation
+
+    assert isinstance(result, ProcessEnsembleResult)
+    summaries = result.fire_regime_summaries(years=2, burnable_area_ha=160.0, cell_size_ha=10.0)
+    target = Target(
+        account="fire.regime.annual_burn_rate",
+        period=1,
+        period_width=2,
+        aggregation="mean",
+        minimum=0.0,
+    )
+    validation = evaluate_process_fire_risk_validation(
+        summaries,
+        years=2,
+        targets=(target,),
+        train_fraction=0.5,
+    )
+
+    assert validation.summary()["train_scenarios"] == ["a", "b"]
+    assert validation.summary()["validation_scenarios"] == ["c", "d"]
+    assert validation.gap == pytest.approx(
+        validation.validation.objective - validation.train.objective
+    )
+
+
+def test_process_fire_risk_validation_artifact(tmp_path: Path) -> None:
+    _schema, state, edges = synthetic_grid(3, 3)
+    scenarios = ScenarioSet((Scenario("a", 1), Scenario("b", 2)))
+    result = run_process_ensemble(
+        state,
+        edges,
+        ProcessEnsembleConfig(
+            horizon_years=2,
+            fire=FireConfig(ignition_rate_per_fragment_year=0.0),
+        ),
+        scenarios,
+    )
+    from ws4.ecosystem.ensemble import ProcessEnsembleResult
+    from ws4.opt.fire_risk import evaluate_process_fire_risk_validation
+
+    assert isinstance(result, ProcessEnsembleResult)
+    summaries = result.fire_regime_summaries(years=2, burnable_area_ha=90.0, cell_size_ha=10.0)
+    validation = evaluate_process_fire_risk_validation(
+        summaries,
+        years=2,
+        targets=(
+            Target(
+                account="fire.regime.annual_burn_rate",
+                period=1,
+                period_width=2,
+                aggregation="mean",
+                minimum=0.0,
+            ),
+        ),
+        train_fraction=0.5,
+    )
+    validation.write(tmp_path / "validation")
+
+    payload = json.loads(
+        (tmp_path / "validation" / "process_fire_risk_validation.json").read_text()
+    )
+    assert payload["train_scenarios"] == ["a"]
+    assert payload["validation_scenarios"] == ["b"]
+    assert (tmp_path / "validation" / "process_fire_risk_train_values.csv").is_file()
+    assert (tmp_path / "validation" / "process_fire_risk_validation_values.csv").is_file()
+
+
+def test_process_fire_risk_validation_rejects_bad_splits() -> None:
+    from ws4.opt.fire_risk import evaluate_process_fire_risk_validation
+
+    with pytest.raises(ProcessFireRiskError, match="fraction"):
+        evaluate_process_fire_risk_validation({}, years=1, targets=(), train_fraction=0.0)
+    with pytest.raises(ProcessFireRiskError, match="at least two"):
+        evaluate_process_fire_risk_validation({}, years=1, targets=(), train_fraction=0.5)

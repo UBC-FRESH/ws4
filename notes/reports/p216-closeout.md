@@ -38,4 +38,4 @@ Use the report artifact in the optimizer's risk verification path for a process 
 
 ## Pull request
 
-PR: #1266 is queued for maintainer approval. Do not merge without approval.
+Merged as `217ad60` (PR #1266); branch deleted.

@@ -5775,3 +5775,16 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   re-wetting crosses. The 60-minute run exceeded the execution budget.
 - P217.3: closed P217 with a go for 15-minute persistence as a diagnostic mechanism and a no-go for
   operational claims. Report: `notes/reports/p217-rewetting.md`. Dashboard: **GREEN**.
+
+- P216 merged: the process fire-risk report artifact is on `main` as `217ad60`. Branch deleted;
+  no tag, release, or settings change.
+
+- P218.1: added deterministic train/validation splitting for process fire-risk reports and a
+  generalization-gap artifact.
+
+- P218.2: verified split membership, gap, files, and invalid inputs. Dashboard: pending full run.
+
+- P218.2: verified and closed P218. Full dashboard **OVERALL: GREEN**. Splits, gap, artifact, and
+  invalid inputs pass. Report: `notes/reports/p218-process-risk-validation.md`; close-out:
+  `notes/reports/p218-closeout.md`. Design: `notes/design/ws4-process-risk-validation.md`.
+  PR: #1274.
