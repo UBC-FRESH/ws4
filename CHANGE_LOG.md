@@ -5894,4 +5894,4 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 
 - P234.3: verified and closed P234. Full dashboard **OVERALL: GREEN**. Compiled curve and shared
   schedule both report 340 m3. Report: `notes/reports/p234-compiled-curves.md`; close-out:
-  `notes/reports/p234-closeout.md`. Design: `notes/design/ws4-compiled-curves.md`. PR: #TBD.
+  `notes/reports/p234-closeout.md`. Design: `notes/design/ws4-compiled-curves.md`. PR: #1339.

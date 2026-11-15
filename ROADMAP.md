@@ -6677,7 +6677,7 @@ Status: pr-open
 Design note: `notes/design/ws4-compiled-curves.md`
 Report: `notes/reports/p234-closeout.md`
 Curve report: `notes/reports/p234-compiled-curves.md`
-PR: #TBD
+PR: #1339
 
 Goal: load compiled dataset curves into the process bridge and compare the shared schedule.
 
