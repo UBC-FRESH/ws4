@@ -5200,7 +5200,7 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P169.3: closed P169. The dominant issue is late/continued growth, not ignition or neighbor
   radius. Next work should model containment/stopping or verify weather/FFMC, not tune a global
   multiplier. Reports: `notes/reports/p169-growth-trajectory.md` and
-  `notes/reports/p169-closeout.md`. Dashboard: pending.
+  `notes/reports/p169-closeout.md`. Dashboard: **GREEN**.
 
 - P170.1: added daily CFSDS FWI fields (FFMC, DMC, DC, BUI, ISI, wind, RH, precipitation,
   temperature) to the six reanalysis fixtures and the fixture builder.
@@ -5850,3 +5850,8 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   scenario selection, missing accounts, and artifacts pass. Report:
   `notes/reports/p223-account-comparison.md`; close-out: `notes/reports/p223-closeout.md`.
   Design: `notes/design/ws4-account-comparison.md`. PR: #1298.
+
+- P229.1: added the Alberta waterbody source screen and tests.
+- P229.2: confirmed `2003_96` is Alberta HWF113; nearest current waterbody is 3.29 ha at 0.38 km,
+  with an 18.45 ha lake at 1.19 km. Report: `notes/reports/p229-alberta-water-source.md`.
+  Dashboard: **GREEN**.
