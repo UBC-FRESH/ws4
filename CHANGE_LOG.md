@@ -5864,4 +5864,4 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 
 - P230.2: verified and closed P230. Full dashboard **OVERALL: GREEN**. Both engines report 340 m3
   and the P223 comparison is zero. Report: `notes/reports/p230-shared-schedule.md`; close-out:
-  `notes/reports/p230-closeout.md`. Design: `notes/design/ws4-shared-schedule.md`. PR: #TBD.
+  `notes/reports/p230-closeout.md`. Design: `notes/design/ws4-shared-schedule.md`. PR: #1324.
