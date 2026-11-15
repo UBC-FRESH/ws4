@@ -27,7 +27,7 @@ repos:
         always_run: true
       - id: pytest
         name: pytest with coverage gate
-        entry: python -m pytest -q
+        entry: python -m pytest -q -n auto
         language: system
         pass_filenames: false
         always_run: true

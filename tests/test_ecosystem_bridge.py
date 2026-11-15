@@ -115,3 +115,24 @@ def test_age_curves_are_serialized_and_validated(tmp_path: Path) -> None:
         VolumeBridgeConfig(age_volume_curves={"PL": {}})
     with pytest.raises(BridgeError, match="non-negative"):
         VolumeBridgeConfig(age_volume_curves={"PL": {-1: 1.0}})
+
+
+def test_compiled_curves_are_loaded_by_species_mapping() -> None:
+    from ws4.ecosystem.bridge import age_volume_curves_from_frame
+
+    frame = pd.DataFrame(
+        {
+            "curve_id": [2, 2, 2, 3],
+            "x": [0.0, 40.0, 80.0, 0.0],
+            "y": [1.0, 120.0, 220.0, 0.0],
+        }
+    )
+    curves = age_volume_curves_from_frame(frame, {"PL": 2})
+
+    assert curves == {"PL": {0: 1.0, 40: 120.0, 80: 220.0}}
+    with pytest.raises(BridgeError, match="missing"):
+        age_volume_curves_from_frame(frame, {"PL": 99})
+    with pytest.raises(BridgeError, match="non-negative integers"):
+        age_volume_curves_from_frame(
+            pd.DataFrame({"curve_id": [2], "x": [1.5], "y": [1.0]}), {"PL": 2}
+        )

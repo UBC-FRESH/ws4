@@ -225,9 +225,10 @@ exists and the maintainer approves it.
 | P227 Stochastic source-queue envelope | #1308 | `feature/p227-stochastic-source` | pr-open |
 | P229 Alberta HWF113 water-source screen | #1316 | `feature/p229-alberta-water` | pr-open |
 | P230 shared-schedule process/estate comparison | #1313 | `feature/p230-shared-schedule` | complete |
-| P231 age-based volume curves | #1326 | `feature/p231-age-curves` | pr-open |
-| P232 HWF113 source-distance and drawdown closure | #1321 | `feature/p232-source-geometry` | pr-open |
+| P231 age-based volume curves | #1326 | `feature/p231-age-curves` | complete |
+| P232 HWF113 source-distance and drawdown closure | #1321 | `feature/p232-source-geometry` | complete |
 | P233 Harden full-suite CI job timeouts | #1332 | `feature/p233-ci-timeouts` | pr-open |
+| P234 compiled yield curves in the process bridge | #1335 | `feature/p234-compiled-curves` | pr-open |
 | P217 Re-wetting interval at 100 m | #1262 | `feature/p217-rewetting` | pr-open |
 | P201 Firebreak gap sensitivity pilot | #1185 | `feature/p201-firebreak-gap` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
@@ -6624,7 +6625,7 @@ Acceptance:
 
 Parent issue: #1326
 Branch: `feature/p231-age-curves`
-Status: pr-open
+Status: complete
 Design note: `notes/design/ws4-age-volume-curves.md`
 Report: `notes/reports/p231-closeout.md`
 Curve report: `notes/reports/p231-age-curves.md`
@@ -6646,7 +6647,7 @@ Acceptance:
 
 Parent issue: #1321
 Branch: `feature/p232-source-geometry`
-Status: pr-open
+Status: complete
 Report: `notes/reports/p232-source-geometry.md`
 Manifest: `notes/reports/p232-source-geometry.json`
 PR: #1330
@@ -6688,3 +6689,27 @@ Acceptance:
 - Quality job completes the full suite.
 - Dashboard remains green.
 - No test or coverage behavior changes.
+
+
+## Phase 234: compiled yield curves in the process bridge
+
+Parent issue: #1335
+Branch: `feature/p234-compiled-curves`
+Status: pr-open
+Design note: `notes/design/ws4-compiled-curves.md`
+Report: `notes/reports/p234-closeout.md`
+Curve report: `notes/reports/p234-compiled-curves.md`
+PR: #1339
+
+Goal: load compiled dataset curves into the process bridge and compare the shared schedule.
+
+- [x] P234.1 Add the compiled curve loader (#1336)
+- [x] P234.2 Compare the compiled-curve shared schedule (#1337)
+- [x] P234.3 Test and close out compiled curves (#1338)
+
+Acceptance:
+
+- The loader reproduces compiled curve points.
+- The shared schedule reports a real, documented difference.
+- Invalid curves fail loudly.
+- Dashboard green.
