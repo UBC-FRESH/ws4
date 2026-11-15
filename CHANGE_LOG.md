@@ -5806,3 +5806,14 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P219.2: gap-only 15-minute re-wetting needs 10 sorties/application, 40 sorties/h and 3 aircraft;
   the full 75-cell line needs 43 aircraft and 3.6 million L/h. Report:
   `notes/reports/p219-rewetting-capacity.md`. Dashboard: **GREEN**.
+
+- P220 merged: the combined risk verification bundle is on `main` as `0903e7f`. Branch deleted;
+  no tag, release, or settings change.
+
+- P221.1: added `bundle_existing_risk_verification`, reading an optimizer's
+  `risk_verification.json` and writing the P220 bundle into the same directory.
+
+- P221.2: verified and closed P221. Full dashboard **OVERALL: GREEN**. Bundle values, gap, and
+  missing-file failure pass. Report: `notes/reports/p221-optimizer-bundle.md`; close-out:
+  `notes/reports/p221-closeout.md`. Design: `notes/design/ws4-optimizer-risk-bundle.md`.
+  PR: #1286.

@@ -360,3 +360,59 @@ def test_risk_verification_bundle_rejects_empty_optimizer(tmp_path: Path) -> Non
             optimizer_summary={},
             process=object(),  # type: ignore[arg-type]
         )
+
+
+def test_bundle_existing_optimizer_risk_verification(tmp_path: Path) -> None:
+    _schema, state, edges = synthetic_grid(3, 3)
+    scenarios = ScenarioSet((Scenario("a", 1), Scenario("b", 2)))
+    result = run_process_ensemble(
+        state,
+        edges,
+        ProcessEnsembleConfig(
+            horizon_years=2,
+            fire=FireConfig(ignition_rate_per_fragment_year=0.0),
+        ),
+        scenarios,
+    )
+    from ws4.ecosystem.ensemble import ProcessEnsembleResult
+    from ws4.opt.fire_risk import (
+        bundle_existing_risk_verification,
+        evaluate_process_fire_risk_validation,
+    )
+
+    assert isinstance(result, ProcessEnsembleResult)
+    summaries = result.fire_regime_summaries(years=2, burnable_area_ha=90.0, cell_size_ha=10.0)
+    validation = evaluate_process_fire_risk_validation(
+        summaries,
+        years=2,
+        targets=(
+            Target(
+                account="fire.regime.annual_burn_rate",
+                period=1,
+                period_width=2,
+                aggregation="mean",
+                minimum=0.0,
+            ),
+        ),
+        train_fraction=0.5,
+    )
+    out_dir = tmp_path / "run"
+    out_dir.mkdir()
+    (out_dir / "risk_verification.json").write_text(
+        json.dumps({"search_objective": 4.0, "full_objective": 5.0, "gap": 1.0})
+    )
+
+    payload = bundle_existing_risk_verification(out_dir, process=validation)
+
+    written = json.loads((out_dir / "risk_verification_bundle.json").read_text())
+    assert written == payload
+    assert written["optimizer"]["search_objective"] == 4.0
+    assert written["optimizer"]["gap"] == 1.0
+    assert written["process"]["generalization_gap"] == validation.gap
+
+
+def test_bundle_existing_optimizer_rejects_missing_file(tmp_path: Path) -> None:
+    from ws4.opt.fire_risk import bundle_existing_risk_verification
+
+    with pytest.raises(ProcessFireRiskError, match="missing"):
+        bundle_existing_risk_verification(tmp_path, process=object())  # type: ignore[arg-type]

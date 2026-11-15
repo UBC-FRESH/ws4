@@ -215,7 +215,8 @@ exists and the maintainer approves it.
 | P216 process fire-risk report artifact | #1259 | `feature/p216-risk-report-artifact` | complete |
 | P218 process fire-risk train/validation | #1271 | `feature/p218-process-risk-validation` | complete |
 | P219 Re-wetting sortie and fleet lower bound | #1280 | `feature/p219-rewetting-capacity` | pr-open |
-| P220 combined optimizer/process risk verification bundle | #1276 | `feature/p220-risk-bundle` | pr-open |
+| P220 combined optimizer/process risk verification bundle | #1276 | `feature/p220-risk-bundle` | complete |
+| P221 bundle existing optimizer risk verification | #1281 | `feature/p221-optimizer-bundle` | pr-open |
 | P217 Re-wetting interval at 100 m | #1262 | `feature/p217-rewetting` | pr-open |
 | P201 Firebreak gap sensitivity pilot | #1185 | `feature/p201-firebreak-gap` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
@@ -6375,7 +6376,8 @@ Acceptance:
 
 Parent issue: #1276
 Branch: `feature/p220-risk-bundle`
-Status: pr-open
+Status: complete
+Merge commit: `0903e7f`
 Design note: `notes/design/ws4-risk-bundle.md`
 Report: `notes/reports/p220-closeout.md`
 Bundle report: `notes/reports/p220-risk-bundle.md`
@@ -6391,4 +6393,27 @@ Acceptance:
 - The bundle contains both summaries.
 - The process gap is preserved exactly.
 - Empty optimizer summaries fail loudly.
+- Dashboard green.
+
+
+## Phase 221: bundle existing optimizer risk verification
+
+Parent issue: #1281
+Branch: `feature/p221-optimizer-bundle`
+Status: pr-open
+Design note: `notes/design/ws4-optimizer-risk-bundle.md`
+Report: `notes/reports/p221-closeout.md`
+Bundle report: `notes/reports/p221-optimizer-bundle.md`
+PR: #1286
+
+Goal: bundle an optimizer's existing `risk_verification.json` with P218 process risk.
+
+- [x] P221.1 Load the optimizer risk verification and bundle (#1282)
+- [x] P221.2 Test and close out the optimizer bundle (#1283)
+
+Acceptance:
+
+- The bundle uses the optimizer's written verification values.
+- Missing or invalid risk verification files fail loudly.
+- The process gap is preserved.
 - Dashboard green.
