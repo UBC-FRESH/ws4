@@ -52,3 +52,4 @@ Limits
 - Train/validation: ``evaluate_process_fire_risk_validation`` and
   ``ProcessFireRiskValidation.write``.
 - Combined bundle: ``write_risk_verification_bundle``.
+- Existing optimizer output: ``bundle_existing_risk_verification``.

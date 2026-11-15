@@ -437,3 +437,42 @@ def write_risk_verification_bundle(
         json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
     return payload
+
+
+def bundle_existing_risk_verification(
+    out_dir: Path, *, process: ProcessFireRiskValidation
+) -> dict[str, object]:
+    """Bundle an optimizer's written risk verification with process risk.
+
+    Parameters
+    ----------
+    out_dir : Path
+        Optimizer output directory containing ``risk_verification.json``.
+    process : ProcessFireRiskValidation
+        Process fire-risk train/validation report.
+
+    Returns
+    -------
+    dict
+        The written bundle payload.
+
+    Raises
+    ------
+    ProcessFireRiskError
+        If the optimizer verification file is missing or malformed.
+    """
+    target = Path(out_dir)
+    path = target / "risk_verification.json"
+    if not path.is_file():
+        raise ProcessFireRiskError(f"optimizer risk verification is missing: {path}")
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as error:
+        raise ProcessFireRiskError("optimizer risk verification is not valid JSON") from error
+    if not isinstance(payload, Mapping):
+        raise ProcessFireRiskError("optimizer risk verification must be an object")
+    required = {"search_objective", "full_objective", "gap"}
+    missing = sorted(required - set(payload))
+    if missing:
+        raise ProcessFireRiskError(f"optimizer risk verification is missing: {', '.join(missing)}")
+    return write_risk_verification_bundle(target, optimizer_summary=payload, process=process)
