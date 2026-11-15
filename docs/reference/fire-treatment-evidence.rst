@@ -40,6 +40,13 @@ Source: Davis et al. (2024), *Forest Ecology and Management* 561:121885,
 https://doi.org/10.1016/j.foreco.2024.121885. The values are western-US conifer meta-analysis
 means, not a BC-specific transfer value.
 
+Available mechanism
+--------------------
+
+``ws4.fire.treatment.apply_fuel_treatment`` converts a declared mask of burnable cells to an
+explicit FBP fuel type. It requires the caller to name the replacement and refuses to modify
+non-fuel cells. It does not choose a prescription, fuel type, or treatment extent.
+
 Comparison gate
 ----------------
 
@@ -54,6 +61,7 @@ Decision
 simulation cannot be scored against it until a treatment prescription changes fuel and canopy
 structure in the fire model.
 
-Next requirement: a prescription pathway that maps thinning, prescribed fire, and surface-fuel
-reduction to explicit FBP fuel and canopy inputs. Until then, report containment/firebreak
+A generic fuel-conversion mechanism now exists, but the prescription mapping is still missing:
+which FBP fuel type represents thinning, prescribed fire, or surface-fuel reduction is an
+expert decision, not a default. Until that mapping is supplied, report containment/firebreak
 effects separately.

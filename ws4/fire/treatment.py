@@ -8,8 +8,13 @@ reported as validation against these values until that pathway exists.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Final, Literal
+
+import numpy as np
+
+from .fbp import canonical_fuel_type
+from .observed import ObservedFire
 
 Position = Literal["below", "within", "above"]
 
@@ -191,6 +196,59 @@ def evidence_for(
         if item.treatment == treatment and item.metric == metric:
             return item
     raise KeyError(f"no treatment evidence for {treatment!r}/{metric!r}")
+
+
+def apply_fuel_treatment(
+    fire: ObservedFire,
+    *,
+    mask: np.ndarray,
+    replacement: str,
+    code: int | None = None,
+) -> ObservedFire:
+    """Return a copy of the fire with masked cells converted to one FBP fuel type.
+
+    Parameters
+    ----------
+    fire : ObservedFire
+        Source observed fire.
+    mask : numpy.ndarray
+        Boolean treatment mask with the fire-grid shape.
+    replacement : str
+        FBP fuel type assigned to treated cells.
+    code : int or None, optional
+        New fuel-grid code; defaults to one above the current maximum.
+
+    Returns
+    -------
+    ObservedFire
+        Copy with treated fuel codes and an explicit lookup entry.
+
+    Raises
+    ------
+    ValueError
+        If the mask is invalid, includes non-fuel cells, or the code collides.
+    """
+    if mask.shape != fire.fuel_codes.shape:
+        raise ValueError("treatment mask shape must match the fire grid")
+    masked = np.asarray(mask, dtype=bool)
+    if not masked.any():
+        raise ValueError("treatment mask must contain at least one cell")
+    fuel_grid = fire.fbp_fuel_grid()
+    burnable = np.array(
+        [[value is not None for value in row] for row in fuel_grid],
+        dtype=bool,
+    )
+    if np.any(masked & ~burnable):
+        raise ValueError("treatment mask includes non-fuel cells")
+    fuel_type = canonical_fuel_type(replacement)
+    new_code = max(fire.fuel_lookup) + 1 if code is None else int(code)
+    if new_code in fire.fuel_lookup:
+        raise ValueError(f"fuel-grid code {new_code} is already in use")
+    codes = np.array(fire.fuel_codes, copy=True)
+    codes[masked] = new_code
+    lookup = dict(fire.fuel_lookup)
+    lookup[new_code] = fuel_type
+    return replace(fire, fuel_codes=codes, fuel_lookup=lookup)
 
 
 def classify_effect(
