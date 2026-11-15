@@ -5754,3 +5754,7 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   cases pass. Report: `notes/reports/p215-process-risk-report.md`; close-out:
   `notes/reports/p215-closeout.md`. Design: `notes/design/ws4-process-risk-report.md`.
   PR: #1257.
+
+- P209.1: ran the P208 drop-depth pilot on the 100 m `2003_96` fixture. Cell depth reaches 1.18 mm,
+  but two drops and a 60-minute decay do not hold the gap; final area is 146,191 ha vs 146,532 ha
+  free burn. Report: `notes/reports/p209-fine-drop.md`. Dashboard: **GREEN**.

@@ -1,0 +1,45 @@
+{
+  "proof": "P208 single drop-depth pilot",
+  "case_id": "2003_96",
+  "fixture": "tests/fixtures/fire/fine_2003_96",
+  "barrier": {
+    "column": 270,
+    "gap_center_row": 168,
+    "gap_cells": 5,
+    "drop_times_min": [
+      13000.0
+    ],
+    "placement": "oracle-assisted: 60% from mean start column to eastern observed extent"
+  },
+  "drops": {
+    "drops_per_cell": 2,
+    "volume_l": 6000.0,
+    "length_m": 100.0,
+    "width_m": 50.0,
+    "decay_min": 60.0,
+    "required_depth_mm": 0.75
+  },
+  "rows": [
+    {
+      "case": "2003_96",
+      "member": "baseline",
+      "drop_time_min": 13000.0,
+      "barrier_col": 270,
+      "gap_mean_depth_mm": 1.183196044131492,
+      "area_obs_ha": 31382.0,
+      "area_sim_ha": 146191.0,
+      "area_bias": 3.6584347715250782,
+      "iou": 0.209197014681448,
+      "sorensen": 0.3460098100499513,
+      "east_of_barrier_burned_cells": 53464,
+      "time_to_observed_area_min": 5820.0
+    }
+  ],
+  "limitations": [
+    "Cell-center ellipse sampling, not a surveyed drop contour.",
+    "Two drops per gap cell, no overlap/dispatch sequence.",
+    "No tanker, helicopter, refill or queue model.",
+    "Synthetic, oracle-assisted barrier geometry.",
+    "No calibration and no operational claim."
+  ]
+}

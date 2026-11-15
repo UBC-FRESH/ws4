@@ -145,6 +145,9 @@ def main() -> None:
         default=ROOT / "notes/reports/p208-drop-depth.csv",
     )
     parser.add_argument("--drop-times", default="12000,13000,14000")
+    parser.add_argument(
+        "--members", default="", help="comma-separated member names; empty uses all"
+    )
     args = parser.parse_args()
     fixture = args.fixture or args.ws4_root / "tests/fixtures/fire/large_2003_96"
     sys.path.insert(0, str(args.ws4_root))
@@ -186,10 +189,12 @@ def main() -> None:
         np.mean([depth[row, barrier_col] for row in np.flatnonzero(~barrier[:, barrier_col])])
     )
     drop_times = [float(value) for value in args.drop_times.split(",") if value]
+    member_names = [value for value in args.members.split(",") if value]
+    members = [member for member in MEMBERS if not member_names or member["name"] in member_names]
 
     rows: list[dict[str, object]] = []
     for drop_time in drop_times:
-        for member in MEMBERS:
+        for member in members:
             perturbed = _weather_member(
                 fire,
                 wind_scale=float(member["wind_scale"]),
