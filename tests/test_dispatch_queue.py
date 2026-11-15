@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 import importlib
+import json
 import sys
 from pathlib import Path
 from typing import Any
+
+import pytest
 
 SCRIPTS = Path(__file__).resolve().parents[1] / "scripts"
 if str(SCRIPTS) not in sys.path:
@@ -25,3 +28,11 @@ def test_two_aircraft_accumulate_lateness() -> None:
     result = module.simulate_queue(aircraft=2)
     assert result["feasible"] is False
     assert result["max_end_lateness_min"] > 0.0
+
+
+def test_cli(monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
+    module: Any = importlib.import_module("dispatch_queue")
+    monkeypatch.setattr(sys, "argv", ["dispatch_queue.py", "--aircraft", "3"])
+    module.main()
+    output = json.loads(capsys.readouterr().out)
+    assert output["3"]["feasible"] is True

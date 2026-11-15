@@ -2026,7 +2026,7 @@ def test_compare_tiles_use_the_durable_cache(tmp_path: Path) -> None:
     """A second app process reads a comparison tile from disk."""
     cache = tmp_path / "tile-cache"
     first, _ = _app(tmp_path, tile_cache_dir=cache)
-    params = {"against": "run2", "year": 1, "period_start": 0}
+    params: dict[str, str | int] = {"against": "run2", "year": 1, "period_start": 0}
     response = first.get("/api/runs/run1/compare-tiles/0/0/0.mvt", params=params)
     assert response.status_code == 200
     assert response.headers["x-ws4-tile-cache"] == "miss"
@@ -2113,7 +2113,7 @@ def test_the_tile_cache_writes_and_reuses_a_disk_tile(tmp_path: Path) -> None:
     """A tile is written once and served from disk by a fresh application."""
     cache = tmp_path / "tile-cache"
     client, targets = _app(tmp_path, tile_cache_dir=cache)
-    params = {"year": 0, "layer": "treatments"}
+    params: dict[str, str | int] = {"year": 0, "layer": "treatments"}
     first = client.get("/api/runs/run1/tiles/0/0/0.mvt", params=params)
     assert first.status_code == 200
     assert first.headers["x-ws4-tile-cache"] == "miss"
