@@ -37,4 +37,4 @@ Use the train/validation gap in the optimizer's process-risk verification output
 
 ## Pull request
 
-PR: #TBD is queued for maintainer approval. Do not merge without approval.
+PR: #1274 is queued for maintainer approval. Do not merge without approval.

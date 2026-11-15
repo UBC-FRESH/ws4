@@ -6329,7 +6329,7 @@ Status: pr-open
 Design note: `notes/design/ws4-process-risk-validation.md`
 Report: `notes/reports/p218-closeout.md`
 Validation report: `notes/reports/p218-process-risk-validation.md`
-PR: #TBD
+PR: #1274
 
 Goal: split process scenarios into train/validation and report the risk generalization gap.
 

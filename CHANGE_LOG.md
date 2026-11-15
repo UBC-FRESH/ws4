@@ -5787,4 +5787,4 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P218.2: verified and closed P218. Full dashboard **OVERALL: GREEN**. Splits, gap, artifact, and
   invalid inputs pass. Report: `notes/reports/p218-process-risk-validation.md`; close-out:
   `notes/reports/p218-closeout.md`. Design: `notes/design/ws4-process-risk-validation.md`.
-  PR: #TBD.
+  PR: #1274.
