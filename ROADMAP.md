@@ -205,6 +205,7 @@ exists and the maintainer approves it.
 | P206 Temporary wet-line suppression | #1217 | `feature/p206-wet-line` | pr-open |
 | P207 Drop-depth and dispatch contract | #1227 | `feature/p207-drop-contract` | pr-open |
 | P208 Single drop-depth pilot | #1237 | `feature/p208-drop-depth` | pr-open |
+| P209 100 m drop-depth pilot | #1250 | `feature/p209-fine-drop` | pr-open |
 | P210 align the LANDIS process transition | #1199 | `feature/p210-transition-alignment` | complete |
 | P211 heterogeneous spatial reference | #1222 | `feature/p211-heterogeneous-reference` | complete |
 | P212 process-ensemble fire-regime report | #1232 | `feature/p212-process-fire-regime` | complete |
@@ -6091,6 +6092,29 @@ Acceptance:
 - Depth/coverage are computed from footprint and volume.
 - Decay and threshold checks are tested.
 - Free-burn defaults unchanged.
+- No calibration and no operational claim.
+- Dashboard green.
+
+## Phase 209: 100 m drop-depth pilot
+
+Parent issue: #1250
+Branch: `feature/p209-fine-drop`
+Status: pr-open
+Report: `notes/reports/p209-fine-drop.md`
+Manifest: `notes/reports/p209-fine-drop.json`
+PR: #1258
+
+Goal: test the P208 depth field at 100 m, where a drop footprint is comparable to a cell.
+
+- [x] P209.1 Run the 100 m depth pilot (#1251)
+
+Result: depth reaches 1.18 mm, but two drops and a 60-minute decay do not contain the fire. Final
+area 146,191 ha vs 146,532 ha free burn. No-go for this line design; persistence is still missing.
+
+Acceptance:
+
+- Cell depth and final area reported.
+- 500 m and 100 m results compared.
 - No calibration and no operational claim.
 - Dashboard green.
 
