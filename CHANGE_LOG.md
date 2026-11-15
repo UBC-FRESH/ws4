@@ -5849,4 +5849,4 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P223.2: verified and closed P223. Full dashboard **OVERALL: GREEN**. Exact differences,
   scenario selection, missing accounts, and artifacts pass. Report:
   `notes/reports/p223-account-comparison.md`; close-out: `notes/reports/p223-closeout.md`.
-  Design: `notes/design/ws4-account-comparison.md`. PR: #TBD.
+  Design: `notes/design/ws4-account-comparison.md`. PR: #1298.

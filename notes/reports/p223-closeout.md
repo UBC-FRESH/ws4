@@ -37,4 +37,4 @@ Run both sides on a shared schedule and feed their account files into this compa
 
 ## Pull request
 
-PR: #TBD is queued for maintainer approval. Do not merge without approval.
+PR: #1298 is queued for maintainer approval. Do not merge without approval.

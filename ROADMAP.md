@@ -6457,7 +6457,7 @@ Status: pr-open
 Design note: `notes/design/ws4-account-comparison.md`
 Report: `notes/reports/p223-closeout.md`
 Comparison report: `notes/reports/p223-account-comparison.md`
-PR: #TBD
+PR: #1298
 
 Goal: compare mapped process and estate account values at the final period.
 
