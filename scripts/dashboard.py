@@ -101,7 +101,11 @@ def default_gates(root: Path, python: str = sys.executable) -> tuple[Gate, ...]:
         Gate("lint", (python, "-m", "ruff", "check", "."), "ruff finds no lint errors"),
         Gate("format", (python, "-m", "ruff", "format", "--check", "."), "code is formatted"),
         Gate("types", (python, "-m", "mypy"), "mypy --strict passes on the configured files"),
-        Gate("tests", (python, "-m", "pytest", "-q"), "tests pass and the coverage gate holds"),
+        Gate(
+            "tests",
+            (python, "-m", "pytest", "-q", "-n", "auto"),
+            "tests pass and the coverage gate holds",
+        ),
         Gate(
             "validator",
             (python, "scripts/check_workflow.py"),

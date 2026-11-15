@@ -5896,3 +5896,7 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P234.3: verified and closed P234. Full dashboard **OVERALL: GREEN**. Compiled curve and shared
   schedule both report 340 m3. Report: `notes/reports/p234-compiled-curves.md`; close-out:
   `notes/reports/p234-closeout.md`. Design: `notes/design/ws4-compiled-curves.md`. PR: #1339.
+
+- CI: parallelized the pytest gate with `pytest-xdist` (`-n auto`) in the dashboard, CI quality
+  job, and pre-commit, and set an explicit 30-minute quality-job timeout. No test or coverage
+  threshold was removed. Local full suite: 3m49s, 2470 passed, 90.40% coverage.
