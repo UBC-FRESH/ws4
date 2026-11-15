@@ -216,8 +216,9 @@ exists and the maintainer approves it.
 | P218 process fire-risk train/validation | #1271 | `feature/p218-process-risk-validation` | complete |
 | P219 Re-wetting sortie and fleet lower bound | #1280 | `feature/p219-rewetting-capacity` | pr-open |
 | P220 combined optimizer/process risk verification bundle | #1276 | `feature/p220-risk-bundle` | complete |
-| P221 bundle existing optimizer risk verification | #1281 | `feature/p221-optimizer-bundle` | pr-open |
-| P222 Gap-only dispatch queue feasibility | #1288 | `feature/p222-dispatch-queue` | pr-open |
+| P221 bundle existing optimizer risk verification | #1281 | `feature/p221-optimizer-bundle` | complete |
+| P222 Gap-only dispatch queue feasibility | #1288 | `feature/p222-dispatch-queue` | complete |
+| P223 process/estate account comparison | #1292 | `feature/p223-account-comparison` | pr-open |
 | P224 Water-source throughput lower bound | #1295 | `feature/p224-water-source` | pr-open |
 | P225 Water-source service utilization | #1300 | `feature/p225-source-service` | pr-open |
 | P226 Source queue and refill feasibility | #1304 | `feature/p226-source-queue` | pr-open |
@@ -6405,7 +6406,8 @@ Acceptance:
 
 Parent issue: #1281
 Branch: `feature/p221-optimizer-bundle`
-Status: pr-open
+Status: complete
+Merge commit: `4ecf504`
 Design note: `notes/design/ws4-optimizer-risk-bundle.md`
 Report: `notes/reports/p221-closeout.md`
 Bundle report: `notes/reports/p221-optimizer-bundle.md`
@@ -6427,7 +6429,7 @@ Acceptance:
 
 Parent issue: #1288
 Branch: `feature/p222-dispatch-queue`
-Status: pr-open
+Status: complete
 Report: `notes/reports/p222-dispatch-queue.md`
 Manifest: `notes/reports/p222-dispatch-queue.json`
 PR: #1291
@@ -6445,6 +6447,28 @@ Acceptance:
 - Application lateness and maximum cell gap reported.
 - Three, four and five aircraft compared.
 - No calibration and no operational claim.
+
+
+## Phase 223: process/estate account comparison
+
+Parent issue: #1292
+Branch: `feature/p223-account-comparison`
+Status: pr-open
+Design note: `notes/design/ws4-account-comparison.md`
+Report: `notes/reports/p223-closeout.md`
+Comparison report: `notes/reports/p223-account-comparison.md`
+PR: #TBD
+
+Goal: compare mapped process and estate account values at the final period.
+
+- [x] P223.1 Implement account comparison (#1293)
+- [x] P223.2 Test and close out account comparison (#1294)
+
+Acceptance:
+
+- The mapping is explicit and validated.
+- Exact differences are tested.
+- Missing/ambiguous inputs fail loudly.
 - Dashboard green.
 
 ## Phase 224: water-source throughput lower bound
