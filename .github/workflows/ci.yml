@@ -106,7 +106,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     env:
-      PYTEST_ADDOPTS: "-n 4"
+      PYTEST_ADDOPTS: "-n 2 --dist loadscope"
 
     steps:
       - name: Check out repository
