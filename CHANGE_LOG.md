@@ -5871,6 +5871,6 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   drawdown for the 480,000 L gap demand. Source geometry is not the blocker; refill/depth
   remain unknown. Report: `notes/reports/p232-source-geometry.md`. Dashboard: **GREEN**.
 
-- P233.1: raised the quality and pre-commit CI job timeouts to 30 minutes, made the
-  quality pytest invocation quiet, and skipped the duplicate pytest hook in pre-commit CI.
-  Quality gates and the dashboard still run the full suite. Dashboard: **GREEN**.
+- P233.1: raised the quality and pre-commit CI job timeouts to 30 minutes and removed the
+  duplicate pytest runs from both jobs. The green-dashboard job remains the full test and
+  coverage gate. Dashboard: **GREEN**.

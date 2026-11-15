@@ -87,9 +87,8 @@ jobs:
       - name: Types (mypy --strict)
         run: python -m mypy
 
-      - name: Tests with coverage gate
-        run: python -m pytest -q
-
+      # The full suite and coverage gate run in the dashboard job. Re-running
+      # the same suite here duplicates the load and can stall the runner.
       - name: Validate workflow surfaces
         run: python scripts/check_workflow.py
 
