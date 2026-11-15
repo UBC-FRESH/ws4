@@ -107,3 +107,54 @@ def test_invalid_fire_risk_accounts_fail() -> None:
         fire_regime_account_values({}, years=1)
     with pytest.raises(ProcessFireRiskError, match="summaries"):
         fire_regime_account_values({"x": object()}, years=1)  # type: ignore[dict-item]
+
+
+def test_process_fire_risk_report_has_exact_penalty() -> None:
+    result = _ensemble()
+    from ws4.ecosystem.ensemble import ProcessEnsembleResult
+    from ws4.opt.fire_risk import evaluate_process_fire_risk
+
+    assert isinstance(result, ProcessEnsembleResult)
+    summaries = result.fire_regime_summaries(years=2, burnable_area_ha=160.0, cell_size_ha=10.0)
+    base_target = Target(
+        account="fire.regime.annual_burn_rate",
+        period=1,
+        period_width=2,
+        aggregation="mean",
+        minimum=0.0,
+    )
+    base = evaluate_process_fire_risk(
+        summaries,
+        years=2,
+        targets=(base_target,),
+        scenario_ids=("one", "two"),
+        weights={"one": 0.5, "two": 0.5},
+    )
+    assert base.objective == 0.0
+    assert base.summary()["schema_version"] == "ws4.process-fire-risk-accounts.v1"
+    value = float(base.aggregated["value"].iloc[0])
+
+    penalized = evaluate_process_fire_risk(
+        summaries,
+        years=2,
+        targets=(
+            Target(
+                account="fire.regime.annual_burn_rate",
+                period=1,
+                period_width=2,
+                aggregation="mean",
+                minimum=value + 2.0,
+            ),
+        ),
+        scenario_ids=("one", "two"),
+        weights={"one": 0.5, "two": 0.5},
+    )
+
+    assert penalized.objective == pytest.approx(2.0)
+
+
+def test_process_fire_risk_report_requires_targets() -> None:
+    from ws4.opt.fire_risk import evaluate_process_fire_risk
+
+    with pytest.raises(ProcessFireRiskError, match="target"):
+        evaluate_process_fire_risk({}, years=1, targets=())

@@ -39,4 +39,4 @@ Add a process-conditioned scenario set to the optimizer's risk evaluation.
 
 ## Pull request
 
-PR: #1252 is queued for maintainer approval. Do not merge without approval.
+Merged as `1f5c4d1` (PR #1252); branch deleted.

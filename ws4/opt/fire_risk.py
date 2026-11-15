@@ -8,12 +8,14 @@ not change the optimizer search or calibrate the fire model.
 from __future__ import annotations
 
 import math
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
 from typing import Final
 
 import pandas as pd
 
 from ..fire.risk import FireRegimeRiskSummary
+from .objective import Target, objective
 
 PROCESS_FIRE_RISK_VERSION: Final[str] = "ws4.process-fire-risk-accounts.v1"
 
@@ -138,4 +140,93 @@ def fire_regime_account_values(
             )
     return pd.DataFrame(rows, columns=["offset", "account", "value", "scenario"]).sort_values(
         ["scenario", "account"], ignore_index=True
+    )
+
+
+@dataclass(frozen=True)
+class ProcessFireRiskReport:
+    """Risk evaluation over process fire-regime summaries.
+
+    Attributes
+    ----------
+    values : pandas.DataFrame
+        Per-scenario fire-regime account rows.
+    aggregated : pandas.DataFrame
+        Risk pseudo-account rows.
+    targets : tuple of Target
+        Effective targets.
+    objective : float
+        Weighted objective on the aggregated targets.
+    """
+
+    values: pd.DataFrame
+    aggregated: pd.DataFrame
+    targets: tuple[Target, ...]
+    objective: float
+
+    def summary(self) -> dict[str, object]:
+        """Return a stable summary.
+
+        Returns
+        -------
+        dict
+            Schema version, scenario count, aggregated account count, and objective.
+        """
+        return {
+            "schema_version": PROCESS_FIRE_RISK_VERSION,
+            "scenarios": sorted(self.values["scenario"].unique().tolist()),
+            "aggregated_accounts": len(self.aggregated),
+            "objective": self.objective,
+        }
+
+
+def evaluate_process_fire_risk(
+    summaries: Mapping[str, FireRegimeRiskSummary],
+    *,
+    years: int,
+    targets: Sequence[Target],
+    scenario_ids: Sequence[str] | None = None,
+    weights: Mapping[str, float] | None = None,
+) -> ProcessFireRiskReport:
+    """Risk-aggregate process fire-regime summaries with the existing objective.
+
+    Parameters
+    ----------
+    summaries : mapping of str to FireRegimeRiskSummary
+        Per-scenario fire-regime summaries.
+    years : int
+        Number of simulated years.
+    targets : sequence of Target
+        Risk-aggregated targets.
+    scenario_ids : sequence of str or None, optional
+        Full scenario list. None infers it from the account frame.
+    weights : mapping of str to float or None, optional
+        Scenario weights.
+
+    Returns
+    -------
+    ProcessFireRiskReport
+        Account values, aggregated rows, effective targets, and objective.
+
+    Raises
+    ------
+    ProcessFireRiskError
+        If no targets are supplied.
+    """
+    if not targets:
+        raise ProcessFireRiskError("at least one target is required")
+    from ..ecosystem.scenarios import risk_account_values
+
+    values = fire_regime_account_values(summaries, years=years)
+    aggregated, effective = risk_account_values(
+        values,
+        targets,
+        scenario_ids=scenario_ids,
+        weights=weights,
+    )
+    return ProcessFireRiskReport(
+        values=values,
+        aggregated=aggregated,
+        targets=tuple(effective),
+        objective=objective(aggregated, effective),
     )

@@ -209,7 +209,8 @@ exists and the maintainer approves it.
 | P211 heterogeneous spatial reference | #1222 | `feature/p211-heterogeneous-reference` | complete |
 | P212 process-ensemble fire-regime report | #1232 | `feature/p212-process-fire-regime` | complete |
 | P213 process-ensemble fire-regime artifact | #1241 | `feature/p213-ensemble-artifact` | complete |
-| P214 process fire-regime risk accounts | #1246 | `feature/p214-fire-risk-accounts` | pr-open |
+| P214 process fire-regime risk accounts | #1246 | `feature/p214-fire-risk-accounts` | complete |
+| P215 process fire-risk evaluation report | #1253 | `feature/p215-process-risk-report` | pr-open |
 | P201 Firebreak gap sensitivity pilot | #1185 | `feature/p201-firebreak-gap` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
@@ -6196,7 +6197,8 @@ Acceptance:
 
 Parent issue: #1246
 Branch: `feature/p214-fire-risk-accounts`
-Status: pr-open
+Status: complete
+Merge commit: `1f5c4d1`
 Design note: `notes/design/ws4-fire-risk-accounts.md`
 Report: `notes/reports/p214-closeout.md`
 Accounts report: `notes/reports/p214-fire-risk-accounts.md`
@@ -6213,4 +6215,28 @@ Acceptance:
 - Account rows are stable and complete for a scenario.
 - Zero-fire FRI is omitted, not zero-filled.
 - The rows feed `risk_account_values` with a mean risk target.
+- Dashboard green.
+
+
+## Phase 215: process fire-risk evaluation report
+
+Parent issue: #1253
+Branch: `feature/p215-process-risk-report`
+Status: pr-open
+Design note: `notes/design/ws4-process-risk-report.md`
+Report: `notes/reports/p215-closeout.md`
+Evaluation report: `notes/reports/p215-process-risk-report.md`
+PR: #1257
+
+Goal: evaluate optimizer risk targets over process-conditioned fire-regime summaries.
+
+- [x] P215.1 Implement the process fire-risk report (#1254)
+- [x] P215.2 Test the process risk report (#1255)
+- [x] P215.3 Document and close out the process risk report (#1256)
+
+Acceptance:
+
+- The report uses the existing risk aggregation and objective code.
+- Exact penalty and zero-penalty cases are tested.
+- Invalid inputs fail loudly.
 - Dashboard green.
