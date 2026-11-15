@@ -224,7 +224,8 @@ exists and the maintainer approves it.
 | P226 Source queue and refill feasibility | #1304 | `feature/p226-source-queue` | pr-open |
 | P227 Stochastic source-queue envelope | #1308 | `feature/p227-stochastic-source` | pr-open |
 | P229 Alberta HWF113 water-source screen | #1316 | `feature/p229-alberta-water` | pr-open |
-| P230 shared-schedule process/estate comparison | #1313 | `feature/p230-shared-schedule` | pr-open |
+| P230 shared-schedule process/estate comparison | #1313 | `feature/p230-shared-schedule` | complete |
+| P231 age-based volume curves | #1326 | `feature/p231-age-curves` | pr-open |
 | P232 HWF113 source-distance and drawdown closure | #1321 | `feature/p232-source-geometry` | pr-open |
 | P217 Re-wetting interval at 100 m | #1262 | `feature/p217-rewetting` | pr-open |
 | P201 Firebreak gap sensitivity pilot | #1185 | `feature/p201-firebreak-gap` | pr-open |
@@ -6599,7 +6600,7 @@ Acceptance:
 
 Parent issue: #1313
 Branch: `feature/p230-shared-schedule`
-Status: pr-open
+Status: complete
 Design note: `notes/design/ws4-shared-schedule.md`
 Report: `notes/reports/p230-closeout.md`
 Comparison report: `notes/reports/p230-shared-schedule.md`
@@ -6616,6 +6617,29 @@ Acceptance:
 - Final mapped volume matches exactly.
 - The comparison artifact reports zero difference.
 - Dashboard green.
+
+
+## Phase 231: age-based volume curves
+
+Parent issue: #1326
+Branch: `feature/p231-age-curves`
+Status: pr-open
+Design note: `notes/design/ws4-age-volume-curves.md`
+Report: `notes/reports/p231-closeout.md`
+Curve report: `notes/reports/p231-age-curves.md`
+PR: #1331
+
+Goal: use age-based yield curves in the shared-schedule comparison instead of a linear biomass bridge.
+
+- [x] P231.1 Add age-based volume curves (#1327)
+- [x] P231.2 Use curves in the shared schedule (#1328)
+- [x] P231.3 Test and close out age curves (#1329)
+
+Acceptance:
+
+- Curves override biomass rates.
+- Interpolation and clamping are exact.
+- Shared-schedule comparison remains zero difference.
 
 ## Phase 232: HWF113 source-distance and drawdown closure
 

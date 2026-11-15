@@ -48,7 +48,7 @@ def _process_state() -> CohortState:
             "fragment_id": fragment,
             "cohort_id": 1,
             "species": "PL",
-            "age": 60,
+            "age": 40 if fragment == 1 else 60,
             "area_fraction": 1.0,
             "biomass_t_ha": biomass,
             "fuel_t_ha": 0.0,
@@ -83,7 +83,11 @@ def test_one_clearcut_matches_across_engines(tmp_path: Path) -> None:
         horizon_years=1,
         fire=FireConfig(ignition_rate_per_fragment_year=0.0),
         regeneration=RegenerationConfig(establishment_probability=0.0),
-        bridge=VolumeBridgeConfig(default_volume_m3_per_t=1.0, merchantable_fraction=1.0),
+        bridge=VolumeBridgeConfig(
+            default_volume_m3_per_t=0.0,
+            merchantable_fraction=1.0,
+            age_volume_curves={"PL": {0: 0.0, 40: 120.0, 60: 170.0}},
+        ),
         succession_process=_NoSuccession(),
         seed=1,
     )
