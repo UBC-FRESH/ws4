@@ -12,7 +12,23 @@ from statistics import mean
 
 @dataclass(frozen=True)
 class Sample:
-    """One source-queue sample."""
+    """One source-queue sample.
+
+    Parameters
+    ----------
+    refill_l_min : float
+        Nominal refill rate.
+    seed : int
+        Random seed.
+    max_cell_gap_min : float
+        Largest cell wetness gap.
+    max_end_lateness_min : float
+        Largest application end lateness.
+    max_source_wait_min : float
+        Largest source wait.
+    feasible : bool
+        Whether the gap and lateness constraints hold.
+    """
 
     refill_l_min: float
     seed: int
@@ -71,7 +87,7 @@ def simulate_sample(
     rng = random.Random(seed)
     source_free = 0.0
     aircraft_ready = [0.0] * aircraft
-    cell_times = {cell: [] for cell in range(cells)}
+    cell_times: dict[int, list[float]] = {cell: [] for cell in range(cells)}
     application_ends: list[float] = []
     max_source_wait = 0.0
     for application in range(applications):
@@ -95,8 +111,7 @@ def simulate_sample(
                 aircraft_ready[index] = source_free
         application_ends.append(max(app_times))
     max_gap = max(
-        max(b - a for a, b in itertools.pairwise(sorted(times)))
-        for times in cell_times.values()
+        max(b - a for a, b in itertools.pairwise(sorted(times))) for times in cell_times.values()
     )
     lateness = max(
         application_ends[index] - (index * interval_min + interval_min)

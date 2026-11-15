@@ -10,7 +10,33 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True)
 class QueueResult:
-    """One source-queue simulation result."""
+    """One source-queue simulation result.
+
+    Parameters
+    ----------
+    aircraft : int
+        Number of aircraft.
+    sources : int
+        Number of water sources.
+    refill_l_min : float
+        Refill rate per source.
+    applications : int
+        Number of applications.
+    interval_min : float
+        Target interval.
+    cycle_min : float
+        Total aircraft cycle.
+    payload_l : float
+        Litres per sortie.
+    max_cell_gap_min : float
+        Largest cell wetness gap.
+    max_end_lateness_min : float
+        Largest application end lateness.
+    max_source_wait_min : float
+        Largest source wait.
+    feasible : bool
+        Whether the gap and lateness constraints hold.
+    """
 
     aircraft: int
     sources: int
@@ -25,7 +51,13 @@ class QueueResult:
     feasible: bool
 
     def to_dict(self) -> dict[str, float]:
-        """Return a JSON-serializable mapping."""
+        """Return a JSON-serializable mapping.
+
+        Returns
+        -------
+        dict of str to float
+            Queue result fields.
+        """
         return {
             "aircraft": self.aircraft,
             "sources": self.sources,
@@ -85,7 +117,7 @@ def simulate(
     travel_min = max(0.0, cycle_min - service_min)
     aircraft_ready = [0.0] * aircraft
     source_free = [0.0] * sources
-    cell_times = {cell: [] for cell in range(cells)}
+    cell_times: dict[int, list[float]] = {cell: [] for cell in range(cells)}
     application_ends: list[float] = []
     max_source_wait = 0.0
     for application in range(applications):
@@ -105,8 +137,7 @@ def simulate(
                 aircraft_ready[index] = source_free[source_index]
         application_ends.append(max(app_times))
     max_gap = max(
-        max(b - a for a, b in itertools.pairwise(sorted(times)))
-        for times in cell_times.values()
+        max(b - a for a, b in itertools.pairwise(sorted(times))) for times in cell_times.values()
     )
     end_lateness = max(
         application_ends[index] - (index * interval_min + interval_min)

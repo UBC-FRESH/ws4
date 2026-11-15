@@ -267,10 +267,11 @@ def prewarm(
                     for year, period_start in request_periods:
                         if requested >= max_tiles:
                             break
-                        params: dict[str, object] = {"year": year, "layer": layer}
+                        params: dict[str, str | int | float] = {"year": year, "layer": layer}
                         if period_start is not None:
                             params["period_start"] = period_start
                         if layer == "compare":
+                            assert compare_against is not None
                             params["against"] = compare_against
                             path = (
                                 f"/api/runs/{run_name}/compare-tiles/{zoom}/{tile.x}/{tile.y}.mvt"
