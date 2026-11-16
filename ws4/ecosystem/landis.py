@@ -490,8 +490,10 @@ class LandisSuccessionProcess:
             self.config.traits(str(species)).longevity for species in group["species"]
         ]
         # Match the published Biomass_core transition order: age the cohort, compute
-        # age mortality, then competition, ANPP, and developmental mortality.
-        group.loc[group["age"] >= 1, "age"] = group.loc[group["age"] >= 1, "age"] + 1
+        # age mortality, then competition, ANPP, and developmental mortality. Age-zero
+        # cohorts are recruits from the previous year and must age too; otherwise they
+        # never leave age zero.
+        group["age"] = group["age"] + 1
         group = calculate_sum_b(
             group,
             last_reg=0,

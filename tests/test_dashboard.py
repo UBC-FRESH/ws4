@@ -145,6 +145,20 @@ def test_run_gates_keeps_the_order_of_the_gates(tmp_path: Path) -> None:
     assert [r.name for r in db.run_gates(gates, tmp_path)] == ["first", "second"]
 
 
+def test_test_command_adds_workers_locally(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("PYTEST_ADDOPTS", raising=False)
+
+    assert db._test_command("python") == ("python", "-m", "pytest", "-q", "-n", "4")
+
+
+def test_test_command_defers_to_inherited_pytest_options(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("PYTEST_ADDOPTS", "-n 2 --dist loadscope")
+
+    assert db._test_command("python") == ("python", "-m", "pytest", "-q")
+
+
 def test_default_gates_include_seed_gates_only_when_the_generator_exists(tmp_path: Path) -> None:
     """A repository without the project generator does not get the seed gates."""
     bare = {gate.name for gate in db.default_gates(tmp_path, python="python")}

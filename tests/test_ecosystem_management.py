@@ -12,6 +12,7 @@ from ws4.ecosystem.ensemble import (
 )
 from ws4.ecosystem.events import Event
 from ws4.ecosystem.fire import FireConfig, synthetic_grid
+from ws4.ecosystem.landis import LandisSuccessionProcess
 from ws4.ecosystem.management import (
     ManagementError,
     ScheduleSource,
@@ -66,6 +67,54 @@ def test_harvest_event_timing_and_retention() -> None:
     assert float((group["biomass_t_ha"] * group["area_fraction"]).sum()) < float(
         (before["biomass_t_ha"] * before["area_fraction"]).sum()
     )
+
+
+def test_harvest_is_logged_before_growth_in_the_same_year() -> None:
+    _schema, state, edges = synthetic_grid(2, 2)
+    state.cohorts["track_id"] = 1
+    source = ScheduleSource({1: (("CC", 1),)}, {1: (1,)})
+    config = ProcessEnsembleConfig(
+        horizon_years=2,
+        fire=FireConfig(ignition_rate_per_fragment_year=0.0),
+        management=source,
+        succession_process=LandisSuccessionProcess(),
+    )
+
+    result = run_process_scenario(state, edges, config, scenario_id="order", seed=1)
+    same_year = [
+        event.event_type
+        for event in result.log.events
+        if event.year == 1 and event.event_type in {"harvest", "landis_succession"}
+    ]
+
+    assert same_year[0] == "harvest"
+    assert set(same_year[1:]) == {"landis_succession"}
+
+
+def test_harvest_splits_track_identity_between_survivor_and_recruit() -> None:
+    _schema, state, _edges = synthetic_grid(2, 2)
+    state.cohorts["track_id"] = 1
+    source = ScheduleSource(
+        {1: (("CC", 0),)},
+        {1: (1,)},
+        harvest_fraction=0.5,
+        track_transitions={(1, "CC"): 2},
+    )
+    events = source.events(state, ProcessContext(0, "treatment", "m"))
+    updated = source.apply(state, events[0])
+    group = updated.cohorts[updated.cohorts["fragment_id"] == 1]
+
+    assert group["track_id"].tolist() == [1, 2]
+    assert group["area_fraction"].tolist() == pytest.approx([0.5, 0.5])
+
+
+def test_schedule_rejects_invalid_track_transitions() -> None:
+    with pytest.raises(ManagementError, match="source tracks"):
+        ScheduleSource({1: (("CC", 0),)}, {1: (1,)}, track_transitions={(-1, "CC"): 2})
+    with pytest.raises(ManagementError, match="targets"):
+        ScheduleSource({1: (("CC", 0),)}, {1: (1,)}, track_transitions={(1, "CC"): -2})
+    with pytest.raises(ManagementError, match="treatments"):
+        ScheduleSource({1: (("CC", 0),)}, {1: (1,)}, track_transitions={(1, "  "): 2})
 
 
 def test_schedule_rejects_unknown_mapping_and_duplicate_rows(tmp_path: Path) -> None:

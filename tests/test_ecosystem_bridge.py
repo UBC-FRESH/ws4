@@ -117,6 +117,69 @@ def test_age_curves_are_serialized_and_validated(tmp_path: Path) -> None:
         VolumeBridgeConfig(age_volume_curves={"PL": {-1: 1.0}})
 
 
+def test_track_age_curves_override_the_species_curve() -> None:
+    _schema, state, _edges = synthetic_grid(1, 2)
+    frame = state.cohorts.copy()
+    frame["species"] = "PL"
+    frame["age"] = 2
+    frame["track_id"] = [1.0, 2.0]
+    state = CohortState(
+        cohorts=frame.reset_index(drop=True),
+        schema=state.schema,
+        fragment_areas={1: 3.0, 2: 2.0},
+    )
+    config = VolumeBridgeConfig(
+        default_volume_m3_per_t=0.0,
+        age_volume_curves={"PL": {0: 0.0, 10: 1.0}},
+        track_age_volume_curves={
+            1: {0: 0.0, 10: 50.0},
+            2: {0: 0.0, 10: 100.0},
+        },
+    )
+    bridge = SpeciesVolumeBridge(config)
+
+    table = bridge.table(state)
+
+    assert table["volume_m3"].tolist() == pytest.approx([30.0, 40.0])
+    assert config.age_volume("PL", 2.0, 1) == pytest.approx(10.0)
+    assert config.age_volume("PL", 2.0, 99) == pytest.approx(0.2)
+
+
+def test_track_age_curves_are_serialized_and_validated(tmp_path: Path) -> None:
+    config = VolumeBridgeConfig(
+        track_age_volume_curves={2: {10: 50.0, 0: 0.0}},
+    )
+    payload = json.loads(config.write(tmp_path / "bridge.json").read_text())
+
+    assert payload["track_age_volume_curves"] == {"2": {"0": 0.0, "10": 50.0}}
+    with pytest.raises(BridgeError, match="non-negative"):
+        VolumeBridgeConfig(track_age_volume_curves={-1: {0: 0.0}})
+    with pytest.raises(BridgeError, match="non-empty"):
+        VolumeBridgeConfig(track_age_volume_curves={1: {}})
+
+
+def test_compiled_track_curves_are_loaded_by_feature_mapping() -> None:
+    from ws4.ecosystem.bridge import track_age_volume_curves_from_frame
+
+    frame = pd.DataFrame(
+        {
+            "curve_id": [2, 2, 2, 3, 3],
+            "x": [0.0, 40.0, 80.0, 0.0, 10.0],
+            "y": [1.0, 120.0, 220.0, 0.0, 50.0],
+        }
+    )
+    curves = track_age_volume_curves_from_frame(frame, {1: 2, 2: 3})
+
+    assert curves == {
+        1: {0: 1.0, 40: 120.0, 80: 220.0},
+        2: {0: 0.0, 10: 50.0},
+    }
+    with pytest.raises(BridgeError, match="missing"):
+        track_age_volume_curves_from_frame(frame, {1: 99})
+    with pytest.raises(BridgeError, match="track ids"):
+        track_age_volume_curves_from_frame(frame, {-1: 2})
+
+
 def test_compiled_curves_are_loaded_by_species_mapping() -> None:
     from ws4.ecosystem.bridge import age_volume_curves_from_frame
 

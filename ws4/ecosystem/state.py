@@ -684,11 +684,16 @@ def _parse_state_schema(
 
 
 def _typed_cohorts(frame: pd.DataFrame, schema: StateSchema) -> tuple[pd.DataFrame, list[Problem]]:
-    """Validate raw cohort rows and return a typed frame plus findings."""
+    """Validate raw cohort rows and return a typed frame plus findings.
+
+    A ``track_id`` column is optional. When present, it is carried through as the cohort's
+    compiled track identity; when absent, the bridge falls back to its species curve.
+    """
     findings: list[Problem] = []
     rows: list[dict[str, object]] = []
     fractions: dict[int, float] = {}
     seen: set[tuple[int, int]] = set()
+    has_track = "track_id" in frame.columns
     for index, row in frame.iterrows():
         where = f"cohorts[{index}]"
         try:
@@ -714,6 +719,11 @@ def _typed_cohorts(frame: pd.DataFrame, schema: StateSchema) -> tuple[pd.DataFra
             biomass = _cohort_number(row, "biomass_t_ha", schema, where)
             fuel = _cohort_number(row, "fuel_t_ha", schema, where)
             snag = _cohort_number(row, "snag_t_ha", schema, where)
+            track_id: int | None = None
+            if has_track:
+                track_id = _integer(row["track_id"], f"{where}.track_id")
+                if track_id < 0:
+                    raise StateError("track_id must be non-negative")
             attributes = _json_object(
                 row["attributes_json"], f"{where}.attributes_json", scalars_only=True
             )
@@ -725,19 +735,20 @@ def _typed_cohorts(frame: pd.DataFrame, schema: StateSchema) -> tuple[pd.DataFra
                     raise StateError(f"attribute {name!r} is already a cohort column")
                 _typed_value(value, variable.dtype, f"{where}.attributes_json.{name}")
             fractions[fragment_id] = fractions.get(fragment_id, 0.0) + fraction
-            rows.append(
-                {
-                    "fragment_id": fragment_id,
-                    "cohort_id": cohort_id,
-                    "species": species,
-                    "age": age,
-                    "area_fraction": fraction,
-                    "biomass_t_ha": biomass,
-                    "fuel_t_ha": fuel,
-                    "snag_t_ha": snag,
-                    "attributes_json": _text(row["attributes_json"], f"{where}.attributes_json"),
-                }
-            )
+            typed_row: dict[str, object] = {
+                "fragment_id": fragment_id,
+                "cohort_id": cohort_id,
+                "species": species,
+                "age": age,
+                "area_fraction": fraction,
+                "biomass_t_ha": biomass,
+                "fuel_t_ha": fuel,
+                "snag_t_ha": snag,
+                "attributes_json": _text(row["attributes_json"], f"{where}.attributes_json"),
+            }
+            if track_id is not None:
+                typed_row["track_id"] = track_id
+            rows.append(typed_row)
         except StateError as error:
             findings.append(problem("ECOSYSTEM-COHORT", where, str(error)))
     for fragment_id, total in sorted(fractions.items()):
@@ -760,6 +771,8 @@ def _typed_cohorts(frame: pd.DataFrame, schema: StateSchema) -> tuple[pd.DataFra
         "snag_t_ha",
         "attributes_json",
     ]
+    if has_track:
+        columns.append("track_id")
     return pd.DataFrame(rows, columns=columns), findings
 
 

@@ -23,8 +23,8 @@ EVENT_PHASES: Final[tuple[str, ...]] = (
     "ignition",
     "propagation",
     "effect",
-    "growth",
     "treatment",
+    "growth",
     "regeneration",
     "accounting",
 )

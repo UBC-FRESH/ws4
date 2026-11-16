@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 import sys
 import time
@@ -79,6 +80,26 @@ class GateResult:
     tail: str
 
 
+def _test_command(python: str) -> tuple[str, ...]:
+    """Return the pytest command, honoring an inherited ``PYTEST_ADDOPTS``.
+
+    Parameters
+    ----------
+    python : str
+        Interpreter for the test process.
+
+    Returns
+    -------
+    tuple of str
+        The pytest command. A local run gets four workers; CI can set its own worker and
+        distribution policy through ``PYTEST_ADDOPTS``.
+    """
+    command = [python, "-m", "pytest", "-q"]
+    if "PYTEST_ADDOPTS" not in os.environ:
+        command.extend(["-n", "4"])
+    return tuple(command)
+
+
 def default_gates(root: Path, python: str = sys.executable) -> tuple[Gate, ...]:
     """Build the gates that apply to a repository.
 
@@ -103,7 +124,7 @@ def default_gates(root: Path, python: str = sys.executable) -> tuple[Gate, ...]:
         Gate("types", (python, "-m", "mypy"), "mypy --strict passes on the configured files"),
         Gate(
             "tests",
-            (python, "-m", "pytest", "-q", "-n", "auto"),
+            _test_command(python),
             "tests pass and the coverage gate holds",
         ),
         Gate(

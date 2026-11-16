@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import math
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Final
 
@@ -37,6 +37,19 @@ def _probability(value: object, field: str) -> float:
     if not math.isfinite(number) or number < 0.0 or number > 1.0:
         raise ManagementError(f"{field} must be between 0 and 1")
     return number
+
+
+def _track_key(value: object) -> int:
+    """Return a non-negative integer track id from a table value."""
+    if isinstance(value, bool):
+        raise ManagementError("track_id must be a non-negative integer")
+    try:
+        number = float(str(value).strip())
+    except ValueError as error:
+        raise ManagementError("track_id must be a non-negative integer") from error
+    if not math.isfinite(number) or not number.is_integer() or number < 0.0:
+        raise ManagementError("track_id must be a non-negative integer")
+    return int(number)
 
 
 def load_schedule(path: str | Path) -> dict[int, tuple[tuple[str, int], ...]]:
@@ -140,6 +153,9 @@ class ScheduleSource(DecisionSource):
         Fraction of each live cohort removed (default 1.0, a clearcut).
     scenario_id : str, optional
         Scenario id stamped on events.
+    track_transitions : mapping of (int, str) to int, optional
+        Compiled ``(source_track, treatment)`` to target track transitions. Newly created
+        cohorts take the target track; survivors keep the source track.
     process_id : str
         Process id used by the executor.
     phases : tuple of str
@@ -152,14 +168,15 @@ class ScheduleSource(DecisionSource):
     block_fragments: Mapping[int, Sequence[int]]
     harvest_fraction: float = 1.0
     scenario_id: str = "management"
+    track_transitions: Mapping[tuple[int, str], int] = field(default_factory=dict)
 
     process_id: str = MANAGEMENT_PROCESS_ID
     phases: tuple[str, ...] = ("treatment",)
     state_reads: frozenset[str] = frozenset(
-        {"area_fraction", "biomass_t_ha", "fuel_t_ha", "snag_t_ha"}
+        {"area_fraction", "biomass_t_ha", "fuel_t_ha", "snag_t_ha", "track_id"}
     )
     state_writes: frozenset[str] = frozenset(
-        {"area_fraction", "age", "biomass_t_ha", "fuel_t_ha", "snag_t_ha"}
+        {"area_fraction", "age", "biomass_t_ha", "fuel_t_ha", "snag_t_ha", "track_id"}
     )
 
     def __post_init__(self) -> None:
@@ -182,6 +199,19 @@ class ScheduleSource(DecisionSource):
                 events.append((str(treatment).strip(), int(offset)))
             cleaned[int(block)] = tuple(sorted(events, key=lambda item: (item[1], item[0])))
         object.__setattr__(self, "schedule", cleaned)
+        transitions: dict[tuple[int, str], int] = {}
+        for (raw_track, raw_treatment), target in self.track_transitions.items():
+            if isinstance(raw_track, bool) or not isinstance(raw_track, int) or raw_track < 0:
+                raise ManagementError(
+                    "track transition source tracks must be non-negative integers"
+                )
+            treatment = str(raw_treatment).strip()
+            if not treatment:
+                raise ManagementError("track transition treatments must be non-empty")
+            if isinstance(target, bool) or not isinstance(target, int) or target < 0:
+                raise ManagementError("track transition targets must be non-negative integers")
+            transitions[(raw_track, treatment)] = target
+        object.__setattr__(self, "track_transitions", transitions)
         mapping: dict[int, tuple[int, ...]] = {}
         for block, fragments in self.block_fragments.items():
             values = tuple(sorted(int(fragment) for fragment in fragments))
@@ -226,7 +256,7 @@ class ScheduleSource(DecisionSource):
                             event_id=event_id,
                             process_id=self.process_id,
                             event_type="harvest",
-                            time=float(context.year) + 0.6,
+                            time=float(context.year) + 0.4,
                             year=context.year,
                             phase="treatment",
                             source=MANAGEMENT_SOURCE,
@@ -259,15 +289,22 @@ class ScheduleSource(DecisionSource):
         if event.event_type != "harvest" or not event.fragment_ids:
             return state
         fraction = self.harvest_fraction
+        treatment = ""
         for key, value in event.attributes:
             if key == "harvest_fraction" and isinstance(value, (int, float)):
                 fraction = float(value)
-                break
+            elif key == "treatment" and isinstance(value, str):
+                treatment = value.strip()
         fragment = event.fragment_ids[0]
         frame = state.cohorts.copy()
         group = frame[frame["fragment_id"] == fragment]
         if group.empty:
             return state
+        has_track = "track_id" in frame.columns
+        if self.track_transitions and not has_track:
+            frame["track_id"] = 0
+            group = frame[frame["fragment_id"] == fragment]
+            has_track = True
         next_id = int(group["cohort_id"].max()) + 1
         drop: list[int] = []
         new_rows: list[dict[str, object]] = []
@@ -275,6 +312,10 @@ class ScheduleSource(DecisionSource):
             area = float(row["area_fraction"])
             removed = area * fraction
             survivor = area - removed
+            source_track = 0
+            if has_track and pd.notna(row["track_id"]):
+                source_track = _track_key(row["track_id"])
+            new_track = self.track_transitions.get((source_track, treatment), source_track)
             if survivor > FRACTION_TOLERANCE:
                 frame.at[index, "area_fraction"] = survivor
             else:
@@ -291,6 +332,7 @@ class ScheduleSource(DecisionSource):
                         "fuel_t_ha": 0.0,
                         "snag_t_ha": 0.0,
                         "attributes_json": "{}",
+                        **({"track_id": new_track} if has_track else {}),
                     }
                 )
                 next_id += 1

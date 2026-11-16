@@ -36,6 +36,19 @@ def _volume_rate(value: object, field: str) -> float:
     return number
 
 
+def _track_key(value: object) -> int:
+    """Return a non-negative integer track id from a table value."""
+    if isinstance(value, bool):
+        raise BridgeError("track_id must be a non-negative integer")
+    try:
+        number = float(str(value).strip())
+    except ValueError as error:
+        raise BridgeError("track_id must be a non-negative integer") from error
+    if not math.isfinite(number) or not number.is_integer() or number < 0.0:
+        raise BridgeError("track_id must be a non-negative integer")
+    return int(number)
+
+
 @dataclass(frozen=True)
 class VolumeBridgeConfig:
     """Parameters of the provisional species-biomass bridge.
@@ -56,6 +69,9 @@ class VolumeBridgeConfig:
         Provenance note.
     age_volume_curves : mapping of str to mapping of int to float, optional
         Species age-to-volume-per-hectare curves. These override the biomass rate.
+    track_age_volume_curves : mapping of int to mapping of int to float, optional
+        Compiled track age-to-volume-per-hectare curves. A cohort with a matching
+        ``track_id`` uses this curve before the species curve.
     """
 
     volume_m3_per_t: Mapping[str, float] = field(default_factory=dict)
@@ -65,6 +81,7 @@ class VolumeBridgeConfig:
     calibration_status: str = "provisional"
     calibration_source: str = "Default coefficients; not fitted to observed data."
     age_volume_curves: Mapping[str, Mapping[int, float]] = field(default_factory=dict)
+    track_age_volume_curves: Mapping[int, Mapping[int, float]] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         """Validate and canonicalize the parameters."""
@@ -104,6 +121,23 @@ class VolumeBridgeConfig:
                 curve[raw_age] = _volume_rate(raw_volume, f"age curve {species!r} at {raw_age}")
             curves[species.strip()] = dict(sorted(curve.items()))
         object.__setattr__(self, "age_volume_curves", curves)
+        if not isinstance(self.track_age_volume_curves, Mapping):
+            raise BridgeError("track_age_volume_curves must be a mapping")
+        track_curves: dict[int, dict[int, float]] = {}
+        for raw_track, raw_curve in self.track_age_volume_curves.items():
+            if isinstance(raw_track, bool) or not isinstance(raw_track, int) or raw_track < 0:
+                raise BridgeError("track ids must be non-negative integers")
+            if not isinstance(raw_curve, Mapping) or not raw_curve:
+                raise BridgeError(f"age curve for track {raw_track!r} must be a non-empty mapping")
+            track_curve: dict[int, float] = {}
+            for raw_age, raw_volume in raw_curve.items():
+                if isinstance(raw_age, bool) or not isinstance(raw_age, int) or raw_age < 0:
+                    raise BridgeError("age curve keys must be non-negative integers")
+                track_curve[raw_age] = _volume_rate(
+                    raw_volume, f"track age curve {raw_track!r} at {raw_age}"
+                )
+            track_curves[raw_track] = dict(sorted(track_curve.items()))
+        object.__setattr__(self, "track_age_volume_curves", track_curves)
 
     def rate(self, species: str) -> float:
         """Return the volume rate for one species.
@@ -138,11 +172,15 @@ class VolumeBridgeConfig:
                 species: dict(sorted(curve.items()))
                 for species, curve in sorted(self.age_volume_curves.items())
             },
+            "track_age_volume_curves": {
+                str(track): dict(sorted(curve.items()))
+                for track, curve in sorted(self.track_age_volume_curves.items())
+            },
             "calibration_status": self.calibration_status,
             "calibration_source": self.calibration_source,
         }
 
-    def age_volume(self, species: str, age: float) -> float | None:
+    def age_volume(self, species: str, age: float, track_id: int | None = None) -> float | None:
         """Return interpolated volume per hectare from an age curve.
 
         Parameters
@@ -151,13 +189,19 @@ class VolumeBridgeConfig:
             Species label.
         age : float
             Cohort age in years.
+        track_id : int or None, optional
+            Compiled track identity. A matching track curve takes precedence.
 
         Returns
         -------
         float or None
-            Interpolated volume, or None when the species has no age curve.
+            Interpolated volume, or None when neither the track nor the species has a curve.
         """
-        curve = self.age_volume_curves.get(species)
+        curve = None
+        if track_id is not None:
+            curve = self.track_age_volume_curves.get(track_id)
+        if curve is None:
+            curve = self.age_volume_curves.get(species)
         if not curve:
             return None
         ages = sorted(curve)
@@ -230,7 +274,10 @@ class SpeciesVolumeBridge:
             volume = 0.0
             for _, row in group.iterrows():
                 species = str(row["species"])
-                age_volume = self.config.age_volume(species, float(row["age"]))
+                track_id = None
+                if "track_id" in group.columns and pd.notna(row["track_id"]):
+                    track_id = _track_key(row["track_id"])
+                age_volume = self.config.age_volume(species, float(row["age"]), track_id)
                 if age_volume is None:
                     volume += (
                         float(row["biomass_t_ha"])
@@ -279,6 +326,26 @@ class SpeciesVolumeBridge:
         )
 
 
+def _curve_from_frame(frame: pd.DataFrame, curve_id: int) -> dict[int, float]:
+    """Return one validated curve from a compiled curves table."""
+    subset = frame.loc[frame["curve_id"] == curve_id]
+    if subset.empty:
+        raise BridgeError(f"curve {curve_id} is missing")
+    curve: dict[int, float] = {}
+    for row in subset.itertuples(index=False):
+        raw_x = float(str(row.x))
+        raw_y = float(str(row.y))
+        if not raw_x.is_integer() or raw_x < 0.0:
+            raise BridgeError("curve ages must be non-negative integers")
+        age = int(raw_x)
+        if age in curve:
+            raise BridgeError(f"curve {curve_id} has duplicate age {age}")
+        if not math.isfinite(raw_y) or raw_y < 0.0:
+            raise BridgeError("curve volumes must be finite and non-negative")
+        curve[age] = raw_y
+    return dict(sorted(curve.items()))
+
+
 def age_volume_curves_from_frame(
     frame: pd.DataFrame, species_curves: Mapping[str, int]
 ) -> dict[str, dict[int, float]]:
@@ -309,20 +376,39 @@ def age_volume_curves_from_frame(
     for species, curve_id in species_curves.items():
         if not isinstance(species, str) or not species.strip():
             raise BridgeError("species names must be non-empty strings")
-        subset = frame.loc[frame["curve_id"] == curve_id]
-        if subset.empty:
-            raise BridgeError(f"curve {curve_id} for {species!r} is missing")
-        curve: dict[int, float] = {}
-        for row in subset.itertuples(index=False):
-            raw_x = float(str(row.x))
-            raw_y = float(str(row.y))
-            if not raw_x.is_integer() or raw_x < 0.0:
-                raise BridgeError("curve ages must be non-negative integers")
-            age = int(raw_x)
-            if age in curve:
-                raise BridgeError(f"curve {curve_id} has duplicate age {age}")
-            if not math.isfinite(raw_y) or raw_y < 0.0:
-                raise BridgeError("curve volumes must be finite and non-negative")
-            curve[age] = raw_y
-        curves[species.strip()] = dict(sorted(curve.items()))
+        curves[species.strip()] = _curve_from_frame(frame, curve_id)
+    return curves
+
+
+def track_age_volume_curves_from_frame(
+    frame: pd.DataFrame, track_curves: Mapping[int, int]
+) -> dict[int, dict[int, float]]:
+    """Build validated track age-volume curves from a compiled curves table.
+
+    Parameters
+    ----------
+    frame : pandas.DataFrame
+        Curve table with ``curve_id``, ``x``, and ``y`` columns.
+    track_curves : mapping of int to int
+        Compiled track id to curve id, usually from the ``features`` table.
+
+    Returns
+    -------
+    dict
+        Track to age-to-volume-per-hectare mapping.
+
+    Raises
+    ------
+    BridgeError
+        If columns are missing, a track or curve is invalid, an age is not a non-negative
+        integer, a volume is invalid, or an age is duplicated.
+    """
+    for column in ("curve_id", "x", "y"):
+        if column not in frame.columns:
+            raise BridgeError(f"curve table needs a {column!r} column")
+    curves: dict[int, dict[int, float]] = {}
+    for raw_track, curve_id in track_curves.items():
+        if isinstance(raw_track, bool) or not isinstance(raw_track, int) or raw_track < 0:
+            raise BridgeError("track ids must be non-negative integers")
+        curves[raw_track] = _curve_from_frame(frame, curve_id)
     return curves
