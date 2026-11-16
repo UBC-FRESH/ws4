@@ -125,6 +125,8 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
      - Published fuel-treatment effect ranges and the deferred validation gate.
    * - :doc:`fire-tree-mortality`
      - FOFEM crown-scorch mortality and validation against the public FTM database.
+   * - :doc:`decision-quality`
+     - Expected outcome, regret, robustness, and rank stability across uncertain scenarios.
    * - :doc:`fire-wind`
      - WindNinja angle and velocity pairs, direction selection, and provenance.
    * - :doc:`fire-scene`
@@ -189,6 +191,7 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
    fire-containment
    fire-treatment-evidence
    fire-tree-mortality
+   decision-quality
    fire-wind
    fire-scene
    femic-hydrology
