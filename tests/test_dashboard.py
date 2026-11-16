@@ -152,13 +152,22 @@ def test_test_command_adds_workers_locally(monkeypatch: pytest.MonkeyPatch) -> N
     assert db._test_command("python") == ("python", "-m", "pytest", "-q", "-n", "4")
 
 
-def test_test_command_stays_serial_in_github_actions(
+def test_test_command_uses_two_workers_in_github_actions(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.delenv("PYTEST_ADDOPTS", raising=False)
     monkeypatch.setenv("GITHUB_ACTIONS", "true")
 
-    assert db._test_command("python") == ("python", "-m", "pytest", "-q")
+    assert db._test_command("python") == (
+        "python",
+        "-m",
+        "pytest",
+        "-q",
+        "-n",
+        "2",
+        "--dist",
+        "loadscope",
+    )
 
 
 def test_test_command_defers_to_inherited_pytest_options(
