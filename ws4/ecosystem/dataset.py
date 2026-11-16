@@ -342,6 +342,8 @@ class ProcessDataset:
         Volume bridge with track age curves.
     track_transitions : mapping of (int, str) to int
         ``(source_track, treatment)`` to target track.
+    treatment_windows : mapping of (int, str) to (int, int)
+        Compiled inclusive age window for each ``(source_track, treatment)``.
     volume_labels : tuple of str
         Feature labels used to build the track curves.
     species : str
@@ -359,6 +361,7 @@ class ProcessDataset:
     block_fragments: Mapping[int, tuple[int, ...]]
     bridge: VolumeBridgeConfig
     track_transitions: Mapping[tuple[int, str], int]
+    treatment_windows: Mapping[tuple[int, str], tuple[int, int]]
     volume_labels: tuple[str, ...]
     species: str
     landis_config: LandisSuccessionConfig
@@ -479,7 +482,7 @@ class ProcessDataset:
         treatments = _read_table(
             directory,
             "treatments",
-            ("track_id", "treatment", "new_track"),
+            ("track_id", "begin", "end", "treatment", "new_track"),
         )
         curve_ids, labels = _curve_ids(features, tracks, volume_label)
         try:
@@ -561,13 +564,18 @@ class ProcessDataset:
             areas,
         )
         transitions: dict[tuple[int, str], int] = {}
+        treatment_windows: dict[tuple[int, str], tuple[int, int]] = {}
         for row in treatments.itertuples(index=False):
             treatment = str(row.treatment).strip()
             if not treatment:
                 raise ProcessDatasetError("treatment must be non-empty")
-            transitions[(_as_int(row.track_id, "track_id"), treatment)] = _as_int(
-                row.new_track, "new_track"
-            )
+            track = _as_int(row.track_id, "track_id")
+            transitions[(track, treatment)] = _as_int(row.new_track, "new_track")
+            begin = _as_int(row.begin, "begin")
+            end = _as_int(row.end, "end")
+            if begin < 0 or end < begin:
+                raise ProcessDatasetError("treatment age windows must satisfy 0 <= begin <= end")
+            treatment_windows.setdefault((track, treatment), (begin, end))
         bridge = VolumeBridgeConfig(
             default_volume_m3_per_t=0.0,
             merchantable_fraction=1.0,
@@ -592,11 +600,93 @@ class ProcessDataset:
             block_fragments=ordered_blocks,
             bridge=bridge,
             track_transitions=transitions,
+            treatment_windows=treatment_windows,
             volume_labels=labels,
             species=species.strip(),
             landis_config=landis_config,
             topology=topology_path,
             edges=edges,
+        )
+
+    def grammar(
+        self,
+        horizon_years: int,
+        *,
+        treatments: Sequence[str] | None = None,
+        max_events_per_block: int = 1,
+        allow_offset_moves: bool = False,
+    ) -> ScheduleMoveGrammar:
+        """Build a schedule grammar from the compiled treatment windows.
+
+        Parameters
+        ----------
+        horizon_years : int
+            Number of schedule offsets.
+        treatments : sequence of str or None, optional
+            Treatments to expose. None uses every compiled treatment.
+        max_events_per_block : int, optional
+            Maximum events per block (default one).
+        allow_offset_moves : bool, optional
+            Whether to move existing event offsets (default False).
+
+        Returns
+        -------
+        ScheduleMoveGrammar
+            Grammar restricted to blocks and offsets where every fragment in the block
+            is inside its compiled treatment age window.
+
+        Raises
+        ------
+        ProcessDatasetError
+            If no block has an eligible treatment.
+        """
+        from ..opt.schedule_grammar import ScheduleMoveGrammar
+
+        available = (
+            sorted({treatment for _track, treatment in self.track_transitions})
+            if treatments is None
+            else sorted({str(treatment).strip() for treatment in treatments})
+        )
+        first = self.state.cohorts.groupby("fragment_id", sort=False).first()
+        per_block: dict[int, dict[str, tuple[int, int]]] = {}
+        for block, fragments in self.block_fragments.items():
+            allowed: dict[str, tuple[int, int]] = {}
+            for treatment in available:
+                starts: list[int] = []
+                ends: list[int] = []
+                for fragment in fragments:
+                    row = first.loc[fragment]
+                    track = int(str(row["track_id"]))
+                    age = int(str(row["age"]))
+                    window = self.treatment_windows.get((track, treatment))
+                    if window is None:
+                        break
+                    begin, end = window
+                    start = max(0, begin - age)
+                    stop = min(horizon_years, end - age + 1)
+                    if start >= stop:
+                        break
+                    starts.append(start)
+                    ends.append(stop)
+                else:
+                    start = max(starts)
+                    stop = min(ends)
+                    if start < stop:
+                        allowed[treatment] = (start, stop)
+            if allowed:
+                per_block[block] = allowed
+        if not per_block:
+            raise ProcessDatasetError("no block has an eligible treatment in the horizon")
+        grammar_treatments = sorted(
+            {treatment for values in per_block.values() for treatment in values}
+        )
+        return ScheduleMoveGrammar(
+            blocks=tuple(sorted(per_block)),
+            treatments=grammar_treatments,
+            horizon_years=horizon_years,
+            max_events_per_block=max_events_per_block,
+            allow_offset_moves=allow_offset_moves,
+            treatment_windows=per_block,
         )
 
     def evaluate(

@@ -109,6 +109,9 @@ class ScheduleMoveGrammar:
     windows : mapping of int to (int, int) or None, optional
         Inclusive start and exclusive end offsets per block. Omitted blocks use the full
         horizon.
+    treatment_windows : mapping of int to mapping of str to (int, int) or None, optional
+        Treatment-specific offset windows per block. A treatment window overrides the
+        block's general window.
     """
 
     blocks: Sequence[int]
@@ -117,6 +120,7 @@ class ScheduleMoveGrammar:
     max_events_per_block: int = 1
     allow_offset_moves: bool = False
     windows: Mapping[int, tuple[int, int]] | None = None
+    treatment_windows: Mapping[int, Mapping[str, tuple[int, int]]] | None = None
 
     def __post_init__(self) -> None:
         """Validate and canonicalize the grammar."""
@@ -172,23 +176,66 @@ class ScheduleMoveGrammar:
                         "window bounds must satisfy 0 <= start < end <= horizon_years"
                     )
                 windows[raw_block] = (start, end)
+        treatment_windows: dict[int, dict[str, tuple[int, int]]] | None
+        if self.treatment_windows is None:
+            treatment_windows = None
+        else:
+            if not isinstance(self.treatment_windows, Mapping):
+                raise ScheduleGrammarError("treatment_windows must be a mapping")
+            treatment_windows = {}
+            for raw_block, raw_treatments in self.treatment_windows.items():
+                if raw_block not in blocks:
+                    raise ScheduleGrammarError(
+                        f"treatment window block {raw_block} is outside the grammar"
+                    )
+                if not isinstance(raw_treatments, Mapping):
+                    raise ScheduleGrammarError("treatment windows must be mappings")
+                per_treatment: dict[str, tuple[int, int]] = {}
+                for raw_treatment, raw_window in raw_treatments.items():
+                    treatment = str(raw_treatment).strip()
+                    if treatment not in treatments:
+                        raise ScheduleGrammarError(
+                            f"treatment {treatment!r} is outside the grammar"
+                        )
+                    if not isinstance(raw_window, tuple) or len(raw_window) != 2:
+                        raise ScheduleGrammarError("treatment windows must be (start, end) pairs")
+                    start, end = raw_window
+                    if (
+                        isinstance(start, bool)
+                        or isinstance(end, bool)
+                        or not isinstance(start, int)
+                        or not isinstance(end, int)
+                        or start < 0
+                        or end > self.horizon_years
+                        or start >= end
+                    ):
+                        raise ScheduleGrammarError(
+                            "treatment window bounds must satisfy 0 <= start < end <= horizon_years"
+                        )
+                    per_treatment[treatment] = (start, end)
+                treatment_windows[raw_block] = per_treatment
         object.__setattr__(self, "blocks", blocks)
         object.__setattr__(self, "treatments", treatments)
         object.__setattr__(self, "windows", windows)
+        object.__setattr__(self, "treatment_windows", treatment_windows)
 
-    def _window(self, block: int) -> tuple[int, int]:
-        """Return a block's allowed offset window.
+    def _treatment_window(self, block: int, treatment: str) -> tuple[int, int]:
+        """Return a block and treatment's allowed offset window.
 
         Parameters
         ----------
         block : int
             Block id.
+        treatment : str
+            Treatment name.
 
         Returns
         -------
         tuple of (int, int)
             Inclusive start and exclusive end.
         """
+        if self.treatment_windows is not None and block in self.treatment_windows:
+            return self.treatment_windows[block].get(treatment, (0, 0))
         if self.windows is None:
             return (0, self.horizon_years)
         return self.windows.get(block, (0, self.horizon_years))
@@ -213,12 +260,14 @@ class ScheduleMoveGrammar:
                 raise ScheduleGrammarError(f"block {block} is outside the grammar")
             if len(events) > self.max_events_per_block:
                 raise ScheduleGrammarError(f"block {block} exceeds max_events_per_block")
-            start, end = self._window(block)
             for treatment, offset in events:
                 if treatment not in treatments:
                     raise ScheduleGrammarError(f"treatment {treatment!r} is outside the grammar")
+                start, end = self._treatment_window(block, treatment)
                 if offset < start or offset >= end:
-                    raise ScheduleGrammarError(f"offset {offset} is outside block {block}'s window")
+                    raise ScheduleGrammarError(
+                        f"offset {offset} is outside block {block}'s {treatment} window"
+                    )
 
     def neighbours(self, candidate: ProcessSearchCandidate) -> tuple[ProcessSearchCandidate, ...]:
         """Return deterministic add and remove neighbours.
@@ -251,8 +300,8 @@ class ScheduleMoveGrammar:
             events = current.get(block, ())
             if len(events) >= self.max_events_per_block:
                 continue
-            start, end = self._window(block)
             for treatment in self.treatments:
+                start, end = self._treatment_window(block, treatment)
                 for offset in range(start, end):
                     item = (treatment, offset)
                     if item in events:
@@ -276,8 +325,8 @@ class ScheduleMoveGrammar:
         if self.allow_offset_moves:
             for block in tuple(current):
                 events = current[block]
-                start, end = self._window(block)
                 for index, (treatment, offset) in enumerate(events):
+                    start, end = self._treatment_window(block, treatment)
                     for new_offset in range(start, end):
                         if new_offset == offset or (treatment, new_offset) in events:
                             continue
