@@ -1,0 +1,75 @@
+{
+  "deterministic_choice": "0.0",
+  "metrics": [
+    {
+      "best_case": 98025.0,
+      "closure_min": "0.0",
+      "constraint_satisfaction": 1.0,
+      "expected_outcome": 98025.0,
+      "expected_regret": 0.0,
+      "max_regret": 0.0,
+      "rank_max": 1.0,
+      "rank_min": 1.0,
+      "rank_stability": 1.0,
+      "worst_case": 98025.0
+    },
+    {
+      "best_case": 98025.0,
+      "closure_min": "6000.0",
+      "constraint_satisfaction": 1.0,
+      "expected_outcome": 98025.0,
+      "expected_regret": 0.0,
+      "max_regret": 0.0,
+      "rank_max": 1.0,
+      "rank_min": 1.0,
+      "rank_stability": 1.0,
+      "worst_case": 98025.0
+    },
+    {
+      "best_case": 98025.0,
+      "closure_min": "9000.0",
+      "constraint_satisfaction": 1.0,
+      "expected_outcome": 110025.0,
+      "expected_regret": 12000.0,
+      "max_regret": 60000.0,
+      "rank_max": 3.0,
+      "rank_min": 1.0,
+      "rank_stability": 0.5,
+      "worst_case": 158025.0
+    },
+    {
+      "best_case": 98025.0,
+      "closure_min": "10500.0",
+      "constraint_satisfaction": 1.0,
+      "expected_outcome": 122025.0,
+      "expected_regret": 24000.0,
+      "max_regret": 60000.0,
+      "rank_max": 4.0,
+      "rank_min": 1.0,
+      "rank_stability": 0.25,
+      "worst_case": 158025.0
+    },
+    {
+      "best_case": 98025.0,
+      "closure_min": "12000.0",
+      "constraint_satisfaction": 1.0,
+      "expected_outcome": 134025.0,
+      "expected_regret": 36000.0,
+      "max_regret": 60000.0,
+      "rank_max": 5.0,
+      "rank_min": 1.0,
+      "rank_stability": 0.0,
+      "worst_case": 158025.0
+    }
+  ],
+  "minimax_regret_choice": "0.0",
+  "robust_choice": "0.0",
+  "schema_version": "ws4.decision-quality.v1",
+  "weights": {
+    "baseline": 0.2,
+    "rh-dry": 0.2,
+    "rh-moist": 0.2,
+    "wind-high": 0.2,
+    "wind-low": 0.2
+  }
+}
