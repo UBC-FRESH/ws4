@@ -14,6 +14,7 @@ fire, LANDIS succession, management, salvage, and regeneration.
      --dataset build/tsa24 \
      --schedule schedule.csv \
      --output runs/process \
+     --topology topology.csv \
      --years 5 \
      --max-blocks 200 \
      --ignition-rate 0.01 \
@@ -39,7 +40,7 @@ The default curve selection uses ``feature.Volume`` when present, then the manag
 ``feature.Yield.*.Total`` label that matches the track name. Use ``--volume-label`` to force one
 feature label.
 
-The command does not build spatial edges. Fire ignites independently per fragment and does not
-spread between fragments until a caller supplies edges through the Python API
-(``ProcessDataset.evaluate(..., edges=...)``). ``--max-blocks`` bounds a pilot run; a full estate-scale dataset needs the vectorized path
-before it is practical.
+Pass ``--topology`` with a block edge list (``src_block,dst_block,distance_m``) to map block
+adjacency onto fragment fire edges. Without it, fire ignites independently per fragment and does
+not spread. ``--max-blocks`` bounds a pilot run; a full estate-scale dataset needs the vectorized
+path before it is practical.

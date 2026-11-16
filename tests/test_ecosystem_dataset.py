@@ -8,12 +8,13 @@ import pandas as pd
 import pytest
 from ws4.build.compiler import build_canonical_dataset
 from ws4.ecosystem.dataset import ProcessDataset, ProcessDatasetError
-from ws4.ecosystem.fire import FireConfig
+from ws4.ecosystem.fire import FireConfig, FireEdge
 from ws4.ecosystem.regeneration import RegenerationConfig
 from ws4.opt.account_compare import compare_accounts
 from ws4.sim.engine import Simulator
 
 _FIXTURE = Path(__file__).resolve().parents[1] / "examples" / "synthetic"
+_ESTATE = Path(__file__).resolve().parents[1] / "examples" / "estate"
 
 
 def _dataset(tmp_path: Path) -> Path:
@@ -34,6 +35,19 @@ def test_dataset_loads_fragments_tracks_curves_and_transitions(tmp_path: Path) -
     assert prepared.track_transitions == {(1, "CC"): 2}
     assert prepared.volume_labels == ("feature.Volume",)
     assert sorted(prepared.bridge.track_age_volume_curves) == [1, 2]
+    assert prepared.topology is None
+    assert prepared.edges == ()
+
+
+def test_dataset_maps_block_topology_to_fragment_fire_edges(tmp_path: Path) -> None:
+    dataset = _dataset(tmp_path)
+    topology = tmp_path / "topology.csv"
+    topology.write_text("src_block,dst_block,distance_m\n1,2,25\n", encoding="utf-8")
+
+    prepared = ProcessDataset.from_directory(dataset, topology=topology)
+
+    assert prepared.topology == topology
+    assert prepared.edges == (FireEdge(1, 2, 25.0),)
 
 
 def test_dataset_run_matches_the_estate_after_a_timed_harvest(tmp_path: Path) -> None:
@@ -61,6 +75,37 @@ def test_dataset_run_matches_the_estate_after_a_timed_harvest(tmp_path: Path) ->
     assert row["estate_value"] == pytest.approx(390.0)
     assert row["process_value"] == pytest.approx(390.0)
     assert row["absolute_difference"] == pytest.approx(0.0)
+
+
+def test_dataset_process_matches_the_estate_across_multiple_blocks(tmp_path: Path) -> None:
+    dataset = build_canonical_dataset(
+        _ESTATE / "recipe.xml", _ESTATE / "fragments.csv", tmp_path / "estate"
+    )
+    blocks = (1, 2, 3, 4, 5)
+    schedule_path = tmp_path / "schedule.csv"
+    pd.DataFrame(
+        {"block_id": list(blocks), "treatment": ["CC"] * len(blocks), "offset": [2] * len(blocks)}
+    ).to_csv(schedule_path, index=False)
+    estate = Simulator.from_dataset(dataset).simulate(pd.read_csv(schedule_path), years=5)
+    final = estate[estate["offset"] == 4]
+    estate_volume = float(final[final["account"].str.startswith("feature.Volume")]["value"].sum())
+    prepared = ProcessDataset.from_directory(dataset, topology=_ESTATE / "topology.csv")
+
+    evaluation = prepared.evaluate(
+        dict.fromkeys(blocks, (("CC", 2),)),
+        horizon_years=4,
+        fire=FireConfig(ignition_rate_per_fragment_year=0.0),
+        regeneration=RegenerationConfig(establishment_probability=0.0),
+        seed=1,
+    )
+    process_volume = float(
+        evaluation.accounts.loc[evaluation.accounts["account"] == "bridge.volume_m3", "value"].iloc[
+            0
+        ]
+    )
+
+    assert process_volume == pytest.approx(estate_volume)
+    assert len(prepared.edges) > 0
 
 
 def test_dataset_limit_keeps_a_bounded_run(tmp_path: Path) -> None:

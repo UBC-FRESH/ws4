@@ -18,6 +18,7 @@ from typing import Final
 import pandas as pd
 
 from ..opt.objective import Target
+from ..patch.accounts import load_patch_edges_detailed
 from .bridge import BridgeError, VolumeBridgeConfig, track_age_volume_curves_from_frame
 from .evaluation import ProcessScheduleEvaluation, evaluate_process_schedule
 from .fire import FireConfig, FireEdge
@@ -69,6 +70,24 @@ def _as_float(value: object, field: str) -> float:
     if not math.isfinite(number) or number < 0.0:
         raise ProcessDatasetError(f"{field} must be finite and non-negative")
     return number
+
+
+def _fragment_edges(
+    topology: Path,
+    block_fragments: Mapping[int, Sequence[int]],
+) -> tuple[FireEdge, ...]:
+    """Map a block topology onto the dataset's fragment graph."""
+    edges: dict[frozenset[int], FireEdge] = {}
+    for source_block, target_block, _length, distance in load_patch_edges_detailed(topology):
+        if source_block == target_block:
+            continue
+        for source in block_fragments.get(source_block, ()):
+            for target in block_fragments.get(target_block, ()):
+                if source == target:
+                    continue
+                key = frozenset((source, target))
+                edges.setdefault(key, FireEdge(source, target, distance))
+    return tuple(sorted(edges.values(), key=lambda edge: (edge.source, edge.target)))
 
 
 def _curve_ids(
@@ -149,6 +168,10 @@ class ProcessDataset:
         Feature labels used to build the track curves.
     species : str
         Provisional species label supplied where the dataset has no species column.
+    topology : Path or None
+        Block topology file, when one was supplied.
+    edges : tuple of FireEdge
+        Fragment fire edges mapped from the block topology.
     """
 
     dataset_dir: Path
@@ -158,6 +181,8 @@ class ProcessDataset:
     track_transitions: Mapping[tuple[int, str], int]
     volume_labels: tuple[str, ...]
     species: str
+    topology: Path | None
+    edges: tuple[FireEdge, ...]
 
     @classmethod
     def from_directory(
@@ -168,6 +193,7 @@ class ProcessDataset:
         initial_biomass_t_ha: float = 100.0,
         initial_fuel_t_ha: float = 0.0,
         volume_label: str | None = None,
+        topology: Path | None = None,
         max_blocks: int | None = None,
     ) -> ProcessDataset:
         """Build a process dataset from a compiled dataset directory.
@@ -186,6 +212,9 @@ class ProcessDataset:
         volume_label : str or None, optional
             Feature label to use for every track. None selects ``feature.Volume``, then the
             managed/unmanaged ``feature.Yield.*.Total`` label that matches the track name.
+        topology : Path or None, optional
+            Block topology CSV. When supplied, its block edges are mapped to fragment fire
+            edges, so fire can spread between adjacent blocks.
         max_blocks : int or None, optional
             Keep only this many blocks, for a bounded trial run.
 
@@ -291,16 +320,28 @@ class ProcessDataset:
             merchantable_fraction=1.0,
             track_age_volume_curves=track_curves,
         )
+        ordered_blocks = {
+            block: tuple(sorted(values)) for block, values in sorted(block_fragments.items())
+        }
+        edges: tuple[FireEdge, ...] = ()
+        topology_path = None if topology is None else Path(topology)
+        if topology_path is not None:
+            if not topology_path.is_file():
+                raise ProcessDatasetError(f"topology does not exist: {topology_path}")
+            try:
+                edges = _fragment_edges(topology_path, ordered_blocks)
+            except (OSError, ValueError) as error:
+                raise ProcessDatasetError(f"cannot read topology: {error}") from error
         return cls(
             dataset_dir=directory,
             state=state,
-            block_fragments={
-                block: tuple(sorted(values)) for block, values in sorted(block_fragments.items())
-            },
+            block_fragments=ordered_blocks,
             bridge=bridge,
             track_transitions=transitions,
             volume_labels=labels,
             species=species.strip(),
+            topology=topology_path,
+            edges=edges,
         )
 
     def evaluate(
@@ -311,7 +352,7 @@ class ProcessDataset:
         fire: FireConfig | None = None,
         regeneration: RegenerationConfig | None = None,
         succession_process: Process | None = None,
-        edges: Sequence[FireEdge] = (),
+        edges: Sequence[FireEdge] | None = None,
         harvest_fraction: float = 1.0,
         targets: Sequence[Target] = (),
         scenario_id: str = "process-dataset",
@@ -331,8 +372,9 @@ class ProcessDataset:
             Regeneration parameters.
         succession_process : Process or None, optional
             Succession source; the default is the LANDIS process.
-        edges : sequence of FireEdge, optional
-            Spatial fire edges. Empty means no inter-fragment spread.
+        edges : sequence of FireEdge or None, optional
+            Spatial fire edges. None uses the edges loaded from ``topology``; an empty
+            sequence disables inter-fragment spread.
         harvest_fraction : float, optional
             Fraction removed by a harvest.
         targets : sequence of Target, optional
@@ -349,7 +391,7 @@ class ProcessDataset:
         """
         return evaluate_process_schedule(
             self.state,
-            edges,
+            self.edges if edges is None else edges,
             schedule,
             self.block_fragments,
             horizon_years=horizon_years,

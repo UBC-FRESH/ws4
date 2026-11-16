@@ -2452,6 +2452,9 @@ def ecosystem_run_dataset(
     volume_label: str | None = typer.Option(
         None, "--volume-label", help="Feature label to use for every track."
     ),
+    topology: Path | None = typer.Option(
+        None, "--topology", exists=True, help="Block topology CSV for fire spread."
+    ),
     ignition_rate: float = typer.Option(
         0.01, "--ignition-rate", help="Poisson ignitions per fragment-year."
     ),
@@ -2472,6 +2475,7 @@ def ecosystem_run_dataset(
             initial_biomass_t_ha=initial_biomass,
             initial_fuel_t_ha=initial_fuel,
             volume_label=volume_label,
+            topology=topology,
             max_blocks=max_blocks,
         )
         schedule_map = load_schedule(schedule)
@@ -2490,6 +2494,7 @@ def ecosystem_run_dataset(
         "dataset": str(dataset),
         "fragments": len(prepared.state.cohorts),
         "blocks": len(prepared.block_fragments),
+        "edges": len(prepared.edges),
         "volume_labels": list(prepared.volume_labels),
         "species": prepared.species,
         "horizon_years": years,
@@ -2506,6 +2511,7 @@ def ecosystem_run_dataset(
     table.add_row("dataset", str(dataset))
     table.add_row("fragments", str(metadata["fragments"]))
     table.add_row("blocks", str(metadata["blocks"]))
+    table.add_row("fire edges", str(len(prepared.edges)))
     table.add_row("volume labels", ", ".join(prepared.volume_labels))
     table.add_row("events", str(len(evaluation.log.events)))
     table.add_row(
