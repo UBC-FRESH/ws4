@@ -44,3 +44,17 @@ Pass ``--topology`` with a block edge list (``src_block,dst_block,distance_m``) 
 adjacency onto fragment fire edges. Without it, fire ignites independently per fragment and does
 not spread. ``--max-blocks`` bounds a pilot run; a full estate-scale dataset needs the vectorized
 path before it is practical.
+
+The Python API carries the same state into the process search and optimization modules:
+
+.. code-block:: python
+
+   prepared = ProcessDataset.from_directory(dataset, topology=topology)
+   result = prepared.search(
+       candidates,
+       horizon_years=5,
+       targets=targets,
+       fire=FireConfig(ignition_rate_per_fragment_year=0.01),
+       seed=1,
+   )
+   best = result.best.evaluation

@@ -13,7 +13,7 @@ import math
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Final
+from typing import TYPE_CHECKING, Final
 
 import pandas as pd
 
@@ -26,6 +26,12 @@ from .landis import LandisSuccessionProcess
 from .process import Process
 from .regeneration import RegenerationConfig
 from .state import CohortState, StateSchema
+from .succession import SuccessionConfig
+
+if TYPE_CHECKING:
+    from ..opt.process_optimization import ProcessOptimizationResult
+    from ..opt.process_search import ProcessSearchCandidate, ProcessSearchResult
+    from ..opt.schedule_grammar import ScheduleMoveGrammar
 
 DATASET_PROCESS_VERSION: Final[str] = "ws4.process-dataset.v1"
 
@@ -403,5 +409,139 @@ class ProcessDataset:
             harvest_fraction=harvest_fraction,
             track_transitions=self.track_transitions,
             scenario_id=scenario_id,
+            seed=seed,
+        )
+
+    def search(
+        self,
+        candidates: Sequence[ProcessSearchCandidate],
+        *,
+        horizon_years: int,
+        targets: Sequence[Target],
+        fire: FireConfig | None = None,
+        succession: SuccessionConfig | None = None,
+        regeneration: RegenerationConfig | None = None,
+        succession_process: Process | None = None,
+        edges: Sequence[FireEdge] | None = None,
+        harvest_fraction: float = 1.0,
+        seed: int = 0,
+    ) -> ProcessSearchResult:
+        """Rank candidate schedules through the process engine on this dataset.
+
+        Parameters
+        ----------
+        candidates : sequence of ProcessSearchCandidate
+            Candidate schedules.
+        horizon_years : int
+            Process transitions.
+        targets : sequence of Target
+            Level targets used to price every candidate.
+        fire : FireConfig or None, optional
+            Fire parameters.
+        succession : SuccessionConfig or None, optional
+            Logistic succession parameters, used only when no process is supplied.
+        regeneration : RegenerationConfig or None, optional
+            Regeneration parameters.
+        succession_process : Process or None, optional
+            Succession source; the default is the LANDIS process.
+        edges : sequence of FireEdge or None, optional
+            Spatial fire edges; None uses the loaded topology.
+        harvest_fraction : float, optional
+            Fraction removed by a harvest.
+        seed : int, optional
+            Shared random-tape seed.
+
+        Returns
+        -------
+        ProcessSearchResult
+            Ranked candidate evaluations.
+        """
+        from ..opt.process_search import search_process_candidates
+
+        return search_process_candidates(
+            self.state,
+            self.edges if edges is None else edges,
+            candidates,
+            self.block_fragments,
+            horizon_years=horizon_years,
+            fire=fire or FireConfig(),
+            targets=targets,
+            succession=succession,
+            regeneration=regeneration,
+            bridge=self.bridge,
+            succession_process=succession_process or LandisSuccessionProcess(),
+            harvest_fraction=harvest_fraction,
+            track_transitions=self.track_transitions,
+            seed=seed,
+        )
+
+    def optimize(
+        self,
+        grammar: ScheduleMoveGrammar,
+        initial: ProcessSearchCandidate,
+        *,
+        horizon_years: int,
+        targets: Sequence[Target],
+        max_iterations: int,
+        fire: FireConfig | None = None,
+        succession: SuccessionConfig | None = None,
+        regeneration: RegenerationConfig | None = None,
+        succession_process: Process | None = None,
+        edges: Sequence[FireEdge] | None = None,
+        harvest_fraction: float = 1.0,
+        seed: int = 0,
+    ) -> ProcessOptimizationResult:
+        """Optimize a schedule through the process engine on this dataset.
+
+        Parameters
+        ----------
+        grammar : ScheduleMoveGrammar
+            Add/remove/optional-move grammar.
+        initial : ProcessSearchCandidate
+            Starting candidate.
+        horizon_years : int
+            Process transitions; must match the grammar horizon.
+        targets : sequence of Target
+            Level targets used to price every candidate.
+        max_iterations : int
+            Maximum hill-climb rounds.
+        fire : FireConfig or None, optional
+            Fire parameters.
+        succession : SuccessionConfig or None, optional
+            Logistic succession parameters, used only when no process is supplied.
+        regeneration : RegenerationConfig or None, optional
+            Regeneration parameters.
+        succession_process : Process or None, optional
+            Succession source; the default is the LANDIS process.
+        edges : sequence of FireEdge or None, optional
+            Spatial fire edges; None uses the loaded topology.
+        harvest_fraction : float, optional
+            Fraction removed by a harvest.
+        seed : int, optional
+            Shared random-tape seed.
+
+        Returns
+        -------
+        ProcessOptimizationResult
+            Best evaluation, search trace, and block mapping.
+        """
+        from ..opt.process_optimization import optimize_process_schedule
+
+        return optimize_process_schedule(
+            self.state,
+            self.edges if edges is None else edges,
+            grammar,
+            initial,
+            self.block_fragments,
+            horizon_years=horizon_years,
+            fire=fire or FireConfig(),
+            targets=targets,
+            max_iterations=max_iterations,
+            succession=succession,
+            regeneration=regeneration,
+            bridge=self.bridge,
+            succession_process=succession_process or LandisSuccessionProcess(),
+            harvest_fraction=harvest_fraction,
+            track_transitions=self.track_transitions,
             seed=seed,
         )

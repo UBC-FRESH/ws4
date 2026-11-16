@@ -201,6 +201,7 @@ def search_process_neighbourhood(
     bridge: VolumeBridgeConfig | None = None,
     succession_process: Process | None = None,
     harvest_fraction: float = 1.0,
+    track_transitions: Mapping[tuple[int, str], int] | None = None,
     seed: int = 0,
 ) -> ProcessNeighbourhoodResult:
     """Run a bounded strict-improvement search over process candidates.
@@ -235,6 +236,8 @@ def search_process_neighbourhood(
         Override the default succession source.
     harvest_fraction : float, optional
         Fraction removed by a harvest (default 1.0).
+    track_transitions : mapping of (int, str) to int or None, optional
+        Compiled ``(source_track, treatment)`` to target track transitions.
     seed : int, optional
         Shared random-tape seed (default zero).
 
@@ -268,6 +271,7 @@ def search_process_neighbourhood(
         bridge=bridge,
         succession_process=succession_process,
         harvest_fraction=harvest_fraction,
+        track_transitions=track_transitions,
         seed=seed,
     ).results[0]
     evaluations: list[ProcessSearchEvaluation] = [first]
@@ -307,6 +311,7 @@ def search_process_neighbourhood(
             bridge=bridge,
             succession_process=succession_process,
             harvest_fraction=harvest_fraction,
+            track_transitions=track_transitions,
             seed=seed,
         )
         evaluations.extend(ranked.results)

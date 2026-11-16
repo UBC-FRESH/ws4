@@ -11,6 +11,8 @@ from ws4.ecosystem.dataset import ProcessDataset, ProcessDatasetError
 from ws4.ecosystem.fire import FireConfig, FireEdge
 from ws4.ecosystem.regeneration import RegenerationConfig
 from ws4.opt.account_compare import compare_accounts
+from ws4.opt.objective import Target
+from ws4.opt.process_search import ProcessSearchCandidate
 from ws4.sim.engine import Simulator
 
 _FIXTURE = Path(__file__).resolve().parents[1] / "examples" / "synthetic"
@@ -106,6 +108,28 @@ def test_dataset_process_matches_the_estate_across_multiple_blocks(tmp_path: Pat
 
     assert process_volume == pytest.approx(estate_volume)
     assert len(prepared.edges) > 0
+
+
+def test_dataset_search_carries_track_transitions_into_candidates(tmp_path: Path) -> None:
+    prepared = ProcessDataset.from_directory(_dataset(tmp_path))
+    candidate = ProcessSearchCandidate("base", {1: (("CC", 2),)})
+    target = Target("bridge.volume_m3", period=4, minimum=390.0, maximum=390.0)
+
+    result = prepared.search(
+        (candidate,),
+        horizon_years=4,
+        targets=(target,),
+        fire=FireConfig(ignition_rate_per_fragment_year=0.0),
+        regeneration=RegenerationConfig(establishment_probability=0.0),
+        seed=1,
+    )
+
+    accounts = {
+        str(row.account): float(str(row.value))
+        for row in result.best.evaluation.accounts.itertuples(index=False)
+    }
+    assert accounts["bridge.volume_m3"] == pytest.approx(390.0)
+    assert result.best.objective == pytest.approx(0.0)
 
 
 def test_dataset_limit_keeps_a_bounded_run(tmp_path: Path) -> None:
