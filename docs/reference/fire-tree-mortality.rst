@@ -73,3 +73,14 @@ generic equation is not species- or region-calibrated, and the 3D scorched/torch
 classes remain visual states, not mortality observations.
 
 The full report is ``notes/reports/tree-mortality.md``.
+
+Fire-scene integration
+----------------------
+
+The scene viewer adds a per-tree ``mortality_probability`` for species with a bark coefficient.
+It estimates crown volume scorched from local flame length and crown geometry, then applies the
+FOFEM equation. Unsupported species return ``None``.
+
+The viewer shows a mean **screening mortality** statistic. This is separate from the
+unburned/scorched/torched/consumed visual classes, which remain visual states rather than
+mortality observations.

@@ -43,7 +43,7 @@
 <canvas id="canvas"></canvas>
 <div id="title" class="hud">
   <h1>WS4 fire scene</h1>
-  <p>Synthetic trees over a VRI polygon cluster. P156 FBP growth field; each tree samples the local arrival time.</p>
+  <p>Synthetic trees over a VRI polygon cluster. P156 FBP growth field; each tree samples the local arrival time. Mortality is a screening probability, not a validated BC model.</p>
 </div>
 <div id="stats" class="hud">
   <div><span>fragments</span><strong id="stat-fragments">—</strong></div>
@@ -51,6 +51,7 @@
   <div><span>fire events</span><strong id="stat-fires">—</strong></div>
   <div><span>burning now</span><strong id="stat-burning">0</strong></div>
   <div><span>burnt trees</span><strong id="stat-burnt">0</strong></div>
+  <div><span>screening mortality</span><strong id="stat-mortality">—</strong></div>
   <div><span>particles</span><strong id="stat-particles">—</strong></div>
   <div><span>fps</span><strong id="stat-fps">—</strong></div>
 </div>
@@ -642,6 +643,12 @@ const speedSelect = document.getElementById("speed");
 slider.max = String(DATA.timeline.end);
 document.getElementById("stat-fragments").textContent = DATA.counts.fragments;
 document.getElementById("stat-trees").textContent = DATA.counts.trees;
+const mortalityValues = tree
+  .map((item) => item.mortality_probability)
+  .filter((value) => value !== null && Number.isFinite(value));
+document.getElementById("stat-mortality").textContent = mortalityValues.length
+  ? `${(100 * mortalityValues.reduce((sum, value) => sum + value, 0) / mortalityValues.length).toFixed(0)}% mean`
+  : "—";
 document.getElementById("stat-fires").textContent = DATA.counts.fires;
 
 let lastPost = 0;

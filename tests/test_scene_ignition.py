@@ -71,6 +71,7 @@ def test_sampling_gives_per_tree_ignition_times() -> None:
         "flame_intensity",
         "smoke_strength",
         "post_fire_state",
+        "mortality_probability",
     ]
     assert set(animation["post_fire_state"]) <= {
         "unburned",
@@ -85,6 +86,8 @@ def test_sampling_gives_per_tree_ignition_times() -> None:
     assert burned["burn_duration"].eq(2.0).all()
     assert burned["flame_intensity"].between(0.0, 1.0).all()
     assert burned["smoke_strength"].between(0.0, 1.0).all()
+    assert burned["mortality_probability"].notna().all()
+    assert burned["mortality_probability"].between(0.0, 1.0).all()
 
 
 def test_sampling_rejects_bad_inputs() -> None:

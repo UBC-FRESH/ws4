@@ -19,6 +19,7 @@ import pandas as pd
 from ..ecosystem.events import Event
 from ..ecosystem.fire import FireResult
 from ..ecosystem.log import EventLog
+from ..fire.mortality import tree_mortality_probability
 from .ignition import classify_tree_fire_outcome
 from .trees import TREE_SCHEMA_VERSION, TreeInventory
 
@@ -328,6 +329,9 @@ class FireScene:
                     "flame_intensity": float(str(animation_row["flame_intensity"])),
                     "smoke_strength": float(str(animation_row["smoke_strength"])),
                     "post_fire_state": str(animation_row["post_fire_state"]),
+                    "mortality_probability": None
+                    if _missing(animation_row["mortality_probability"])
+                    else float(str(animation_row["mortality_probability"])),
                 }
             )
         fires = [
@@ -622,6 +626,15 @@ def compile_fire_scene(
                     height_m=tree.height_m,
                     crown_ratio=tree.crown_ratio,
                     burned=tree_burn_time is not None,
+                ),
+                "mortality_probability": None
+                if tree_burn_time is None
+                else tree_mortality_probability(
+                    species=tree.species,
+                    dbh_cm=tree.dbh_cm,
+                    flame_length_m=flame_length,
+                    height_m=tree.height_m,
+                    crown_ratio=tree.crown_ratio,
                 ),
             }
         )

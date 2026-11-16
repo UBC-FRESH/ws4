@@ -16,6 +16,36 @@ from typing import Final
 
 import numpy as np
 
+#: Scene species labels mapped to FTM/PLANTS codes.
+SPECIES_CODES: Final[dict[str, str]] = {
+    "PL": "PICO",
+    "PICO": "PICO",
+    "LODGEPOLE": "PICO",
+    "FD": "PSME",
+    "PSME": "PSME",
+    "DOUGLASFIR": "PSME",
+    "PY": "PIPO",
+    "PIPO": "PIPO",
+    "PONDEROSA": "PIPO",
+    "SW": "PIGL",
+    "PIGL": "PIGL",
+    "WHITESPRUCE": "PIGL",
+    "SE": "PIEN",
+    "PIEN": "PIEN",
+    "ENGELMANN": "PIEN",
+    "BL": "ABLA",
+    "ABLA": "ABLA",
+    "SUBAALPINE": "ABLA",
+    "ABCO": "ABCO",
+    "WHITEFIR": "ABCO",
+    "LT": "LAOC",
+    "LAOC": "LAOC",
+    "LARCH": "LAOC",
+    "AT": "POTR5",
+    "POTR5": "POTR5",
+    "ASPEN": "POTR5",
+}
+
 #: Species bark-thickness coefficients from the FTM species table.
 BARK_COEFFICIENTS: Final[dict[str, float]] = {
     "PICO": 0.028,
@@ -112,6 +142,91 @@ def species_mortality(
         dbh_cm=dbh_cm,
         crown_volume_scorched_pct=crown_volume_scorched_pct,
         bark_coefficient=coefficient,
+    )
+
+
+def crown_volume_scorched_pct(
+    *,
+    flame_length_m: float,
+    height_m: float,
+    crown_ratio: float,
+) -> float:
+    """Estimate crown volume scorched from flame length and crown geometry.
+
+    Parameters
+    ----------
+    flame_length_m : float
+        Local flame length in metres.
+    height_m : float
+        Tree height in metres.
+    crown_ratio : float
+        Live crown length divided by height, in [0, 1].
+
+    Returns
+    -------
+    float
+        Crown volume scorched in percent, in [0, 100].
+    """
+    if flame_length_m < 0.0:
+        raise ValueError("flame_length_m must be non-negative")
+    if height_m <= 0.0:
+        raise ValueError("height_m must be positive")
+    if not 0.0 <= crown_ratio <= 1.0:
+        raise ValueError("crown_ratio must be in [0, 1]")
+    if flame_length_m == 0.0 or crown_ratio == 0.0:
+        return 0.0
+    flame_ft = flame_length_m / 0.3048
+    scorch_ft = (flame_ft / 0.45) ** 2.174 * 0.667
+    scorch_m = scorch_ft * 0.3048
+    crown_length = height_m * crown_ratio
+    crown_base = height_m - crown_length
+    scorched_length = min(crown_length, max(0.0, scorch_m - crown_base))
+    if crown_length <= 0.0:
+        return 0.0
+    value = 100.0 * (scorched_length * (2.0 * crown_length - scorched_length) / crown_length**2)
+    return float(value)
+
+
+def tree_mortality_probability(
+    *,
+    species: str,
+    dbh_cm: float,
+    flame_length_m: float,
+    height_m: float,
+    crown_ratio: float,
+) -> float | None:
+    """Return screening mortality probability for one scene tree.
+
+    Parameters
+    ----------
+    species : str
+        Scene species label.
+    dbh_cm : float
+        Diameter at breast height in centimetres.
+    flame_length_m : float
+        Local flame length in metres.
+    height_m : float
+        Tree height in metres.
+    crown_ratio : float
+        Live crown length divided by height.
+
+    Returns
+    -------
+    float or None
+        Probability in [0, 1], or None for an unsupported species.
+    """
+    code = SPECIES_CODES.get(species.upper().replace(" ", "").replace("-", ""))
+    if code is None:
+        return None
+    scorch = crown_volume_scorched_pct(
+        flame_length_m=flame_length_m,
+        height_m=height_m,
+        crown_ratio=crown_ratio,
+    )
+    return species_mortality(
+        species_code=code,
+        dbh_cm=dbh_cm,
+        crown_volume_scorched_pct=scorch,
     )
 
 

@@ -92,6 +92,9 @@ def test_scene_payload_has_bounds_timeline_and_counts() -> None:
     assert len(stands) == 9
     assert len(trees) == 1800
     states = {str(tree["post_fire_state"]) for tree in trees}
+    mortality = [tree["mortality_probability"] for tree in trees]
+    assert all(value is None or 0.0 <= float(str(value)) <= 1.0 for value in mortality)
+    assert any(value is not None for value in mortality)
     assert states <= {"unburned", "scorched", "torched", "consumed"}
 
 
@@ -130,6 +133,7 @@ def test_scene_write_produces_every_artifact(tmp_path: Path) -> None:
     assert "WS4 fire scene" in html
     assert "__SCENE_DATA__" not in html
     assert '"trees"' in html
+    assert "screening mortality" in html
     assert pd.read_parquet(paths.trees).shape[0] == 1800
 
 
