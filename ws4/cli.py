@@ -114,7 +114,9 @@ from .opt.calibrate import write_targets
 from .opt.engine import OptimizeConfig, Optimizer, load_schedule_csv
 from .opt.exact import solve_option_model, write_exact_result
 from .opt.objective import load_targets
+from .opt.process_search import ProcessSearchCandidate
 from .opt.repro import dataset_quality
+from .opt.schedule_grammar import ScheduleMoveGrammar, schedule_id
 from .opt.watch import run_watch
 from .patch.accounts import load_patch_accounts
 from .patch.edge import load_edge_elements
@@ -2554,6 +2556,122 @@ def ecosystem_run_dataset(
         str(int(evaluation.accounts["offset"].max()) if len(evaluation.accounts) else 0),
     )
     for row in evaluation.accounts.itertuples(index=False):
+        table.add_row(str(row.account), f"{float(str(row.value)):.6g}")
+    print(table)
+    print(f"wrote {output}")
+
+
+@ecosystem_app.command("optimize")
+def ecosystem_optimize(
+    dataset: Path = typer.Option(
+        ..., "--dataset", exists=True, file_okay=False, help="Compiled dataset directory."
+    ),
+    targets: Path = typer.Option(..., "--targets", exists=True, help="Targets YAML."),
+    output: Path = typer.Option(..., "--output", "-o", help="Optimization output directory."),
+    years: int = typer.Option(5, "--years", help="Process transitions."),
+    max_iterations: int = typer.Option(1, "--max-iterations", help="Hill-climb rounds."),
+    initial_schedule: Path | None = typer.Option(
+        None, "--initial-schedule", exists=True, help="Optional starting schedule CSV."
+    ),
+    species: str = typer.Option("PL", "--species", help="Fallback species label."),
+    species_composition: bool = typer.Option(
+        True,
+        "--species-composition/--no-species-composition",
+        help="Use compiled species-proportion curves.",
+    ),
+    biomass_source: str = typer.Option(
+        "auto", "--biomass-source", help="auto, feature, volume, or fixed."
+    ),
+    initial_biomass: float = typer.Option(
+        100.0, "--initial-biomass", help="Fixed initial live biomass, t/ha."
+    ),
+    wood_density: float = typer.Option(
+        0.5, "--wood-density", help="Wood density for volume conversion, t/m3."
+    ),
+    biomass_expansion: float = typer.Option(
+        1.5, "--biomass-expansion", help="Biomass expansion factor."
+    ),
+    topology: Path | None = typer.Option(
+        None, "--topology", exists=True, help="Block topology CSV for fire spread."
+    ),
+    ignition_rate: float = typer.Option(
+        0.01, "--ignition-rate", help="Poisson ignitions per fragment-year."
+    ),
+    establishment_probability: float = typer.Option(
+        0.25, "--establishment-probability", help="Annual regeneration probability."
+    ),
+    allowed_offset_moves: bool = typer.Option(
+        False, "--allow-offset-moves", help="Also move existing treatment offsets."
+    ),
+    max_blocks: int | None = typer.Option(
+        None, "--max-blocks", help="Keep only this many blocks for a bounded run."
+    ),
+    seed: int = typer.Option(1, "--seed", help="Random-tape seed."),
+    json_output: bool = typer.Option(False, "--json", help="Emit a stable JSON summary."),
+) -> None:
+    """Optimize a process schedule against target yield and risk accounts."""
+    try:
+        prepared = ProcessDataset.from_directory(
+            dataset,
+            species=species,
+            species_composition=species_composition,
+            biomass_source=biomass_source,
+            initial_biomass_t_ha=initial_biomass,
+            wood_density_t_m3=wood_density,
+            biomass_expansion=biomass_expansion,
+            topology=topology,
+            max_blocks=max_blocks,
+        )
+        target_list = load_targets(targets)
+        treatments = sorted({treatment for _track, treatment in prepared.track_transitions})
+        if not treatments:
+            raise typer.BadParameter("the dataset has no compiled treatments")
+        grammar = ScheduleMoveGrammar(
+            blocks=tuple(sorted(prepared.block_fragments)),
+            treatments=treatments,
+            horizon_years=years,
+            allow_offset_moves=allowed_offset_moves,
+        )
+        schedule = {} if initial_schedule is None else load_schedule(initial_schedule)
+        initial = ProcessSearchCandidate(schedule_id(schedule), schedule)
+        result = prepared.optimize(
+            grammar,
+            initial,
+            horizon_years=years,
+            targets=target_list,
+            max_iterations=max_iterations,
+            fire=FireConfig(ignition_rate_per_fragment_year=ignition_rate),
+            regeneration=RegenerationConfig(establishment_probability=establishment_probability),
+            seed=seed,
+        )
+    except (ManagementError, ProcessDatasetError, ValueError) as error:
+        raise typer.BadParameter(str(error)) from error
+    result.write_estate_inputs(output)
+    result.best.evaluation.log.write(output / "process_events.json")
+    metadata = {
+        "dataset": str(dataset),
+        "fragments": len(prepared.state.cohorts["fragment_id"].unique()),
+        "cohorts": len(prepared.state.cohorts),
+        "blocks": len(prepared.block_fragments),
+        "treatments": treatments,
+        "horizon_years": years,
+        "max_iterations": max_iterations,
+        "seed": seed,
+    }
+    (output / "process_optimization_metadata.json").write_text(
+        json.dumps(metadata, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
+    summary = result.summary()
+    if json_output:
+        typer.echo(json.dumps(summary, indent=2, sort_keys=True))
+        return
+    table = Table(title="Process optimization")
+    table.add_row("best candidate", str(summary["best_candidate"]))
+    table.add_row("best objective", f"{float(str(summary['best_objective'])):.6g}")
+    table.add_row("blocks", str(metadata["blocks"]))
+    table.add_row("cohorts", str(metadata["cohorts"]))
+    table.add_row("events", str(len(result.best.evaluation.log.events)))
+    for row in result.best.evaluation.accounts.itertuples(index=False):
         table.add_row(str(row.account), f"{float(str(row.value)):.6g}")
     print(table)
     print(f"wrote {output}")
