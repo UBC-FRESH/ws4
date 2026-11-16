@@ -86,6 +86,11 @@ table (``PL`` and ``PLI`` to jack pine, ``SX`` and ``SE`` to white spruce, ``BL`
 aliases are a bridge, not a species-specific calibration; callers can supply exact
 ``LandisSpeciesTraits`` overrides.
 
+A species cohort's ``biomass_t_ha`` is its density on its own area. The process converts it to
+LANDIS ``B`` by multiplying by ``area_fraction`` so ``sumB`` is the whole-fragment biomass, then
+converts the updated ``B`` back to density. This keeps multi-species competition and the
+area-weighted fragment totals consistent.
+
 Limits
 ------
 

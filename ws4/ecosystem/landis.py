@@ -406,7 +406,10 @@ def _transition_frame(
     columns = list(frame.columns)
     group = frame.copy()
     group["pixelGroup"] = group["fragment_id"]
-    group["B"] = group["biomass_t_ha"].astype(float)
+    weights = group["area_fraction"].to_numpy(dtype=float)
+    if bool((weights <= 0.0).any()):
+        raise LandisError("cohort area_fraction must be positive")
+    group["B"] = group["biomass_t_ha"].astype(float) * weights
     group["maxB"] = [config.traits(str(species)).max_b for species in group["species"]]
     group["maxANPP"] = [config.traits(str(species)).max_anpp for species in group["species"]]
     group["growthcurve"] = [config.traits(str(species)).growthcurve for species in group["species"]]
@@ -442,9 +445,10 @@ def _transition_frame(
     snag_decay = np.array(
         [config.traits(str(species)).snag_decay_rate for species in group["species"]]
     )
-    group["biomass_t_ha"] = biomass
+    density = np.divide(biomass, weights, out=np.zeros_like(biomass), where=weights > 0.0)
+    group["biomass_t_ha"] = density
     group["fuel_t_ha"] = np.maximum(
-        group["fuel_t_ha"].to_numpy(dtype=float), biomass * fuel_fraction
+        group["fuel_t_ha"].to_numpy(dtype=float), density * fuel_fraction
     )
     group["snag_t_ha"] = np.maximum(
         0.0, group["snag_t_ha"].to_numpy(dtype=float) * (1.0 - snag_decay)

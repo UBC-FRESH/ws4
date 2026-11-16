@@ -41,7 +41,7 @@ def test_dataset_loads_fragments_tracks_curves_and_transitions(tmp_path: Path) -
     assert prepared.edges == ()
 
 
-def test_dataset_uses_the_dominant_compiled_species(tmp_path: Path) -> None:
+def test_dataset_splits_compiled_species_into_cohorts(tmp_path: Path) -> None:
     dataset = _dataset(tmp_path)
     features = pd.read_parquet(dataset / "features.parquet")
     curves = pd.read_parquet(dataset / "curves.parquet")
@@ -67,18 +67,46 @@ def test_dataset_uses_the_dominant_compiled_species(tmp_path: Path) -> None:
     )
 
     prepared = ProcessDataset.from_directory(dataset)
+    first = prepared.state.cohorts[prepared.state.cohorts["fragment_id"] == 1]
 
-    assert prepared.state.cohorts["species"].tolist() == ["AT", "AT"]
-    assert "AT" in prepared.landis_config.species
-    assert prepared.evaluate(
+    assert first["species"].tolist() == ["AT", "SX"]
+    assert first["area_fraction"].tolist() == pytest.approx([0.8, 0.2])
+    assert first["biomass_t_ha"].tolist() == pytest.approx([100.0, 100.0])
+    assert {"AT", "SX"} <= set(prepared.landis_config.species)
+    aggregate = prepared.state.aggregate_to_fragments().set_index("fragment_id")
+    assert float(str(aggregate.loc[1, "biomass_t_ha"])) == pytest.approx(100.0)
+    prepared.state.check_area_conservation()
+    evaluation = prepared.evaluate(
         {1: (("CC", 2),)},
         horizon_years=4,
         fire=FireConfig(ignition_rate_per_fragment_year=0.0),
         regeneration=RegenerationConfig(establishment_probability=0.0),
         seed=1,
-    ).accounts.loc[lambda frame: frame["account"] == "bridge.volume_m3", "value"].iloc[
-        0
-    ] == pytest.approx(390.0)
+    )
+    volume = float(
+        evaluation.accounts.loc[evaluation.accounts["account"] == "bridge.volume_m3", "value"].iloc[
+            0
+        ]
+    )
+    assert volume == pytest.approx(390.0)
+    per_fragment = prepared.evaluate(
+        {1: (("CC", 2),)},
+        horizon_years=4,
+        fire=FireConfig(ignition_rate_per_fragment_year=0.0),
+        regeneration=RegenerationConfig(establishment_probability=0.0),
+        batch_succession=False,
+        seed=1,
+    )
+    pd.testing.assert_frame_equal(evaluation.state.cohorts, per_fragment.state.cohorts)
+    partial = prepared.evaluate(
+        {1: (("CC", 2),)},
+        horizon_years=4,
+        fire=FireConfig(ignition_rate_per_fragment_year=0.0),
+        regeneration=RegenerationConfig(establishment_probability=0.0),
+        harvest_fraction=0.5,
+        seed=1,
+    )
+    partial.state.check_area_conservation()
 
 
 def test_dataset_can_disable_species_composition(tmp_path: Path) -> None:
