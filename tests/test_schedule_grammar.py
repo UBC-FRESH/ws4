@@ -177,6 +177,38 @@ def test_windows_restrict_adds_and_validate_schedules() -> None:
         )
 
 
+def test_treatment_windows_override_the_block_window() -> None:
+    grammar = ScheduleMoveGrammar(
+        blocks=(1, 2),
+        treatments=("CC", "CT"),
+        horizon_years=4,
+        treatment_windows={1: {"CC": (1, 3)}},
+    )
+    neighbours = grammar.neighbours(ProcessSearchCandidate(schedule_id({}), {}))
+
+    assert schedule_id({1: (("CC", 1),)}) in {candidate.candidate_id for candidate in neighbours}
+    assert schedule_id({1: (("CC", 2),)}) in {candidate.candidate_id for candidate in neighbours}
+    assert schedule_id({1: (("CC", 0),)}) not in {
+        candidate.candidate_id for candidate in neighbours
+    }
+    assert schedule_id({1: (("CT", 0),)}) not in {
+        candidate.candidate_id for candidate in neighbours
+    }
+    assert schedule_id({2: (("CT", 0),)}) in {candidate.candidate_id for candidate in neighbours}
+    with pytest.raises(ScheduleGrammarError, match="CC window"):
+        grammar.validate({1: (("CC", 0),)})
+
+
+def test_invalid_treatment_windows_fail_loudly() -> None:
+    common = {"blocks": (1,), "treatments": ("CC",), "horizon_years": 2}
+    with pytest.raises(ScheduleGrammarError, match="outside the grammar"):
+        ScheduleMoveGrammar(**common, treatment_windows={2: {"CC": (0, 1)}})  # type: ignore[arg-type]
+    with pytest.raises(ScheduleGrammarError, match="outside the grammar"):
+        ScheduleMoveGrammar(**common, treatment_windows={1: {"CT": (0, 1)}})  # type: ignore[arg-type]
+    with pytest.raises(ScheduleGrammarError, match="bounds"):
+        ScheduleMoveGrammar(**common, treatment_windows={1: {"CC": (1, 1)}})  # type: ignore[arg-type]
+
+
 def test_invalid_windows_fail_loudly() -> None:
     common = {"blocks": (1,), "treatments": ("CC",), "horizon_years": 2}
     with pytest.raises(ScheduleGrammarError, match="outside the grammar"):

@@ -265,6 +265,24 @@ def test_dataset_search_carries_track_transitions_into_candidates(tmp_path: Path
     assert result.best.objective == pytest.approx(0.0)
 
 
+def test_dataset_grammar_uses_compiled_treatment_windows(tmp_path: Path) -> None:
+    dataset = _dataset(tmp_path)
+    treatments = pd.read_parquet(dataset / "treatments.parquet")
+    treatments.loc[:, "begin"] = 42
+    treatments.to_parquet(dataset / "treatments.parquet", index=False)
+    prepared = ProcessDataset.from_directory(dataset)
+
+    grammar = prepared.grammar(4)
+
+    assert grammar.treatment_windows == {
+        1: {"CC": (2, 4)},
+        2: {"CC": (0, 4)},
+    }
+    grammar.validate({1: (("CC", 2),)})
+    with pytest.raises(ValueError, match="CC window"):
+        grammar.validate({1: (("CC", 0),)})
+
+
 def test_dataset_limit_keeps_a_bounded_run(tmp_path: Path) -> None:
     prepared = ProcessDataset.from_directory(_dataset(tmp_path), max_blocks=1)
 

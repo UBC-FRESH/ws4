@@ -116,7 +116,7 @@ from .opt.exact import solve_option_model, write_exact_result
 from .opt.objective import load_targets
 from .opt.process_search import ProcessSearchCandidate
 from .opt.repro import dataset_quality
-from .opt.schedule_grammar import ScheduleMoveGrammar, schedule_id
+from .opt.schedule_grammar import schedule_id
 from .opt.watch import run_watch
 from .patch.accounts import load_patch_accounts
 from .patch.edge import load_edge_elements
@@ -2623,15 +2623,11 @@ def ecosystem_optimize(
             max_blocks=max_blocks,
         )
         target_list = load_targets(targets)
-        treatments = sorted({treatment for _track, treatment in prepared.track_transitions})
-        if not treatments:
-            raise typer.BadParameter("the dataset has no compiled treatments")
-        grammar = ScheduleMoveGrammar(
-            blocks=tuple(sorted(prepared.block_fragments)),
-            treatments=treatments,
-            horizon_years=years,
+        grammar = prepared.grammar(
+            years,
             allow_offset_moves=allowed_offset_moves,
         )
+        treatments = list(grammar.treatments)
         schedule = {} if initial_schedule is None else load_schedule(initial_schedule)
         initial = ProcessSearchCandidate(schedule_id(schedule), schedule)
         result = prepared.optimize(
