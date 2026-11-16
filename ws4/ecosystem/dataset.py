@@ -13,11 +13,12 @@ import math
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Final
+from typing import TYPE_CHECKING, Final
 
 import pandas as pd
 
 from ..opt.objective import Target
+from ..patch.accounts import load_patch_edges_detailed
 from .bridge import BridgeError, VolumeBridgeConfig, track_age_volume_curves_from_frame
 from .evaluation import ProcessScheduleEvaluation, evaluate_process_schedule
 from .fire import FireConfig, FireEdge
@@ -25,6 +26,12 @@ from .landis import LandisSuccessionProcess
 from .process import Process
 from .regeneration import RegenerationConfig
 from .state import CohortState, StateSchema
+from .succession import SuccessionConfig
+
+if TYPE_CHECKING:
+    from ..opt.process_optimization import ProcessOptimizationResult
+    from ..opt.process_search import ProcessSearchCandidate, ProcessSearchResult
+    from ..opt.schedule_grammar import ScheduleMoveGrammar
 
 DATASET_PROCESS_VERSION: Final[str] = "ws4.process-dataset.v1"
 
@@ -69,6 +76,24 @@ def _as_float(value: object, field: str) -> float:
     if not math.isfinite(number) or number < 0.0:
         raise ProcessDatasetError(f"{field} must be finite and non-negative")
     return number
+
+
+def _fragment_edges(
+    topology: Path,
+    block_fragments: Mapping[int, Sequence[int]],
+) -> tuple[FireEdge, ...]:
+    """Map a block topology onto the dataset's fragment graph."""
+    edges: dict[frozenset[int], FireEdge] = {}
+    for source_block, target_block, _length, distance in load_patch_edges_detailed(topology):
+        if source_block == target_block:
+            continue
+        for source in block_fragments.get(source_block, ()):
+            for target in block_fragments.get(target_block, ()):
+                if source == target:
+                    continue
+                key = frozenset((source, target))
+                edges.setdefault(key, FireEdge(source, target, distance))
+    return tuple(sorted(edges.values(), key=lambda edge: (edge.source, edge.target)))
 
 
 def _curve_ids(
@@ -149,6 +174,10 @@ class ProcessDataset:
         Feature labels used to build the track curves.
     species : str
         Provisional species label supplied where the dataset has no species column.
+    topology : Path or None
+        Block topology file, when one was supplied.
+    edges : tuple of FireEdge
+        Fragment fire edges mapped from the block topology.
     """
 
     dataset_dir: Path
@@ -158,6 +187,8 @@ class ProcessDataset:
     track_transitions: Mapping[tuple[int, str], int]
     volume_labels: tuple[str, ...]
     species: str
+    topology: Path | None
+    edges: tuple[FireEdge, ...]
 
     @classmethod
     def from_directory(
@@ -168,6 +199,7 @@ class ProcessDataset:
         initial_biomass_t_ha: float = 100.0,
         initial_fuel_t_ha: float = 0.0,
         volume_label: str | None = None,
+        topology: Path | None = None,
         max_blocks: int | None = None,
     ) -> ProcessDataset:
         """Build a process dataset from a compiled dataset directory.
@@ -186,6 +218,9 @@ class ProcessDataset:
         volume_label : str or None, optional
             Feature label to use for every track. None selects ``feature.Volume``, then the
             managed/unmanaged ``feature.Yield.*.Total`` label that matches the track name.
+        topology : Path or None, optional
+            Block topology CSV. When supplied, its block edges are mapped to fragment fire
+            edges, so fire can spread between adjacent blocks.
         max_blocks : int or None, optional
             Keep only this many blocks, for a bounded trial run.
 
@@ -291,16 +326,28 @@ class ProcessDataset:
             merchantable_fraction=1.0,
             track_age_volume_curves=track_curves,
         )
+        ordered_blocks = {
+            block: tuple(sorted(values)) for block, values in sorted(block_fragments.items())
+        }
+        edges: tuple[FireEdge, ...] = ()
+        topology_path = None if topology is None else Path(topology)
+        if topology_path is not None:
+            if not topology_path.is_file():
+                raise ProcessDatasetError(f"topology does not exist: {topology_path}")
+            try:
+                edges = _fragment_edges(topology_path, ordered_blocks)
+            except (OSError, ValueError) as error:
+                raise ProcessDatasetError(f"cannot read topology: {error}") from error
         return cls(
             dataset_dir=directory,
             state=state,
-            block_fragments={
-                block: tuple(sorted(values)) for block, values in sorted(block_fragments.items())
-            },
+            block_fragments=ordered_blocks,
             bridge=bridge,
             track_transitions=transitions,
             volume_labels=labels,
             species=species.strip(),
+            topology=topology_path,
+            edges=edges,
         )
 
     def evaluate(
@@ -311,7 +358,7 @@ class ProcessDataset:
         fire: FireConfig | None = None,
         regeneration: RegenerationConfig | None = None,
         succession_process: Process | None = None,
-        edges: Sequence[FireEdge] = (),
+        edges: Sequence[FireEdge] | None = None,
         harvest_fraction: float = 1.0,
         targets: Sequence[Target] = (),
         scenario_id: str = "process-dataset",
@@ -331,8 +378,9 @@ class ProcessDataset:
             Regeneration parameters.
         succession_process : Process or None, optional
             Succession source; the default is the LANDIS process.
-        edges : sequence of FireEdge, optional
-            Spatial fire edges. Empty means no inter-fragment spread.
+        edges : sequence of FireEdge or None, optional
+            Spatial fire edges. None uses the edges loaded from ``topology``; an empty
+            sequence disables inter-fragment spread.
         harvest_fraction : float, optional
             Fraction removed by a harvest.
         targets : sequence of Target, optional
@@ -349,7 +397,7 @@ class ProcessDataset:
         """
         return evaluate_process_schedule(
             self.state,
-            edges,
+            self.edges if edges is None else edges,
             schedule,
             self.block_fragments,
             horizon_years=horizon_years,
@@ -361,5 +409,139 @@ class ProcessDataset:
             harvest_fraction=harvest_fraction,
             track_transitions=self.track_transitions,
             scenario_id=scenario_id,
+            seed=seed,
+        )
+
+    def search(
+        self,
+        candidates: Sequence[ProcessSearchCandidate],
+        *,
+        horizon_years: int,
+        targets: Sequence[Target],
+        fire: FireConfig | None = None,
+        succession: SuccessionConfig | None = None,
+        regeneration: RegenerationConfig | None = None,
+        succession_process: Process | None = None,
+        edges: Sequence[FireEdge] | None = None,
+        harvest_fraction: float = 1.0,
+        seed: int = 0,
+    ) -> ProcessSearchResult:
+        """Rank candidate schedules through the process engine on this dataset.
+
+        Parameters
+        ----------
+        candidates : sequence of ProcessSearchCandidate
+            Candidate schedules.
+        horizon_years : int
+            Process transitions.
+        targets : sequence of Target
+            Level targets used to price every candidate.
+        fire : FireConfig or None, optional
+            Fire parameters.
+        succession : SuccessionConfig or None, optional
+            Logistic succession parameters, used only when no process is supplied.
+        regeneration : RegenerationConfig or None, optional
+            Regeneration parameters.
+        succession_process : Process or None, optional
+            Succession source; the default is the LANDIS process.
+        edges : sequence of FireEdge or None, optional
+            Spatial fire edges; None uses the loaded topology.
+        harvest_fraction : float, optional
+            Fraction removed by a harvest.
+        seed : int, optional
+            Shared random-tape seed.
+
+        Returns
+        -------
+        ProcessSearchResult
+            Ranked candidate evaluations.
+        """
+        from ..opt.process_search import search_process_candidates
+
+        return search_process_candidates(
+            self.state,
+            self.edges if edges is None else edges,
+            candidates,
+            self.block_fragments,
+            horizon_years=horizon_years,
+            fire=fire or FireConfig(),
+            targets=targets,
+            succession=succession,
+            regeneration=regeneration,
+            bridge=self.bridge,
+            succession_process=succession_process or LandisSuccessionProcess(),
+            harvest_fraction=harvest_fraction,
+            track_transitions=self.track_transitions,
+            seed=seed,
+        )
+
+    def optimize(
+        self,
+        grammar: ScheduleMoveGrammar,
+        initial: ProcessSearchCandidate,
+        *,
+        horizon_years: int,
+        targets: Sequence[Target],
+        max_iterations: int,
+        fire: FireConfig | None = None,
+        succession: SuccessionConfig | None = None,
+        regeneration: RegenerationConfig | None = None,
+        succession_process: Process | None = None,
+        edges: Sequence[FireEdge] | None = None,
+        harvest_fraction: float = 1.0,
+        seed: int = 0,
+    ) -> ProcessOptimizationResult:
+        """Optimize a schedule through the process engine on this dataset.
+
+        Parameters
+        ----------
+        grammar : ScheduleMoveGrammar
+            Add/remove/optional-move grammar.
+        initial : ProcessSearchCandidate
+            Starting candidate.
+        horizon_years : int
+            Process transitions; must match the grammar horizon.
+        targets : sequence of Target
+            Level targets used to price every candidate.
+        max_iterations : int
+            Maximum hill-climb rounds.
+        fire : FireConfig or None, optional
+            Fire parameters.
+        succession : SuccessionConfig or None, optional
+            Logistic succession parameters, used only when no process is supplied.
+        regeneration : RegenerationConfig or None, optional
+            Regeneration parameters.
+        succession_process : Process or None, optional
+            Succession source; the default is the LANDIS process.
+        edges : sequence of FireEdge or None, optional
+            Spatial fire edges; None uses the loaded topology.
+        harvest_fraction : float, optional
+            Fraction removed by a harvest.
+        seed : int, optional
+            Shared random-tape seed.
+
+        Returns
+        -------
+        ProcessOptimizationResult
+            Best evaluation, search trace, and block mapping.
+        """
+        from ..opt.process_optimization import optimize_process_schedule
+
+        return optimize_process_schedule(
+            self.state,
+            self.edges if edges is None else edges,
+            grammar,
+            initial,
+            self.block_fragments,
+            horizon_years=horizon_years,
+            fire=fire or FireConfig(),
+            targets=targets,
+            max_iterations=max_iterations,
+            succession=succession,
+            regeneration=regeneration,
+            bridge=self.bridge,
+            succession_process=succession_process or LandisSuccessionProcess(),
+            harvest_fraction=harvest_fraction,
+            track_transitions=self.track_transitions,
             seed=seed,
         )

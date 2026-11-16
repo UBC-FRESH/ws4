@@ -164,6 +164,7 @@ def optimize_process_schedule(
     bridge: VolumeBridgeConfig | None = None,
     succession_process: Process | None = None,
     harvest_fraction: float = 1.0,
+    track_transitions: Mapping[tuple[int, str], int] | None = None,
     seed: int = 0,
 ) -> ProcessOptimizationResult:
     """Optimize a process-conditioned schedule with the grammar and hill-climb.
@@ -198,6 +199,8 @@ def optimize_process_schedule(
         Override the default succession source.
     harvest_fraction : float, optional
         Fraction removed by a harvest (default 1.0).
+    track_transitions : mapping of (int, str) to int or None, optional
+        Compiled ``(source_track, treatment)`` to target track transitions.
     seed : int, optional
         Shared random-tape seed (default zero).
 
@@ -229,6 +232,7 @@ def optimize_process_schedule(
         bridge=bridge,
         succession_process=succession_process,
         harvest_fraction=harvest_fraction,
+        track_transitions=track_transitions,
         seed=seed,
     )
     return ProcessOptimizationResult(

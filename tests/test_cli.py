@@ -149,6 +149,8 @@ def test_ecosystem_run_dataset_writes_a_process_run(tmp_path: Path) -> None:
     dataset = build_example(tmp_path)
     schedule = tmp_path / "schedule.csv"
     schedule.write_text("block_id,treatment,offset\n1,CC,2\n", encoding="utf-8")
+    topology = tmp_path / "topology.csv"
+    topology.write_text("src_block,dst_block,distance_m\n1,2,0\n", encoding="utf-8")
     out = tmp_path / "process"
     result = run_ws4(
         "ecosystem",
@@ -159,6 +161,8 @@ def test_ecosystem_run_dataset_writes_a_process_run(tmp_path: Path) -> None:
         str(schedule),
         "--output",
         str(out),
+        "--topology",
+        str(topology),
         "--years",
         "4",
         "--ignition-rate",
@@ -173,7 +177,8 @@ def test_ecosystem_run_dataset_writes_a_process_run(tmp_path: Path) -> None:
     assert summary["accounts"]["bridge.volume_m3"] == 390.0
     assert summary["event_counts"]["harvest"] == 1
     assert (out / "process_events.json").is_file()
-    assert (out / "process_dataset.json").is_file()
+    metadata = json.loads((out / "process_dataset.json").read_text())
+    assert metadata["edges"] == 1
 
 
 def test_optimize_runs_without_a_weights_file(tmp_path: Path) -> None:

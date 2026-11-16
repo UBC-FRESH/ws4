@@ -206,6 +206,7 @@ def search_process_candidates(
     bridge: VolumeBridgeConfig | None = None,
     succession_process: Process | None = None,
     harvest_fraction: float = 1.0,
+    track_transitions: Mapping[tuple[int, str], int] | None = None,
     seed: int = 0,
 ) -> ProcessSearchResult:
     """Evaluate and rank candidate schedules through the process engine.
@@ -239,6 +240,8 @@ def search_process_candidates(
         Override the default succession source.
     harvest_fraction : float, optional
         Fraction removed by a harvest (default 1.0).
+    track_transitions : mapping of (int, str) to int or None, optional
+        Compiled ``(source_track, treatment)`` to target track transitions.
     seed : int, optional
         Shared random-tape seed (default zero).
 
@@ -281,6 +284,7 @@ def search_process_candidates(
             succession_process=succession_process,
             targets=targets,
             harvest_fraction=harvest_fraction,
+            track_transitions=track_transitions,
             scenario_id=candidate.candidate_id,
             seed=seed,
         )
