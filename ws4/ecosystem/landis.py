@@ -229,9 +229,9 @@ class LandisSpeciesTraits:
     Parameters
     ----------
     max_b : float
-        Maximum cohort biomass.
+        Maximum cohort biomass, in g/m².
     max_anpp : float
-        Maximum aboveground net primary productivity.
+        Maximum aboveground net primary productivity, in g/m²/year.
     growthcurve : float
         LANDIS growth-curve exponent.
     mortalityshape : float
@@ -244,10 +244,10 @@ class LandisSpeciesTraits:
         Annual snag decay fraction.
     """
 
-    max_b: float = 300.0
-    max_anpp: float = 500.0
+    max_b: float = 30_000.0
+    max_anpp: float = 1_000.0
     growthcurve: float = 0.25
-    mortalityshape: float = 2.0
+    mortalityshape: float = 10.0
     longevity: float = 150.0
     fuel_fraction: float = 0.15
     snag_decay_rate: float = 0.05
@@ -409,7 +409,8 @@ def _transition_frame(
     weights = group["area_fraction"].to_numpy(dtype=float)
     if bool((weights <= 0.0).any()):
         raise LandisError("cohort area_fraction must be positive")
-    group["B"] = group["biomass_t_ha"].astype(float) * weights
+    # The published kernel and reference traits are in g/m²; the cohort state is t/ha.
+    group["B"] = group["biomass_t_ha"].astype(float) * weights * 100.0
     group["maxB"] = [config.traits(str(species)).max_b for species in group["species"]]
     group["maxANPP"] = [config.traits(str(species)).max_anpp for species in group["species"]]
     group["growthcurve"] = [config.traits(str(species)).growthcurve for species in group["species"]]
@@ -445,7 +446,12 @@ def _transition_frame(
     snag_decay = np.array(
         [config.traits(str(species)).snag_decay_rate for species in group["species"]]
     )
-    density = np.divide(biomass, weights, out=np.zeros_like(biomass), where=weights > 0.0)
+    density = np.divide(
+        biomass,
+        weights * 100.0,
+        out=np.zeros_like(biomass),
+        where=weights > 0.0,
+    )
     group["biomass_t_ha"] = density
     group["fuel_t_ha"] = np.maximum(
         group["fuel_t_ha"].to_numpy(dtype=float), density * fuel_fraction

@@ -31,9 +31,17 @@ The output directory contains:
 Assumptions
 -----------
 
-The compiled dataset has no biomass column. The command supplies initial live biomass (default
-100 t/ha) and initial fuel (default zero; succession adds fuel). Pass ``--initial-biomass`` and
-``--initial-fuel`` when the run has better values.
+Initial live biomass comes from ``--biomass-source``:
+
+- ``auto`` uses a compiled feature label containing ``biomass`` when one exists, otherwise
+  converts the track volume curve with ``--wood-density`` and ``--biomass-expansion``.
+- ``feature`` requires a compiled biomass curve; ``--biomass-label`` selects it exactly.
+- ``volume`` always uses the track volume conversion.
+- ``fixed`` uses ``--initial-biomass`` (default 100 t/ha).
+
+The default conversion is 0.5 t/m3 wood density and a 1.5 biomass expansion factor. These are
+explicit provisional coefficients, not a hidden calibration. Initial fuel remains zero by
+default; succession adds fuel.
 
 Species are read from the compiled ``feature.SpeciesProp.*`` curves: each fragment is split
 into species cohorts whose area fractions come from the curves at its current age. ``--species``

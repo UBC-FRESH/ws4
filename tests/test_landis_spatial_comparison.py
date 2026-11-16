@@ -31,7 +31,7 @@ def _state() -> CohortState:
                     "species": species,
                     "age": age,
                     "area_fraction": 1.0,
-                    "biomass_t_ha": 1000.0,
+                    "biomass_t_ha": 10.0,
                     "fuel_t_ha": 0.0,
                     "snag_t_ha": 0.0,
                     "attributes_json": "{}",
@@ -64,7 +64,7 @@ def _trajectory() -> list[float]:
         for event in process.events(state, context):
             state = process.apply(state, event)
         by_fragment = (
-            (state.cohorts["biomass_t_ha"] * state.cohorts["area_fraction"])
+            (state.cohorts["biomass_t_ha"] * state.cohorts["area_fraction"] * 100.0)
             .groupby(state.cohorts["fragment_id"])
             .sum()
         )

@@ -486,7 +486,7 @@ def test_reference_config_selects_and_validates_species() -> None:
     assert set(config.species) == {"pinustro", "abiebals"}
     assert config.stage == "spinup"
     assert config.traits("pinustro").max_b == 38150.0
-    assert config.traits("unknown").max_b == 300.0
+    assert config.traits("unknown").max_b == 30_000.0
 
     with pytest.raises(LandisError, match="unknown reference species"):
         landis_reference_config(["not-a-species"])
