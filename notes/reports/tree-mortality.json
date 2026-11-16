@@ -1,0 +1,45 @@
+{
+  "dataset": "Fire and Tree Mortality Database, 2nd edition",
+  "trees_sha256": "94eedbbacc807b57cc0864c892b7739213ecb6d4cf72761b24501ed975afa1c5",
+  "model": "FOFEM generic crown-scorch equation (Ryan and Amman 1994)",
+  "species_coefficients": {
+    "PICO": 0.028,
+    "PSME": 0.063,
+    "PIPO": 0.063,
+    "LAOC": 0.063,
+    "ABLA": 0.041,
+    "ABCO": 0.048,
+    "PIEN": 0.036,
+    "PIMA": 0.032,
+    "PIGL": 0.025,
+    "POTR5": 0.044
+  },
+  "sample": {
+    "n": 65663,
+    "prevalence": 0.3754321307281117,
+    "auc": 0.8820918565822264,
+    "brier": 0.15853638176209148,
+    "brier_skill": 0.3238892119245441
+  },
+  "train": {
+    "n": 49915,
+    "prevalence": 0.3934889311830111,
+    "auc": 0.8800915018759959,
+    "brier": 0.17527526546919808,
+    "brier_skill": 0.2655717357183427
+  },
+  "validation": {
+    "n": 15748,
+    "prevalence": 0.3181991363982728,
+    "auc": 0.9120663050184072,
+    "brier": 0.10548066800540971,
+    "brier_skill": 0.5137984624767065
+  },
+  "bc_conifers": {
+    "n": 65413,
+    "prevalence": 0.3751700732270344,
+    "auc": 0.8823342816028292,
+    "brier": 0.158204573064757,
+    "brier_skill": 0.32511616994989434
+  }
+}
