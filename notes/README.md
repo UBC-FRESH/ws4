@@ -185,6 +185,8 @@ Working notes for WS4. Notes are living: update them in the same change set as t
 - `reports/p87-closeout.md` — Phase 87 SDMD and AU Explorer close-out, queued for approval.
 - `reference/bc-sdmd-sources.md` — the 14 public BC SDMDs, their BEC coverage, and the caveats.
 - `design/ws4-carbon.md` — historical P58 carbon design note; the current contract is
+- `design/treatment-prescription-elicitation.md` — expert questions and response form for
+  post-treatment FBP conversion.
   `docs/reference/carbon.rst`.
 - `reports/p120-multi-boundary.md` — split-TSA production packages and full-landscape
   carbon evidence.
