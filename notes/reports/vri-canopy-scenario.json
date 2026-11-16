@@ -1,0 +1,28 @@
+{
+  "source": "BC VRI 2025 Rank 1, Open Government Licence - British Columbia",
+  "treatment": "thin-burn",
+  "canopy_cover_pct": -22.9,
+  "weather": {
+    "ffmc": 90.0,
+    "bui": 60.0,
+    "wind_kmh": 20.0,
+    "wind_direction_deg": 270.0
+  },
+  "grid": {
+    "rows": 20,
+    "cols": 42,
+    "cell_size_m": 100.0,
+    "fuel_type": "C2"
+  },
+  "control": {
+    "burned_area_ha": 228.0,
+    "perimeter_m": 7000.0,
+    "head_ros_m_min": 16.149478413752657
+  },
+  "treated": {
+    "burned_area_ha": 228.0,
+    "perimeter_m": 7000.0,
+    "head_ros_m_min": 16.149478413752657
+  },
+  "area_difference_ha": 0.0
+}

@@ -127,6 +127,8 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
      - Measured pre/post canopy, basal-area, and surface-fuel changes from open FFS data.
    * - :doc:`fire-treatment-prescription`
      - Explicit VRI stand treatment inputs and before/after FBP assignments.
+   * - :doc:`fire-canopy-scenario`
+     - Controlled open-VRI canopy-only treatment scenario and its negative C2 result.
    * - :doc:`fire-tree-mortality`
      - FOFEM crown-scorch mortality and validation against the public FTM database.
    * - :doc:`decision-quality`
@@ -196,6 +198,7 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
    fire-treatment-evidence
    fire-treatment-effects
    fire-treatment-prescription
+   fire-canopy-scenario
    fire-tree-mortality
    decision-quality
    fire-wind
