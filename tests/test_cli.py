@@ -144,6 +144,38 @@ def build_example(tmp_path: Path) -> Path:
     return out
 
 
+def test_ecosystem_run_dataset_writes_a_process_run(tmp_path: Path) -> None:
+    """The process command reads a compiled dataset and writes a complete run."""
+    dataset = build_example(tmp_path)
+    schedule = tmp_path / "schedule.csv"
+    schedule.write_text("block_id,treatment,offset\n1,CC,2\n", encoding="utf-8")
+    out = tmp_path / "process"
+    result = run_ws4(
+        "ecosystem",
+        "run-dataset",
+        "--dataset",
+        str(dataset),
+        "--schedule",
+        str(schedule),
+        "--output",
+        str(out),
+        "--years",
+        "4",
+        "--ignition-rate",
+        "0",
+        "--establishment-probability",
+        "0",
+        "--json",
+    )
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    summary = json.loads((out / "process_evaluation.json").read_text())
+    assert summary["accounts"]["bridge.volume_m3"] == 390.0
+    assert summary["event_counts"]["harvest"] == 1
+    assert (out / "process_events.json").is_file()
+    assert (out / "process_dataset.json").is_file()
+
+
 def test_optimize_runs_without_a_weights_file(tmp_path: Path) -> None:
     """The weights file is optional: the weights that apply are each target's own."""
     dataset = build_example(tmp_path)
