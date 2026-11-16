@@ -87,9 +87,11 @@ aliases are a bridge, not a species-specific calibration; callers can supply exa
 ``LandisSpeciesTraits`` overrides.
 
 A species cohort's ``biomass_t_ha`` is its density on its own area. The process converts it to
-LANDIS ``B`` by multiplying by ``area_fraction`` so ``sumB`` is the whole-fragment biomass, then
-converts the updated ``B`` back to density. This keeps multi-species competition and the
-area-weighted fragment totals consistent.
+LANDIS ``B`` in g/m² by multiplying by ``area_fraction`` and by 100, so ``sumB`` is the
+whole-fragment biomass in the kernel's published units. Updated ``B`` is converted back to t/ha.
+This keeps multi-species competition and the area-weighted fragment totals consistent. Unknown
+species use the provisional default trait values, now expressed on the same g/m² scale as the
+reference table.
 
 Limits
 ------

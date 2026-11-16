@@ -2451,11 +2451,25 @@ def ecosystem_run_dataset(
         help="Use compiled species-proportion curves.",
     ),
     initial_biomass: float = typer.Option(
-        100.0, "--initial-biomass", help="Initial live biomass, t/ha."
+        100.0, "--initial-biomass", help="Fixed initial live biomass, t/ha."
     ),
     initial_fuel: float = typer.Option(0.0, "--initial-fuel", help="Initial fuel, t/ha."),
     volume_label: str | None = typer.Option(
         None, "--volume-label", help="Feature label to use for every track."
+    ),
+    biomass_source: str = typer.Option(
+        "auto",
+        "--biomass-source",
+        help="auto, feature, volume, or fixed.",
+    ),
+    biomass_label: str | None = typer.Option(
+        None, "--biomass-label", help="Compiled biomass feature label."
+    ),
+    wood_density: float = typer.Option(
+        0.5, "--wood-density", help="Wood density for volume conversion, t/m3."
+    ),
+    biomass_expansion: float = typer.Option(
+        1.5, "--biomass-expansion", help="Biomass expansion factor."
     ),
     topology: Path | None = typer.Option(
         None, "--topology", exists=True, help="Block topology CSV for fire spread."
@@ -2486,6 +2500,10 @@ def ecosystem_run_dataset(
             initial_biomass_t_ha=initial_biomass,
             initial_fuel_t_ha=initial_fuel,
             volume_label=volume_label,
+            biomass_source=biomass_source,
+            biomass_label=biomass_label,
+            wood_density_t_m3=wood_density,
+            biomass_expansion=biomass_expansion,
             topology=topology,
             max_blocks=max_blocks,
         )
@@ -2510,6 +2528,9 @@ def ecosystem_run_dataset(
         "volume_labels": list(prepared.volume_labels),
         "species": prepared.species,
         "species_composition": species_composition,
+        "biomass_source": biomass_source,
+        "wood_density_t_m3": wood_density,
+        "biomass_expansion": biomass_expansion,
         "batch_succession": batch_succession,
         "horizon_years": years,
         "seed": seed,

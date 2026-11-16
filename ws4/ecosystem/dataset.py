@@ -92,6 +92,8 @@ def _as_float(value: object, field: str) -> float:
     return number
 
 
+_BIOMASS_SOURCES: Final[frozenset[str]] = frozenset({"auto", "feature", "fixed", "volume"})
+
 _SPECIES_ALIASES: Final[Mapping[str, str]] = {
     "ACT": "poputrem",
     "AT": "poputrem",
@@ -179,6 +181,73 @@ def _species_fractions(
             }
             fractions[fragment] = parts
     return fractions
+
+
+def _biomass_feature_curves(
+    features: pd.DataFrame,
+    curves: pd.DataFrame,
+    label: str | None,
+) -> dict[int, dict[int, float]]:
+    """Return per-track biomass curves from a compiled feature label."""
+    chosen: dict[int, int] = {}
+    for row in features.itertuples(index=False):
+        feature = str(row.label)
+        matches = feature == label if label is not None else "biomass" in feature.lower()
+        if not matches:
+            continue
+        track = _as_int(row.track_id, "track_id")
+        chosen.setdefault(track, _as_int(row.curve_id, "curve_id"))
+    if not chosen:
+        return {}
+    try:
+        return track_age_volume_curves_from_frame(curves, chosen)
+    except BridgeError as error:
+        raise ProcessDatasetError(str(error)) from error
+
+
+def _biomass_values(
+    fragments: pd.DataFrame,
+    track_curves: Mapping[int, Mapping[int, float]],
+    feature_curves: Mapping[int, Mapping[int, float]],
+    *,
+    source: str,
+    fixed: float,
+    wood_density: float,
+    expansion: float,
+) -> np.ndarray:
+    """Return initial biomass density for each fragment."""
+    selected = source
+    if source == "auto":
+        if feature_curves:
+            selected = "feature"
+        elif track_curves:
+            selected = "volume"
+        else:
+            selected = "fixed"
+    if selected == "feature" and not feature_curves:
+        raise ProcessDatasetError("no compiled biomass curve is available")
+    if selected == "volume" and not track_curves:
+        raise ProcessDatasetError("no compiled volume curve is available")
+    values = np.full(len(fragments), fixed, dtype=float)
+    curves = feature_curves if selected == "feature" else track_curves
+    if selected == "fixed":
+        return values
+    for track, group in fragments.groupby("track_id", sort=False):
+        track_id = _as_int(track, "track_id")
+        curve = curves.get(track_id)
+        if not curve:
+            raise ProcessDatasetError(f"track {track_id} has no {selected} curve")
+        points = sorted(curve)
+        ages = group["age"].to_numpy(dtype=float)
+        evaluated = np.interp(
+            ages,
+            np.array(points, dtype=float),
+            np.array([curve[point] for point in points], dtype=float),
+        )
+        if selected == "volume":
+            evaluated = evaluated * wood_density * expansion
+        values[group.index.to_numpy()] = evaluated
+    return values
 
 
 def _fragment_edges(
@@ -305,6 +374,10 @@ class ProcessDataset:
         initial_biomass_t_ha: float = 100.0,
         initial_fuel_t_ha: float = 0.0,
         volume_label: str | None = None,
+        biomass_source: str = "auto",
+        biomass_label: str | None = None,
+        wood_density_t_m3: float = 0.5,
+        biomass_expansion: float = 1.5,
         species_composition: bool = True,
         species_traits: Mapping[str, LandisSpeciesTraits] | None = None,
         topology: Path | None = None,
@@ -320,12 +393,24 @@ class ProcessDataset:
             Fallback species label when a track has no species-proportion curve (default
             ``PL``).
         initial_biomass_t_ha : float, optional
-            Initial live biomass per hectare (default 100).
+            Fixed initial live biomass per hectare, used when ``biomass_source`` is
+            ``fixed`` or as the fallback (default 100).
         initial_fuel_t_ha : float, optional
             Initial surface fuel per hectare (default zero; succession adds fuel).
         volume_label : str or None, optional
             Feature label to use for every track. None selects ``feature.Volume``, then the
             managed/unmanaged ``feature.Yield.*.Total`` label that matches the track name.
+        biomass_source : str, optional
+            ``auto`` (compiled biomass curve, then volume conversion, then fixed), ``feature``
+            (compiled biomass curve), ``volume`` (track volume x wood density x expansion), or
+            ``fixed``.
+        biomass_label : str or None, optional
+            Exact compiled biomass feature label. None selects the first label containing
+            ``biomass``.
+        wood_density_t_m3 : float, optional
+            Wood density used by the volume conversion (default 0.5 t/m3).
+        biomass_expansion : float, optional
+            Biomass expansion factor used by the volume conversion (default 1.5).
         species_composition : bool, optional
             Read ``feature.SpeciesProp.*`` curves and split each fragment into species
             cohorts by area fraction (default True). False uses the fallback species
@@ -362,6 +447,18 @@ class ProcessDataset:
             raise ProcessDatasetError("species_traits must be a mapping or None")
         biomass = _as_float(initial_biomass_t_ha, "initial_biomass_t_ha")
         fuel = _as_float(initial_fuel_t_ha, "initial_fuel_t_ha")
+        if biomass_source not in _BIOMASS_SOURCES:
+            raise ProcessDatasetError(
+                f"biomass_source must be one of: {', '.join(sorted(_BIOMASS_SOURCES))}"
+            )
+        wood_density = _as_float(wood_density_t_m3, "wood_density_t_m3")
+        expansion = _as_float(biomass_expansion, "biomass_expansion")
+        if wood_density <= 0.0 or expansion <= 0.0:
+            raise ProcessDatasetError("wood density and biomass expansion must be positive")
+        if biomass_label is not None and (
+            not isinstance(biomass_label, str) or not biomass_label.strip()
+        ):
+            raise ProcessDatasetError("biomass_label must be a non-empty string or None")
 
         fragments = _read_table(
             directory,
@@ -421,6 +518,16 @@ class ProcessDataset:
         if not valid:
             raise ProcessDatasetError("the selected dataset has no positive-area fragments")
         fragment_frame = pd.DataFrame(valid)
+        feature_curves = _biomass_feature_curves(features, curves, biomass_label)
+        biomass_values = _biomass_values(
+            fragment_frame,
+            track_curves,
+            feature_curves,
+            source=biomass_source,
+            fixed=biomass,
+            wood_density=wood_density,
+            expansion=expansion,
+        )
         fallback = species.strip()
         fractions = (
             _species_fractions(fragment_frame, features, curves, default=fallback)
@@ -428,7 +535,7 @@ class ProcessDataset:
             else {int(str(value)): {fallback: 1.0} for value in fragment_frame["fragment_id"]}
         )
         rows: list[dict[str, object]] = []
-        for row in fragment_frame.itertuples(index=False):
+        for position, row in enumerate(fragment_frame.itertuples(index=False)):
             fragment = int(str(row.fragment_id))
             for cohort_id, (name, fraction) in enumerate(
                 sorted(fractions[fragment].items()), start=1
@@ -440,7 +547,7 @@ class ProcessDataset:
                         "species": name,
                         "age": int(str(row.age)),
                         "area_fraction": fraction,
-                        "biomass_t_ha": biomass,
+                        "biomass_t_ha": float(biomass_values[position]),
                         "fuel_t_ha": fuel,
                         "snag_t_ha": 0.0,
                         "attributes_json": "{}",

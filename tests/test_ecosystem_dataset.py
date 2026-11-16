@@ -71,10 +71,10 @@ def test_dataset_splits_compiled_species_into_cohorts(tmp_path: Path) -> None:
 
     assert first["species"].tolist() == ["AT", "SX"]
     assert first["area_fraction"].tolist() == pytest.approx([0.8, 0.2])
-    assert first["biomass_t_ha"].tolist() == pytest.approx([100.0, 100.0])
+    assert first["biomass_t_ha"].tolist() == pytest.approx([90.0, 90.0])
     assert {"AT", "SX"} <= set(prepared.landis_config.species)
     aggregate = prepared.state.aggregate_to_fragments().set_index("fragment_id")
-    assert float(str(aggregate.loc[1, "biomass_t_ha"])) == pytest.approx(100.0)
+    assert float(str(aggregate.loc[1, "biomass_t_ha"])) == pytest.approx(90.0)
     prepared.state.check_area_conservation()
     evaluation = prepared.evaluate(
         {1: (("CC", 2),)},
@@ -107,6 +107,32 @@ def test_dataset_splits_compiled_species_into_cohorts(tmp_path: Path) -> None:
         seed=1,
     )
     partial.state.check_area_conservation()
+
+
+def test_dataset_biomass_can_be_fixed(tmp_path: Path) -> None:
+    prepared = ProcessDataset.from_directory(
+        _dataset(tmp_path), biomass_source="fixed", initial_biomass_t_ha=80.0
+    )
+
+    assert prepared.state.cohorts["biomass_t_ha"].tolist() == pytest.approx([80.0, 80.0])
+
+
+def test_dataset_uses_a_compiled_biomass_curve(tmp_path: Path) -> None:
+    dataset = _dataset(tmp_path)
+    features = pd.read_parquet(dataset / "features.parquet")
+    curves = pd.read_parquet(dataset / "curves.parquet")
+    extra_features = pd.DataFrame({"track_id": [1], "label": ["feature.Biomass"], "curve_id": [12]})
+    extra_curves = pd.DataFrame({"curve_id": [12, 12], "x": [0.0, 100.0], "y": [50.0, 50.0]})
+    pd.concat([features, extra_features], ignore_index=True).to_parquet(
+        dataset / "features.parquet", index=False
+    )
+    pd.concat([curves, extra_curves], ignore_index=True).to_parquet(
+        dataset / "curves.parquet", index=False
+    )
+
+    prepared = ProcessDataset.from_directory(dataset)
+
+    assert prepared.state.cohorts["biomass_t_ha"].tolist() == pytest.approx([50.0, 50.0])
 
 
 def test_dataset_can_disable_species_composition(tmp_path: Path) -> None:
