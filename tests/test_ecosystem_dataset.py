@@ -41,6 +41,54 @@ def test_dataset_loads_fragments_tracks_curves_and_transitions(tmp_path: Path) -
     assert prepared.edges == ()
 
 
+def test_dataset_uses_the_dominant_compiled_species(tmp_path: Path) -> None:
+    dataset = _dataset(tmp_path)
+    features = pd.read_parquet(dataset / "features.parquet")
+    curves = pd.read_parquet(dataset / "curves.parquet")
+    extra_features = pd.DataFrame(
+        {
+            "track_id": [1, 1],
+            "label": ["feature.SpeciesProp.SX", "feature.SpeciesProp.AT"],
+            "curve_id": [10, 11],
+        }
+    )
+    extra_curves = pd.DataFrame(
+        {
+            "curve_id": [10, 10, 11, 11],
+            "x": [0.0, 100.0, 0.0, 100.0],
+            "y": [0.2, 0.2, 0.8, 0.8],
+        }
+    )
+    pd.concat([features, extra_features], ignore_index=True).to_parquet(
+        dataset / "features.parquet", index=False
+    )
+    pd.concat([curves, extra_curves], ignore_index=True).to_parquet(
+        dataset / "curves.parquet", index=False
+    )
+
+    prepared = ProcessDataset.from_directory(dataset)
+
+    assert prepared.state.cohorts["species"].tolist() == ["AT", "AT"]
+    assert "AT" in prepared.landis_config.species
+    assert prepared.evaluate(
+        {1: (("CC", 2),)},
+        horizon_years=4,
+        fire=FireConfig(ignition_rate_per_fragment_year=0.0),
+        regeneration=RegenerationConfig(establishment_probability=0.0),
+        seed=1,
+    ).accounts.loc[lambda frame: frame["account"] == "bridge.volume_m3", "value"].iloc[
+        0
+    ] == pytest.approx(390.0)
+
+
+def test_dataset_can_disable_species_composition(tmp_path: Path) -> None:
+    prepared = ProcessDataset.from_directory(
+        _dataset(tmp_path), species="PL", species_composition=False
+    )
+
+    assert prepared.state.cohorts["species"].tolist() == ["PL", "PL"]
+
+
 def test_dataset_maps_block_topology_to_fragment_fire_edges(tmp_path: Path) -> None:
     dataset = _dataset(tmp_path)
     topology = tmp_path / "topology.csv"

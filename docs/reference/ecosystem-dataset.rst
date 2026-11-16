@@ -31,10 +31,15 @@ The output directory contains:
 Assumptions
 -----------
 
-The compiled dataset has no species or biomass column. The command supplies a provisional
-species label (default ``PL``), initial live biomass (default 100 t/ha), and initial fuel
-(default zero; succession adds fuel). Pass ``--species``, ``--initial-biomass``, and
+The compiled dataset has no biomass column. The command supplies initial live biomass (default
+100 t/ha) and initial fuel (default zero; succession adds fuel). Pass ``--initial-biomass`` and
 ``--initial-fuel`` when the run has better values.
+
+Species are read from the compiled ``feature.SpeciesProp.*`` curves: each fragment takes its
+dominant species at its current age. ``--species`` is the fallback when a track has no
+proportion curve, and ``--no-species-composition`` uses that fallback everywhere. The default
+aliases map common BC codes to the published LANDIS reference traits; pass an explicit
+``species_traits`` mapping to ``ProcessDataset.from_directory`` to override them.
 
 The default curve selection uses ``feature.Volume`` when present, then the managed or unmanaged
 ``feature.Yield.*.Total`` label that matches the track name. Use ``--volume-label`` to force one

@@ -80,6 +80,12 @@ non-spin-up stages and the young-cohort regression case.
 landscape event per year. ``tests/test_ecosystem_dataset.py`` checks that the batch state and
 volume match the per-fragment process exactly; only the event-log granularity differs.
 
+The dataset runner maps compiled species codes to the reference traits with a provisional alias
+table (``PL`` and ``PLI`` to jack pine, ``SX`` and ``SE`` to white spruce, ``BL`` to balsam fir,
+``AT`` and ``ACT`` to trembling aspen, and so on). Unknown codes use the process default. The
+aliases are a bridge, not a species-specific calibration; callers can supply exact
+``LandisSpeciesTraits`` overrides.
+
 Limits
 ------
 
