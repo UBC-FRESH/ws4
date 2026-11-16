@@ -1,0 +1,119 @@
+{
+  "source": "BC VRI 2025 Rank 1, Open Government Licence - British Columbia",
+  "treatment": "thin-burn",
+  "post_fuel_type": "C2",
+  "stand_count": 3,
+  "stands": [
+    {
+      "stand_id": "19974397",
+      "pre_fuel_type": "C2",
+      "post_fuel_type": "C2",
+      "pre_crown_closure_pct": 70.0,
+      "post_crown_closure_pct": 53.97,
+      "basal_area_pct": -29.0,
+      "surface_fuel_pct": -3.5,
+      "prescription": {
+        "name": "thin-burn",
+        "fuel_type": "C2",
+        "source": "National Fire and Fire Surrogate study, RDS-2016-0009"
+      },
+      "pre_assignment": {
+        "stand_id": "19974397",
+        "fuel_type": "C2",
+        "rule_id": "spruce-closed",
+        "confidence": 0.8,
+        "source_fields": [
+          "leading_species",
+          "crown_closure_percent"
+        ],
+        "version": "ws4.vri-fbp.v1",
+        "notes": "Closed spruce/fir mapped to the boreal spruce type."
+      },
+      "post_assignment": {
+        "stand_id": "19974397",
+        "fuel_type": "C2",
+        "rule_id": "explicit-fbp",
+        "confidence": 1.0,
+        "source_fields": [
+          "fuel_type"
+        ],
+        "version": "ws4.vri-fbp.v1",
+        "notes": "VRI carries an explicit FBP fuel type."
+      }
+    },
+    {
+      "stand_id": "19974680",
+      "pre_fuel_type": "C2",
+      "post_fuel_type": "C2",
+      "pre_crown_closure_pct": 60.0,
+      "post_crown_closure_pct": 46.26,
+      "basal_area_pct": -29.0,
+      "surface_fuel_pct": -3.5,
+      "prescription": {
+        "name": "thin-burn",
+        "fuel_type": "C2",
+        "source": "National Fire and Fire Surrogate study, RDS-2016-0009"
+      },
+      "pre_assignment": {
+        "stand_id": "19974680",
+        "fuel_type": "C2",
+        "rule_id": "spruce-closed",
+        "confidence": 0.8,
+        "source_fields": [
+          "leading_species",
+          "crown_closure_percent"
+        ],
+        "version": "ws4.vri-fbp.v1",
+        "notes": "Closed spruce/fir mapped to the boreal spruce type."
+      },
+      "post_assignment": {
+        "stand_id": "19974680",
+        "fuel_type": "C2",
+        "rule_id": "explicit-fbp",
+        "confidence": 1.0,
+        "source_fields": [
+          "fuel_type"
+        ],
+        "version": "ws4.vri-fbp.v1",
+        "notes": "VRI carries an explicit FBP fuel type."
+      }
+    },
+    {
+      "stand_id": "19928101",
+      "pre_fuel_type": "C2",
+      "post_fuel_type": "C2",
+      "pre_crown_closure_pct": 55.0,
+      "post_crown_closure_pct": 42.405,
+      "basal_area_pct": -29.0,
+      "surface_fuel_pct": -3.5,
+      "prescription": {
+        "name": "thin-burn",
+        "fuel_type": "C2",
+        "source": "National Fire and Fire Surrogate study, RDS-2016-0009"
+      },
+      "pre_assignment": {
+        "stand_id": "19928101",
+        "fuel_type": "C2",
+        "rule_id": "spruce-closed",
+        "confidence": 0.8,
+        "source_fields": [
+          "leading_species",
+          "crown_closure_percent"
+        ],
+        "version": "ws4.vri-fbp.v1",
+        "notes": "Closed spruce/fir mapped to the boreal spruce type."
+      },
+      "post_assignment": {
+        "stand_id": "19928101",
+        "fuel_type": "C2",
+        "rule_id": "explicit-fbp",
+        "confidence": 1.0,
+        "source_fields": [
+          "fuel_type"
+        ],
+        "version": "ws4.vri-fbp.v1",
+        "notes": "VRI carries an explicit FBP fuel type."
+      }
+    }
+  ]
+}

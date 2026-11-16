@@ -125,6 +125,8 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
      - Published fuel-treatment effect ranges and the deferred validation gate.
    * - :doc:`fire-treatment-effects`
      - Measured pre/post canopy, basal-area, and surface-fuel changes from open FFS data.
+   * - :doc:`fire-treatment-prescription`
+     - Explicit VRI stand treatment inputs and before/after FBP assignments.
    * - :doc:`fire-tree-mortality`
      - FOFEM crown-scorch mortality and validation against the public FTM database.
    * - :doc:`decision-quality`
@@ -193,6 +195,7 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
    fire-containment
    fire-treatment-evidence
    fire-treatment-effects
+   fire-treatment-prescription
    fire-tree-mortality
    decision-quality
    fire-wind
