@@ -2444,7 +2444,12 @@ def ecosystem_run_dataset(
     schedule: Path = typer.Option(..., "--schedule", exists=True, help="Schedule CSV."),
     output: Path = typer.Option(..., "--output", "-o", help="Process evaluation directory."),
     years: int = typer.Option(5, "--years", help="Process transitions."),
-    species: str = typer.Option("PL", "--species", help="Provisional species label."),
+    species: str = typer.Option("PL", "--species", help="Fallback species label."),
+    species_composition: bool = typer.Option(
+        True,
+        "--species-composition/--no-species-composition",
+        help="Use compiled species-proportion curves.",
+    ),
     initial_biomass: float = typer.Option(
         100.0, "--initial-biomass", help="Initial live biomass, t/ha."
     ),
@@ -2477,6 +2482,7 @@ def ecosystem_run_dataset(
         prepared = ProcessDataset.from_directory(
             dataset,
             species=species,
+            species_composition=species_composition,
             initial_biomass_t_ha=initial_biomass,
             initial_fuel_t_ha=initial_fuel,
             volume_label=volume_label,
@@ -2503,6 +2509,7 @@ def ecosystem_run_dataset(
         "edges": len(prepared.edges),
         "volume_labels": list(prepared.volume_labels),
         "species": prepared.species,
+        "species_composition": species_composition,
         "batch_succession": batch_succession,
         "horizon_years": years,
         "seed": seed,

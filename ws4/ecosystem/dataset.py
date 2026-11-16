@@ -15,6 +15,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Final
 
+import numpy as np
 import pandas as pd
 
 from ..opt.objective import Target
@@ -22,7 +23,13 @@ from ..patch.accounts import load_patch_edges_detailed
 from .bridge import BridgeError, VolumeBridgeConfig, track_age_volume_curves_from_frame
 from .evaluation import ProcessScheduleEvaluation, evaluate_process_schedule
 from .fire import FireConfig, FireEdge
-from .landis import LandisBatchSuccessionProcess, LandisSuccessionProcess
+from .landis import (
+    LANDIS_REFERENCE_TRAITS,
+    LandisBatchSuccessionProcess,
+    LandisSpeciesTraits,
+    LandisSuccessionConfig,
+    LandisSuccessionProcess,
+)
 from .process import Process
 from .regeneration import RegenerationConfig
 from .state import CohortState, StateSchema
@@ -59,10 +66,17 @@ def _as_int(value: object, field: str) -> int:
     """Return an integer from a table value."""
     if isinstance(value, bool):
         raise ProcessDatasetError(f"{field} must be an integer")
+    text = str(value).strip()
     try:
-        return int(str(value))
-    except ValueError as error:
-        raise ProcessDatasetError(f"{field} must be an integer") from error
+        return int(text)
+    except ValueError:
+        try:
+            number = float(text)
+        except ValueError as error:
+            raise ProcessDatasetError(f"{field} must be an integer") from error
+        if not number.is_integer():
+            raise ProcessDatasetError(f"{field} must be an integer") from None
+        return int(number)
 
 
 def _as_float(value: object, field: str) -> float:
@@ -76,6 +90,83 @@ def _as_float(value: object, field: str) -> float:
     if not math.isfinite(number) or number < 0.0:
         raise ProcessDatasetError(f"{field} must be finite and non-negative")
     return number
+
+
+_SPECIES_ALIASES: Final[Mapping[str, str]] = {
+    "ACT": "poputrem",
+    "AT": "poputrem",
+    "BL": "abiebals",
+    "CW": "thujocci",
+    "HW": "tsugcana",
+    "PB": "betupapy",
+    "PL": "pinubank",
+    "PLI": "pinubank",
+    "SE": "piceglau",
+    "SW": "piceglau",
+    "SX": "piceglau",
+    "WB": "betualle",
+}
+
+
+def _landis_config(
+    species_traits: Mapping[str, LandisSpeciesTraits] | None,
+) -> LandisSuccessionConfig:
+    """Return the LANDIS traits used by the dataset process."""
+    traits = {
+        code: LANDIS_REFERENCE_TRAITS[target]
+        for code, target in _SPECIES_ALIASES.items()
+        if target in LANDIS_REFERENCE_TRAITS
+    }
+    if species_traits is not None:
+        traits.update(species_traits)
+    return LandisSuccessionConfig(species=traits)
+
+
+def _dominant_species(
+    fragments: pd.DataFrame,
+    features: pd.DataFrame,
+    curves: pd.DataFrame,
+    *,
+    default: str,
+) -> dict[int, str]:
+    """Return the dominant compiled species for each fragment."""
+    by_track: dict[int, dict[str, int]] = {}
+    for row in features.itertuples(index=False):
+        label = str(row.label)
+        if not label.startswith("feature.SpeciesProp."):
+            continue
+        species = label.rsplit(".", 1)[-1].strip()
+        if species:
+            by_track.setdefault(_as_int(row.track_id, "track_id"), {})[species] = _as_int(
+                row.curve_id, "curve_id"
+            )
+    if not by_track:
+        return {int(str(row.fragment_id)): default for row in fragments.itertuples(index=False)}
+    needed = {curve for values in by_track.values() for curve in values.values()}
+    points: dict[int, tuple[np.ndarray, np.ndarray]] = {}
+    for curve_id in needed:
+        subset = curves.loc[curves["curve_id"] == curve_id]
+        if subset.empty:
+            raise ProcessDatasetError(f"species curve {curve_id} is missing")
+        x = subset["x"].to_numpy(dtype=float)
+        y = subset["y"].to_numpy(dtype=float)
+        order = np.argsort(x)
+        points[curve_id] = (x[order], y[order])
+    dominant: dict[int, str] = {}
+    for track, group in fragments.groupby("track_id", sort=False):
+        track_id = _as_int(track, "track_id")
+        species_curves = by_track.get(track_id)
+        ids = [int(str(value)) for value in group["fragment_id"]]
+        if not species_curves:
+            dominant.update(dict.fromkeys(ids, default))
+            continue
+        ages = group["age"].to_numpy(dtype=float)
+        names = sorted(species_curves)
+        scores = np.column_stack([np.interp(ages, *points[species_curves[name]]) for name in names])
+        winners = np.argmax(scores, axis=1)
+        for fragment, column, row_scores in zip(ids, winners, scores, strict=True):
+            dominant[fragment] = names[int(column)] if float(row_scores[column]) > 0.0 else default
+    return dominant
 
 
 def _fragment_edges(
@@ -173,7 +264,9 @@ class ProcessDataset:
     volume_labels : tuple of str
         Feature labels used to build the track curves.
     species : str
-        Provisional species label supplied where the dataset has no species column.
+        Fallback species label where the dataset has no species-proportion curves.
+    landis_config : LandisSuccessionConfig
+        Species traits used by the LANDIS process, with provisional compiled-code aliases.
     topology : Path or None
         Block topology file, when one was supplied.
     edges : tuple of FireEdge
@@ -187,6 +280,7 @@ class ProcessDataset:
     track_transitions: Mapping[tuple[int, str], int]
     volume_labels: tuple[str, ...]
     species: str
+    landis_config: LandisSuccessionConfig
     topology: Path | None
     edges: tuple[FireEdge, ...]
 
@@ -199,6 +293,8 @@ class ProcessDataset:
         initial_biomass_t_ha: float = 100.0,
         initial_fuel_t_ha: float = 0.0,
         volume_label: str | None = None,
+        species_composition: bool = True,
+        species_traits: Mapping[str, LandisSpeciesTraits] | None = None,
         topology: Path | None = None,
         max_blocks: int | None = None,
     ) -> ProcessDataset:
@@ -209,8 +305,8 @@ class ProcessDataset:
         dataset_dir : Path
             Compiled dataset directory.
         species : str, optional
-            Species label for every initial cohort (default ``PL``). The compiled dataset
-            does not carry a species column.
+            Fallback species label when a track has no species-proportion curve (default
+            ``PL``).
         initial_biomass_t_ha : float, optional
             Initial live biomass per hectare (default 100).
         initial_fuel_t_ha : float, optional
@@ -218,6 +314,12 @@ class ProcessDataset:
         volume_label : str or None, optional
             Feature label to use for every track. None selects ``feature.Volume``, then the
             managed/unmanaged ``feature.Yield.*.Total`` label that matches the track name.
+        species_composition : bool, optional
+            Read ``feature.SpeciesProp.*`` curves and assign each fragment its dominant
+            compiled species (default True). False uses the fallback species everywhere.
+        species_traits : mapping of str to LandisSpeciesTraits or None, optional
+            Explicit trait overrides by compiled species code. The default aliases map the
+            common BC codes to the published reference traits.
         topology : Path or None, optional
             Block topology CSV. When supplied, its block edges are mapped to fragment fire
             edges, so fire can spread between adjacent blocks.
@@ -241,6 +343,10 @@ class ProcessDataset:
             raise ProcessDatasetError("max_blocks must be a positive integer or None")
         if not isinstance(species, str) or not species.strip():
             raise ProcessDatasetError("species must be a non-empty string")
+        if not isinstance(species_composition, bool):
+            raise ProcessDatasetError("species_composition must be a boolean")
+        if species_traits is not None and not isinstance(species_traits, Mapping):
+            raise ProcessDatasetError("species_traits must be a mapping or None")
         biomass = _as_float(initial_biomass_t_ha, "initial_biomass_t_ha")
         fuel = _as_float(initial_fuel_t_ha, "initial_fuel_t_ha")
 
@@ -272,7 +378,7 @@ class ProcessDataset:
             raise ProcessDatasetError(str(error)) from error
 
         areas: dict[int, float] = {}
-        rows: list[dict[str, object]] = []
+        valid: list[dict[str, int | float]] = []
         block_fragments: dict[int, list[int]] = {}
         for row in fragments.itertuples(index=False):
             fragment = _as_int(row.fragment_id, "fragment_id")
@@ -290,22 +396,40 @@ class ProcessDataset:
                 raise ProcessDatasetError(f"duplicate fragment_id {fragment}")
             areas[fragment] = area
             block_fragments.setdefault(block, []).append(fragment)
-            rows.append(
+            valid.append(
                 {
                     "fragment_id": fragment,
-                    "cohort_id": 1,
-                    "species": species.strip(),
+                    "block_id": block,
+                    "area_ha": area,
                     "age": age,
-                    "area_fraction": 1.0,
-                    "biomass_t_ha": biomass,
-                    "fuel_t_ha": fuel,
-                    "snag_t_ha": 0.0,
-                    "attributes_json": "{}",
                     "track_id": track,
                 }
             )
-        if not rows:
+        if not valid:
             raise ProcessDatasetError("the selected dataset has no positive-area fragments")
+        fragment_frame = pd.DataFrame(valid)
+        dominant = (
+            _dominant_species(fragment_frame, features, curves, default=species.strip())
+            if species_composition
+            else dict.fromkeys(
+                (int(str(value)) for value in fragment_frame["fragment_id"]), species.strip()
+            )
+        )
+        rows = [
+            {
+                "fragment_id": int(str(row.fragment_id)),
+                "cohort_id": 1,
+                "species": dominant[int(str(row.fragment_id))],
+                "age": int(str(row.age)),
+                "area_fraction": 1.0,
+                "biomass_t_ha": biomass,
+                "fuel_t_ha": fuel,
+                "snag_t_ha": 0.0,
+                "attributes_json": "{}",
+                "track_id": int(str(row.track_id)),
+            }
+            for row in fragment_frame.itertuples(index=False)
+        ]
         frame = pd.DataFrame(rows).astype(str)
         state = CohortState.from_tables(
             frame,
@@ -325,6 +449,7 @@ class ProcessDataset:
             merchantable_fraction=1.0,
             track_age_volume_curves=track_curves,
         )
+        landis_config = _landis_config(species_traits)
         ordered_blocks = {
             block: tuple(sorted(values)) for block, values in sorted(block_fragments.items())
         }
@@ -345,6 +470,7 @@ class ProcessDataset:
             track_transitions=transitions,
             volume_labels=labels,
             species=species.strip(),
+            landis_config=landis_config,
             topology=topology_path,
             edges=edges,
         )
@@ -408,7 +534,11 @@ class ProcessDataset:
             regeneration=regeneration or RegenerationConfig(),
             bridge=self.bridge,
             succession_process=succession_process
-            or (LandisBatchSuccessionProcess() if batch_succession else LandisSuccessionProcess()),
+            or (
+                LandisBatchSuccessionProcess(self.landis_config)
+                if batch_succession
+                else LandisSuccessionProcess(self.landis_config)
+            ),
             targets=targets,
             harvest_fraction=harvest_fraction,
             track_transitions=self.track_transitions,
@@ -478,7 +608,11 @@ class ProcessDataset:
             regeneration=regeneration,
             bridge=self.bridge,
             succession_process=succession_process
-            or (LandisBatchSuccessionProcess() if batch_succession else LandisSuccessionProcess()),
+            or (
+                LandisBatchSuccessionProcess(self.landis_config)
+                if batch_succession
+                else LandisSuccessionProcess(self.landis_config)
+            ),
             harvest_fraction=harvest_fraction,
             track_transitions=self.track_transitions,
             seed=seed,
@@ -554,7 +688,11 @@ class ProcessDataset:
             regeneration=regeneration,
             bridge=self.bridge,
             succession_process=succession_process
-            or (LandisBatchSuccessionProcess() if batch_succession else LandisSuccessionProcess()),
+            or (
+                LandisBatchSuccessionProcess(self.landis_config)
+                if batch_succession
+                else LandisSuccessionProcess(self.landis_config)
+            ),
             harvest_fraction=harvest_fraction,
             track_transitions=self.track_transitions,
             seed=seed,
