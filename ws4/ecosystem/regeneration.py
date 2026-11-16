@@ -142,20 +142,23 @@ class RegenerationProcess:
             Establishment events not yet emitted this year.
         """
         self._sync_year(context.year)
+        if self.config.establishment_probability == 0.0:
+            return ()
+        frame = state.cohorts
+        juvenile = (
+            (frame["age"] <= self.config.max_regeneration_age)
+            & (frame["biomass_t_ha"] <= self.config.max_biomass_t_ha)
+            & (frame["area_fraction"] > 0.0)
+        )
+        counts = frame.loc[juvenile].groupby("fragment_id", sort=True).size()
         events: list[Event] = []
-        for fragment, group in state.cohorts.groupby("fragment_id", sort=True):
-            key = f"regeneration-{context.year}-{int(str(fragment))}"
+        for fragment, count in counts.items():
+            fragment_id = int(str(fragment))
+            key = f"regeneration-{context.year}-{fragment_id}"
             if key in self._done:
                 continue
-            juvenile = group[
-                (group["age"] <= self.config.max_regeneration_age)
-                & (group["biomass_t_ha"] <= self.config.max_biomass_t_ha)
-                & (group["area_fraction"] > 0.0)
-            ]
-            if juvenile.empty:
-                continue
             draw = self.tape.bernoulli(
-                DrawKey(REGENERATION_PROCESS_ID, int(str(fragment)), context.year, 0),
+                DrawKey(REGENERATION_PROCESS_ID, fragment_id, context.year, 0),
                 self.config.establishment_probability,
             )
             if not draw:
@@ -172,11 +175,11 @@ class RegenerationProcess:
                     phase="regeneration",
                     source=REGENERATION_SOURCE,
                     scenario_id=context.scenario_id,
-                    fragment_ids=(int(str(fragment)),),
-                    area_ha=state.fragment_areas[int(str(fragment))],
+                    fragment_ids=(fragment_id,),
+                    area_ha=state.fragment_areas[fragment_id],
                     attributes=(
                         ("establishment_probability", self.config.establishment_probability),
-                        ("juvenile_cohorts", len(juvenile)),
+                        ("juvenile_cohorts", int(count)),
                     ),
                 )
             )

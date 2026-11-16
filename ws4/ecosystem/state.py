@@ -327,25 +327,37 @@ class CohortState:
         ]
         if self.cohorts.empty:
             return pd.DataFrame(columns=columns)
-        rows: list[dict[str, object]] = []
-        for fragment_id, group in self.cohorts.groupby("fragment_id", sort=True):
-            total = float(group["area_fraction"].sum())
-            if total <= 0.0:
-                continue
-            rows.append(
-                {
-                    "fragment_id": _key_int(fragment_id),
-                    "area_ha": self.fragment_areas[_key_int(fragment_id)],
-                    "cohort_count": len(group),
-                    "age": float((group["age"] * group["area_fraction"]).sum() / total),
-                    "biomass_t_ha": float(
-                        (group["biomass_t_ha"] * group["area_fraction"]).sum() / total
-                    ),
-                    "fuel_t_ha": float((group["fuel_t_ha"] * group["area_fraction"]).sum() / total),
-                    "snag_t_ha": float((group["snag_t_ha"] * group["area_fraction"]).sum() / total),
-                }
-            )
-        return pd.DataFrame(rows, columns=columns)
+        frame = self.cohorts
+        weights = frame["area_fraction"].astype(float)
+        weighted = pd.DataFrame(
+            {
+                "fragment_id": frame["fragment_id"],
+                "weight": weights,
+                "age": frame["age"].astype(float) * weights,
+                "biomass_t_ha": frame["biomass_t_ha"].astype(float) * weights,
+                "fuel_t_ha": frame["fuel_t_ha"].astype(float) * weights,
+                "snag_t_ha": frame["snag_t_ha"].astype(float) * weights,
+            }
+        )
+        grouped = weighted.groupby("fragment_id", sort=True).agg(
+            weight=("weight", "sum"),
+            cohort_count=("weight", "size"),
+            age=("age", "sum"),
+            biomass_t_ha=("biomass_t_ha", "sum"),
+            fuel_t_ha=("fuel_t_ha", "sum"),
+            snag_t_ha=("snag_t_ha", "sum"),
+        )
+        grouped = grouped[grouped["weight"] > 0.0]
+        if grouped.empty:
+            return pd.DataFrame(columns=columns)
+        grouped["age"] = grouped["age"] / grouped["weight"]
+        grouped["biomass_t_ha"] = grouped["biomass_t_ha"] / grouped["weight"]
+        grouped["fuel_t_ha"] = grouped["fuel_t_ha"] / grouped["weight"]
+        grouped["snag_t_ha"] = grouped["snag_t_ha"] / grouped["weight"]
+        grouped["area_ha"] = grouped.index.map(
+            lambda fragment: self.fragment_areas[_key_int(fragment)]
+        )
+        return grouped.reset_index()[columns]
 
     def species_fractions(self) -> pd.DataFrame:
         """Return the species area fractions of every fragment.

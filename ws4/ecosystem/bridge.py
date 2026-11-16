@@ -15,6 +15,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Final
 
+import numpy as np
 import pandas as pd
 
 from .state import CohortState
@@ -264,40 +265,71 @@ class SpeciesVolumeBridge:
             ``biomass_t_ha``, ``volume_m3_ha``, and ``volume_m3``.
         """
         columns = ["fragment_id", "area_ha", "biomass_t_ha", "volume_m3_ha", "volume_m3"]
-        if state.cohorts.empty:
+        frame = state.cohorts
+        if frame.empty:
             return pd.DataFrame(columns=columns)
-        rows: list[dict[str, object]] = []
-        for fragment, group in state.cohorts.groupby("fragment_id", sort=True):
-            fragment_id = int(str(fragment))
-            area = float(state.fragment_areas[fragment_id])
-            biomass = float((group["biomass_t_ha"] * group["area_fraction"] * area).sum())
-            volume = 0.0
-            for _, row in group.iterrows():
-                species = str(row["species"])
-                track_id = None
-                if "track_id" in group.columns and pd.notna(row["track_id"]):
-                    track_id = _track_key(row["track_id"])
-                age_volume = self.config.age_volume(species, float(row["age"]), track_id)
-                if age_volume is None:
-                    volume += (
-                        float(row["biomass_t_ha"])
-                        * float(row["area_fraction"])
-                        * area
-                        * self.config.rate(species)
-                        * self.config.merchantable_fraction
+        fragments = pd.to_numeric(frame["fragment_id"], errors="raise").astype(int)
+        areas = fragments.map(state.fragment_areas).to_numpy(dtype=float)
+        weights = frame["area_fraction"].to_numpy(dtype=float)
+        absolute_area = weights * areas
+        ages = frame["age"].to_numpy(dtype=float)
+        species = frame["species"].astype(str)
+        volume = np.zeros(len(frame), dtype=float)
+        assigned = np.zeros(len(frame), dtype=bool)
+        if "track_id" in frame.columns:
+            tracks = pd.to_numeric(frame["track_id"], errors="coerce")
+            for track, curve in self.config.track_age_volume_curves.items():
+                mask = (tracks == track).to_numpy()
+                if not bool(mask.any()):
+                    continue
+                points = sorted(curve)
+                volume[mask] = (
+                    np.interp(
+                        ages[mask],
+                        np.array(points, dtype=float),
+                        np.array([curve[point] for point in points], dtype=float),
                     )
-                else:
-                    volume += float(row["area_fraction"]) * area * age_volume
-            rows.append(
-                {
-                    "fragment_id": fragment_id,
-                    "area_ha": area,
-                    "biomass_t_ha": biomass / area if area > 0.0 else 0.0,
-                    "volume_m3_ha": volume / area if area > 0.0 else 0.0,
-                    "volume_m3": volume,
-                }
+                    * absolute_area[mask]
+                )
+                assigned[mask] = True
+        for name, curve in self.config.age_volume_curves.items():
+            mask = (~assigned) & (species == name).to_numpy()
+            if not bool(mask.any()):
+                continue
+            points = sorted(curve)
+            volume[mask] = (
+                np.interp(
+                    ages[mask],
+                    np.array(points, dtype=float),
+                    np.array([curve[point] for point in points], dtype=float),
+                )
+                * absolute_area[mask]
             )
-        return pd.DataFrame(rows, columns=columns)
+            assigned[mask] = True
+        if not bool(assigned.all()):
+            rates = species.map(self.config.rate).to_numpy(dtype=float)
+            volume[~assigned] = (
+                frame.loc[~assigned, "biomass_t_ha"].to_numpy(dtype=float)
+                * absolute_area[~assigned]
+                * rates[~assigned]
+                * self.config.merchantable_fraction
+            )
+        result = pd.DataFrame(
+            {
+                "fragment_id": fragments,
+                "area_ha": areas,
+                "biomass_t_ha": frame["biomass_t_ha"].to_numpy(dtype=float) * absolute_area,
+                "volume_m3": volume,
+            }
+        )
+        grouped = result.groupby("fragment_id", sort=True).agg(
+            area_ha=("area_ha", "first"),
+            biomass_t_ha=("biomass_t_ha", "sum"),
+            volume_m3=("volume_m3", "sum"),
+        )
+        grouped["biomass_t_ha"] = grouped["biomass_t_ha"] / grouped["area_ha"]
+        grouped["volume_m3_ha"] = grouped["volume_m3"] / grouped["area_ha"]
+        return grouped.reset_index()[columns]
 
     def apply(self, management: pd.DataFrame, state: CohortState) -> pd.DataFrame:
         """Return the management frame with a volume bridge attached.

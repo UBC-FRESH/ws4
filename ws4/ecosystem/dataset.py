@@ -22,7 +22,7 @@ from ..patch.accounts import load_patch_edges_detailed
 from .bridge import BridgeError, VolumeBridgeConfig, track_age_volume_curves_from_frame
 from .evaluation import ProcessScheduleEvaluation, evaluate_process_schedule
 from .fire import FireConfig, FireEdge
-from .landis import LandisSuccessionProcess
+from .landis import LandisBatchSuccessionProcess, LandisSuccessionProcess
 from .process import Process
 from .regeneration import RegenerationConfig
 from .state import CohortState, StateSchema
@@ -273,21 +273,23 @@ class ProcessDataset:
 
         areas: dict[int, float] = {}
         rows: list[dict[str, object]] = []
+        block_fragments: dict[int, list[int]] = {}
         for row in fragments.itertuples(index=False):
             fragment = _as_int(row.fragment_id, "fragment_id")
             block = _as_int(row.block_id, "block_id")
             area = _as_float(row.area_ha, "area_ha")
+            if area <= 0.0:
+                continue
             age = _as_int(row.age, "age")
             track = _as_int(row.track_id, "track_id")
             if fragment <= 0 or block <= 0:
                 raise ProcessDatasetError("fragment_id and block_id must be positive")
-            if area <= 0.0:
-                raise ProcessDatasetError("area_ha must be positive")
             if age < 0:
                 raise ProcessDatasetError("age must be non-negative")
             if fragment in areas:
                 raise ProcessDatasetError(f"duplicate fragment_id {fragment}")
             areas[fragment] = area
+            block_fragments.setdefault(block, []).append(fragment)
             rows.append(
                 {
                     "fragment_id": fragment,
@@ -302,17 +304,14 @@ class ProcessDataset:
                     "track_id": track,
                 }
             )
+        if not rows:
+            raise ProcessDatasetError("the selected dataset has no positive-area fragments")
         frame = pd.DataFrame(rows).astype(str)
         state = CohortState.from_tables(
             frame,
             StateSchema(variables={}, bridges=()),
             areas,
         )
-        block_fragments: dict[int, list[int]] = {}
-        for row in fragments.itertuples(index=False):
-            block_fragments.setdefault(_as_int(row.block_id, "block_id"), []).append(
-                _as_int(row.fragment_id, "fragment_id")
-            )
         transitions: dict[tuple[int, str], int] = {}
         for row in treatments.itertuples(index=False):
             treatment = str(row.treatment).strip()
@@ -358,6 +357,7 @@ class ProcessDataset:
         fire: FireConfig | None = None,
         regeneration: RegenerationConfig | None = None,
         succession_process: Process | None = None,
+        batch_succession: bool = True,
         edges: Sequence[FireEdge] | None = None,
         harvest_fraction: float = 1.0,
         targets: Sequence[Target] = (),
@@ -378,6 +378,9 @@ class ProcessDataset:
             Regeneration parameters.
         succession_process : Process or None, optional
             Succession source; the default is the LANDIS process.
+        batch_succession : bool, optional
+            Use the vectorized landscape LANDIS process when no source is supplied
+            (default True). Set False for one succession event per fragment.
         edges : sequence of FireEdge or None, optional
             Spatial fire edges. None uses the edges loaded from ``topology``; an empty
             sequence disables inter-fragment spread.
@@ -404,7 +407,8 @@ class ProcessDataset:
             fire=fire or FireConfig(),
             regeneration=regeneration or RegenerationConfig(),
             bridge=self.bridge,
-            succession_process=succession_process or LandisSuccessionProcess(),
+            succession_process=succession_process
+            or (LandisBatchSuccessionProcess() if batch_succession else LandisSuccessionProcess()),
             targets=targets,
             harvest_fraction=harvest_fraction,
             track_transitions=self.track_transitions,
@@ -422,6 +426,7 @@ class ProcessDataset:
         succession: SuccessionConfig | None = None,
         regeneration: RegenerationConfig | None = None,
         succession_process: Process | None = None,
+        batch_succession: bool = True,
         edges: Sequence[FireEdge] | None = None,
         harvest_fraction: float = 1.0,
         seed: int = 0,
@@ -444,6 +449,9 @@ class ProcessDataset:
             Regeneration parameters.
         succession_process : Process or None, optional
             Succession source; the default is the LANDIS process.
+        batch_succession : bool, optional
+            Use the vectorized landscape LANDIS process when no source is supplied
+            (default True).
         edges : sequence of FireEdge or None, optional
             Spatial fire edges; None uses the loaded topology.
         harvest_fraction : float, optional
@@ -469,7 +477,8 @@ class ProcessDataset:
             succession=succession,
             regeneration=regeneration,
             bridge=self.bridge,
-            succession_process=succession_process or LandisSuccessionProcess(),
+            succession_process=succession_process
+            or (LandisBatchSuccessionProcess() if batch_succession else LandisSuccessionProcess()),
             harvest_fraction=harvest_fraction,
             track_transitions=self.track_transitions,
             seed=seed,
@@ -487,6 +496,7 @@ class ProcessDataset:
         succession: SuccessionConfig | None = None,
         regeneration: RegenerationConfig | None = None,
         succession_process: Process | None = None,
+        batch_succession: bool = True,
         edges: Sequence[FireEdge] | None = None,
         harvest_fraction: float = 1.0,
         seed: int = 0,
@@ -513,6 +523,9 @@ class ProcessDataset:
             Regeneration parameters.
         succession_process : Process or None, optional
             Succession source; the default is the LANDIS process.
+        batch_succession : bool, optional
+            Use the vectorized landscape LANDIS process when no source is supplied
+            (default True).
         edges : sequence of FireEdge or None, optional
             Spatial fire edges; None uses the loaded topology.
         harvest_fraction : float, optional
@@ -540,7 +553,8 @@ class ProcessDataset:
             succession=succession,
             regeneration=regeneration,
             bridge=self.bridge,
-            succession_process=succession_process or LandisSuccessionProcess(),
+            succession_process=succession_process
+            or (LandisBatchSuccessionProcess() if batch_succession else LandisSuccessionProcess()),
             harvest_fraction=harvest_fraction,
             track_transitions=self.track_transitions,
             seed=seed,
