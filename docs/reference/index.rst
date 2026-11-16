@@ -121,6 +121,8 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
      - Containment masks and the free-burn versus suppressed validation protocol.
    * - :doc:`fire-treatment-evidence`
      - Published fuel-treatment effect ranges and the deferred validation gate.
+   * - :doc:`fire-tree-mortality`
+     - FOFEM crown-scorch mortality and validation against the public FTM database.
    * - :doc:`fire-wind`
      - WindNinja angle and velocity pairs, direction selection, and provenance.
    * - :doc:`fire-scene`
@@ -183,6 +185,7 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
    fire-reanalysis-case
    fire-containment
    fire-treatment-evidence
+   fire-tree-mortality
    fire-wind
    fire-scene
    femic-hydrology
