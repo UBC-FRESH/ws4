@@ -15,6 +15,7 @@ import numpy as np
 import pandas as pd
 
 from ws4.fire.growth import GrowthResult, directional_ros
+from ws4.fire.mortality import tree_mortality_probability
 
 from .trees import TreeInventory
 
@@ -162,6 +163,7 @@ def sample_tree_ignition(
                     "flame_intensity": 0.0,
                     "smoke_strength": 0.0,
                     "post_fire_state": "unburned",
+                    "mortality_probability": None,
                 }
             )
             continue
@@ -189,6 +191,13 @@ def sample_tree_ignition(
                 "flame_intensity": local_flame,
                 "smoke_strength": min(1.0, smoke * max(0.05, ratio)),
                 "post_fire_state": outcome,
+                "mortality_probability": tree_mortality_probability(
+                    species=tree.species,
+                    dbh_cm=tree.dbh_cm,
+                    flame_length_m=local_flame_length,
+                    height_m=tree.height_m,
+                    crown_ratio=tree.crown_ratio,
+                ),
             }
         )
     if not output:
@@ -203,6 +212,7 @@ def sample_tree_ignition(
             "flame_intensity",
             "smoke_strength",
             "post_fire_state",
+            "mortality_probability",
         ],
     )
 

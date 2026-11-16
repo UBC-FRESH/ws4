@@ -42,6 +42,32 @@ def test_mortality_probability_monotonicity() -> None:
     ) == pytest.approx(high)
 
 
+def test_scorch_and_scene_mortality() -> None:
+    module: Any = importlib.import_module("ws4.fire.mortality")
+    low = module.crown_volume_scorched_pct(flame_length_m=1.0, height_m=20.0, crown_ratio=0.5)
+    high = module.crown_volume_scorched_pct(flame_length_m=12.0, height_m=20.0, crown_ratio=0.5)
+    assert 0.0 <= low < high <= 100.0
+    probability = module.tree_mortality_probability(
+        species="PL",
+        dbh_cm=30.0,
+        flame_length_m=12.0,
+        height_m=20.0,
+        crown_ratio=0.5,
+    )
+    assert probability is not None
+    assert 0.0 < probability < 1.0
+    assert (
+        module.tree_mortality_probability(
+            species="UNKNOWN",
+            dbh_cm=30.0,
+            flame_length_m=12.0,
+            height_m=20.0,
+            crown_ratio=0.5,
+        )
+        is None
+    )
+
+
 def test_metrics_and_invalid_inputs() -> None:
     module: Any = importlib.import_module("ws4.fire.mortality")
     observed = np.array([0.0, 0.0, 1.0, 1.0])
