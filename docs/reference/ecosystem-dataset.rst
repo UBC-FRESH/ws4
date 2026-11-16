@@ -63,6 +63,28 @@ published LANDIS kernels over every fragment at once. Use ``--no-batch-successio
 succession event per fragment for debugging or event-log comparison. ``--max-blocks`` bounds a
 pilot run; the batch path handles a full estate-scale dataset.
 
+Optimize a schedule
+-------------------
+
+``ws4 ecosystem optimize`` runs the process hill-climb against a targets file and writes the
+best schedule in the estate input format:
+
+.. code-block:: bash
+
+   ws4 ecosystem optimize \
+     --dataset build/tsa24 \
+     --targets targets.yaml \
+     --output runs/process-opt \
+     --topology topology.csv \
+     --years 5 \
+     --max-iterations 2 \
+     --max-blocks 200
+
+The output contains ``process_optimization.json``, the search trace, ``schedule.csv``,
+``block_fragments.csv``, the best evaluation, and the best event log. The grammar uses every
+compiled treatment and every block in the selected dataset, with an empty schedule as the
+default starting point; pass ``--initial-schedule`` to start elsewhere.
+
 The Python API carries the same state into the process search and optimization modules:
 
 .. code-block:: python

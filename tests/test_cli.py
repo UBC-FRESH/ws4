@@ -181,6 +181,48 @@ def test_ecosystem_run_dataset_writes_a_process_run(tmp_path: Path) -> None:
     assert metadata["edges"] == 1
 
 
+def test_ecosystem_optimize_writes_a_process_schedule(tmp_path: Path) -> None:
+    """The process optimizer searches the compiled dataset and writes estate inputs."""
+    dataset = build_example(tmp_path)
+    targets = tmp_path / "targets.yaml"
+    targets.write_text(
+        "targets:\n"
+        "- account: bridge.volume_m3\n"
+        "  period: 4\n"
+        "  minimum: 390\n"
+        "  maximum: 390\n"
+        "  period_width: 1\n"
+    )
+    out = tmp_path / "process-opt"
+    result = run_ws4(
+        "ecosystem",
+        "optimize",
+        "--dataset",
+        str(dataset),
+        "--targets",
+        str(targets),
+        "--output",
+        str(out),
+        "--years",
+        "4",
+        "--max-iterations",
+        "1",
+        "--max-blocks",
+        "2",
+        "--ignition-rate",
+        "0",
+        "--establishment-probability",
+        "0",
+        "--json",
+    )
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    summary = json.loads((out / "process_optimization.json").read_text())
+    assert summary["best_objective"] == 0.0
+    assert (out / "schedule.csv").is_file()
+    assert (out / "best_evaluation" / "process_evaluation.json").is_file()
+
+
 def test_optimize_runs_without_a_weights_file(tmp_path: Path) -> None:
     """The weights file is optional: the weights that apply are each target's own."""
     dataset = build_example(tmp_path)
