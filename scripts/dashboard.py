@@ -91,12 +91,15 @@ def _test_command(python: str) -> tuple[str, ...]:
     Returns
     -------
     tuple of str
-        The pytest command. A local run gets four workers; CI can set its own worker and
-        distribution policy through ``PYTEST_ADDOPTS``.
+        The pytest command. A local run gets four workers; GitHub Actions gets two
+        workers with module-scoped distribution. ``PYTEST_ADDOPTS`` overrides both.
     """
     command = [python, "-m", "pytest", "-q"]
     if "PYTEST_ADDOPTS" not in os.environ:
-        command.extend(["-n", "4"])
+        if "GITHUB_ACTIONS" in os.environ:
+            command.extend(["-n", "2", "--dist", "loadscope"])
+        else:
+            command.extend(["-n", "4"])
     return tuple(command)
 
 

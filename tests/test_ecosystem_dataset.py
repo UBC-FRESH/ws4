@@ -110,6 +110,37 @@ def test_dataset_process_matches_the_estate_across_multiple_blocks(tmp_path: Pat
     assert len(prepared.edges) > 0
 
 
+def test_batch_succession_matches_the_per_fragment_process(tmp_path: Path) -> None:
+    prepared = ProcessDataset.from_directory(_dataset(tmp_path))
+    schedule = {1: (("CC", 2),)}
+    batch = prepared.evaluate(
+        schedule,
+        horizon_years=4,
+        fire=FireConfig(ignition_rate_per_fragment_year=0.0),
+        regeneration=RegenerationConfig(establishment_probability=0.0),
+        seed=1,
+    )
+    per_fragment = prepared.evaluate(
+        schedule,
+        horizon_years=4,
+        fire=FireConfig(ignition_rate_per_fragment_year=0.0),
+        regeneration=RegenerationConfig(establishment_probability=0.0),
+        batch_succession=False,
+        seed=1,
+    )
+
+    pd.testing.assert_frame_equal(batch.state.cohorts, per_fragment.state.cohorts)
+    batch_volume = float(
+        batch.accounts.loc[batch.accounts["account"] == "bridge.volume_m3", "value"].iloc[0]
+    )
+    per_fragment_volume = float(
+        per_fragment.accounts.loc[
+            per_fragment.accounts["account"] == "bridge.volume_m3", "value"
+        ].iloc[0]
+    )
+    assert batch_volume == pytest.approx(per_fragment_volume)
+
+
 def test_dataset_search_carries_track_transitions_into_candidates(tmp_path: Path) -> None:
     prepared = ProcessDataset.from_directory(_dataset(tmp_path))
     candidate = ProcessSearchCandidate("base", {1: (("CC", 2),)})

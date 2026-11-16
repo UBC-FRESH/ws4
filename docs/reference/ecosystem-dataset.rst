@@ -42,8 +42,12 @@ feature label.
 
 Pass ``--topology`` with a block edge list (``src_block,dst_block,distance_m``) to map block
 adjacency onto fragment fire edges. Without it, fire ignites independently per fragment and does
-not spread. ``--max-blocks`` bounds a pilot run; a full estate-scale dataset needs the vectorized
-path before it is practical.
+not spread.
+
+Succession runs in a vectorized landscape batch by default: one event per year applies the
+published LANDIS kernels over every fragment at once. Use ``--no-batch-succession`` to emit one
+succession event per fragment for debugging or event-log comparison. ``--max-blocks`` bounds a
+pilot run; the batch path handles a full estate-scale dataset.
 
 The Python API carries the same state into the process search and optimization modules:
 

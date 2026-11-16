@@ -396,6 +396,62 @@ def landis_reference_config(
     )
 
 
+def _transition_frame(
+    frame: pd.DataFrame,
+    config: LandisSuccessionConfig,
+    *,
+    current_time: int,
+) -> pd.DataFrame:
+    """Apply one LANDIS transition to a cohort frame."""
+    columns = list(frame.columns)
+    group = frame.copy()
+    group["pixelGroup"] = group["fragment_id"]
+    group["B"] = group["biomass_t_ha"].astype(float)
+    group["maxB"] = [config.traits(str(species)).max_b for species in group["species"]]
+    group["maxANPP"] = [config.traits(str(species)).max_anpp for species in group["species"]]
+    group["growthcurve"] = [config.traits(str(species)).growthcurve for species in group["species"]]
+    group["mortalityshape"] = [
+        config.traits(str(species)).mortalityshape for species in group["species"]
+    ]
+    group["longevity"] = [config.traits(str(species)).longevity for species in group["species"]]
+    # Match the published Biomass_core transition order: age the cohort, compute
+    # age mortality, then competition, ANPP, and developmental mortality. Age-zero
+    # cohorts are recruits from the previous year and must age too; otherwise they
+    # never leave age zero.
+    group["age"] = group["age"].astype(int) + 1
+    group = calculate_sum_b(
+        group,
+        last_reg=0,
+        current_time=current_time,
+        succession_timestep=config.succession_timestep,
+    )
+    group = calculate_age_mortality(group, stage=config.stage)
+    group = calculate_competition(group, stage=config.stage)
+    group = calculate_anpp(group, stage=config.stage)
+    # Biomass_core removes mAge from aNPPAct and from mBio before the update.
+    group["aNPPAct"] = np.maximum(1.0, group["aNPPAct"] - group["mAge"])
+    group = calculate_growth_mortality(group, stage=config.stage)
+    group["mBio"] = np.maximum(0.0, group["mBio"] - group["mAge"])
+    group["mBio"] = np.minimum(group["mBio"], group["aNPPAct"])
+    group["mortality"] = group["mBio"] + group["mAge"]
+    delta = np.trunc(group["aNPPAct"].to_numpy(dtype=float) - group["mortality"].to_numpy())
+    biomass = np.maximum(0.0, group["B"].to_numpy(dtype=float) + delta)
+    fuel_fraction = np.array(
+        [config.traits(str(species)).fuel_fraction for species in group["species"]]
+    )
+    snag_decay = np.array(
+        [config.traits(str(species)).snag_decay_rate for species in group["species"]]
+    )
+    group["biomass_t_ha"] = biomass
+    group["fuel_t_ha"] = np.maximum(
+        group["fuel_t_ha"].to_numpy(dtype=float), biomass * fuel_fraction
+    )
+    group["snag_t_ha"] = np.maximum(
+        0.0, group["snag_t_ha"].to_numpy(dtype=float) * (1.0 - snag_decay)
+    )
+    return group.loc[:, columns]
+
+
 class LandisSuccessionProcess:
     """Run one annual LANDIS succession transition per fragment.
 
@@ -473,54 +529,103 @@ class LandisSuccessionProcess:
         mask = frame["fragment_id"] == fragment
         if not bool(mask.any()):
             return state
-        group = frame.loc[mask].copy()
-        group["pixelGroup"] = fragment
-        group["B"] = group["biomass_t_ha"].astype(float)
-        group["maxB"] = [self.config.traits(str(species)).max_b for species in group["species"]]
-        group["maxANPP"] = [
-            self.config.traits(str(species)).max_anpp for species in group["species"]
-        ]
-        group["growthcurve"] = [
-            self.config.traits(str(species)).growthcurve for species in group["species"]
-        ]
-        group["mortalityshape"] = [
-            self.config.traits(str(species)).mortalityshape for species in group["species"]
-        ]
-        group["longevity"] = [
-            self.config.traits(str(species)).longevity for species in group["species"]
-        ]
-        # Match the published Biomass_core transition order: age the cohort, compute
-        # age mortality, then competition, ANPP, and developmental mortality. Age-zero
-        # cohorts are recruits from the previous year and must age too; otherwise they
-        # never leave age zero.
-        group["age"] = group["age"] + 1
-        group = calculate_sum_b(
-            group,
-            last_reg=0,
+        group = _transition_frame(
+            frame.loc[mask].copy(),
+            self.config,
             current_time=event.year,
-            succession_timestep=self.config.succession_timestep,
         )
-        group = calculate_age_mortality(group, stage=self.config.stage)
-        group = calculate_competition(group, stage=self.config.stage)
-        group = calculate_anpp(group, stage=self.config.stage)
-        # Biomass_core removes mAge from aNPPAct and from mBio before the update.
-        group["aNPPAct"] = np.maximum(1.0, group["aNPPAct"] - group["mAge"])
-        group = calculate_growth_mortality(group, stage=self.config.stage)
-        group["mBio"] = np.maximum(0.0, group["mBio"] - group["mAge"])
-        group["mBio"] = np.minimum(group["mBio"], group["aNPPAct"])
-        group["mortality"] = group["mBio"] + group["mAge"]
-        for index, row in group.iterrows():
-            traits = self.config.traits(str(row["species"]))
-            delta = math.trunc(float(row["aNPPAct"] - row["mortality"]))
-            biomass = max(0.0, float(row["B"]) + delta)
-            frame.at[index, "age"] = int(row["age"])
-            frame.at[index, "biomass_t_ha"] = biomass
-            frame.at[index, "fuel_t_ha"] = max(
-                float(row["fuel_t_ha"]), biomass * traits.fuel_fraction
-            )
-            frame.at[index, "snag_t_ha"] = max(
-                0.0, float(row["snag_t_ha"]) * (1.0 - traits.snag_decay_rate)
-            )
+        for column in ("age", "biomass_t_ha", "fuel_t_ha", "snag_t_ha"):
+            frame.loc[mask, column] = group[column]
+        return CohortState(
+            cohorts=frame.reset_index(drop=True),
+            schema=state.schema,
+            fragment_areas=state.fragment_areas,
+        )
+
+
+class LandisBatchSuccessionProcess:
+    """Run one annual LANDIS transition over the whole cohort table.
+
+    This is the estate-scale path. It emits one landscape event per year instead of one
+    event per fragment, then runs the same published kernels over every pixel group in a
+    single vectorized pass. The final state matches the per-fragment process; only the
+    event-log granularity differs.
+
+    Parameters
+    ----------
+    config : LandisSuccessionConfig, optional
+        Species traits and kernel settings.
+    """
+
+    process_id: str = "landis-batch-succession"
+    phases: tuple[str, ...] = ("growth",)
+    state_reads: frozenset[str] = frozenset({"age", "biomass_t_ha", "fuel_t_ha", "snag_t_ha"})
+    state_writes: frozenset[str] = frozenset({"age", "biomass_t_ha", "fuel_t_ha", "snag_t_ha"})
+
+    def __init__(self, config: LandisSuccessionConfig | None = None) -> None:
+        """Retain the configuration."""
+        self.config = config or LandisSuccessionConfig()
+
+    def events(self, state: CohortState, context: ProcessContext) -> tuple[Event, ...]:
+        """Return one landscape succession event for the year.
+
+        Parameters
+        ----------
+        state : CohortState
+            The current state.
+        context : ProcessContext
+            The annual context.
+
+        Returns
+        -------
+        tuple of Event
+            A single landscape event, or none when the state has no cohorts.
+        """
+        if state.cohorts.empty:
+            return ()
+        event_id = f"{self.process_id}-{context.year}"
+        if any(event.event_id == event_id for event in context.year_events):
+            return ()
+        area = sum(
+            state.fragment_areas[int(str(fragment))]
+            for fragment in state.cohorts["fragment_id"].unique()
+        )
+        return (
+            Event(
+                event_id=event_id,
+                process_id=self.process_id,
+                event_type="landis_succession",
+                time=float(context.year) + 0.5,
+                year=context.year,
+                phase="growth",
+                source="ws4.ecosystem.landis",
+                scenario_id=context.scenario_id,
+                area_ha=area,
+                attributes=(
+                    ("batch", True),
+                    ("cohort_count", len(state.cohorts)),
+                ),
+            ),
+        )
+
+    def apply(self, state: CohortState, event: Event) -> CohortState:
+        """Apply one vectorized LANDIS transition to every cohort.
+
+        Parameters
+        ----------
+        state : CohortState
+            The current state.
+        event : Event
+            A landscape LANDIS succession event.
+
+        Returns
+        -------
+        CohortState
+            The updated state; other event types are returned unchanged.
+        """
+        if event.event_type != "landis_succession":
+            return state
+        frame = _transition_frame(state.cohorts, self.config, current_time=event.year)
         return CohortState(
             cohorts=frame.reset_index(drop=True),
             schema=state.schema,

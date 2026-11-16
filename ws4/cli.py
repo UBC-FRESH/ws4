@@ -2461,6 +2461,11 @@ def ecosystem_run_dataset(
     establishment_probability: float = typer.Option(
         0.25, "--establishment-probability", help="Annual regeneration probability."
     ),
+    batch_succession: bool = typer.Option(
+        True,
+        "--batch-succession/--no-batch-succession",
+        help="Run one vectorized succession pass per year.",
+    ),
     max_blocks: int | None = typer.Option(
         None, "--max-blocks", help="Keep only this many blocks for a bounded run."
     ),
@@ -2484,6 +2489,7 @@ def ecosystem_run_dataset(
             horizon_years=years,
             fire=FireConfig(ignition_rate_per_fragment_year=ignition_rate),
             regeneration=RegenerationConfig(establishment_probability=establishment_probability),
+            batch_succession=batch_succession,
             seed=seed,
         )
     except (ManagementError, ProcessDatasetError, ValueError) as error:
@@ -2497,6 +2503,7 @@ def ecosystem_run_dataset(
         "edges": len(prepared.edges),
         "volume_labels": list(prepared.volume_labels),
         "species": prepared.species,
+        "batch_succession": batch_succession,
         "horizon_years": years,
         "seed": seed,
     }

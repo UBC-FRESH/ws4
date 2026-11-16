@@ -42,6 +42,7 @@ from .fire import (
 from .landis import (
     LANDIS_KERNEL_VERSION,
     LANDIS_REFERENCE_TRAITS,
+    LandisBatchSuccessionProcess,
     LandisError,
     LandisSpeciesTraits,
     LandisSuccessionConfig,
@@ -160,6 +161,7 @@ __all__ = [
     "FireProcess",
     "FireResult",
     "FireRun",
+    "LandisBatchSuccessionProcess",
     "LandisError",
     "LandisSpeciesTraits",
     "LandisSuccessionConfig",

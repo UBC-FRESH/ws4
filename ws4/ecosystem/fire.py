@@ -375,6 +375,8 @@ class FireProcess:
         """
         if year < 0:
             raise FireError("year must be non-negative")
+        if self.config.ignition_rate_per_fragment_year == 0.0:
+            return ()
         fuel = self._fragment_values(state, "fuel_t_ha")
         events: list[Event] = []
         for fragment in sorted(fuel):

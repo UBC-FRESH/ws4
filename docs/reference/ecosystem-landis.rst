@@ -76,6 +76,10 @@ Tests
 growth/mortality, competition, ``sumB``, and age mortality, including spin-up and
 non-spin-up stages and the young-cohort regression case.
 
+``LandisBatchSuccessionProcess`` applies the same kernels to the whole cohort table in one
+landscape event per year. ``tests/test_ecosystem_dataset.py`` checks that the batch state and
+volume match the per-fragment process exactly; only the event-log granularity differs.
+
 Limits
 ------
 
