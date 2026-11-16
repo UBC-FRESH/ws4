@@ -147,8 +147,18 @@ def test_run_gates_keeps_the_order_of_the_gates(tmp_path: Path) -> None:
 
 def test_test_command_adds_workers_locally(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("PYTEST_ADDOPTS", raising=False)
+    monkeypatch.delenv("GITHUB_ACTIONS", raising=False)
 
     assert db._test_command("python") == ("python", "-m", "pytest", "-q", "-n", "4")
+
+
+def test_test_command_stays_serial_in_github_actions(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("PYTEST_ADDOPTS", raising=False)
+    monkeypatch.setenv("GITHUB_ACTIONS", "true")
+
+    assert db._test_command("python") == ("python", "-m", "pytest", "-q")
 
 
 def test_test_command_defers_to_inherited_pytest_options(

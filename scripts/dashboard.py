@@ -91,11 +91,11 @@ def _test_command(python: str) -> tuple[str, ...]:
     Returns
     -------
     tuple of str
-        The pytest command. A local run gets four workers; CI can set its own worker and
-        distribution policy through ``PYTEST_ADDOPTS``.
+        The pytest command. A local run gets four workers; CI stays serial unless it sets
+        its own policy through ``PYTEST_ADDOPTS``.
     """
     command = [python, "-m", "pytest", "-q"]
-    if "PYTEST_ADDOPTS" not in os.environ:
+    if "PYTEST_ADDOPTS" not in os.environ and "GITHUB_ACTIONS" not in os.environ:
         command.extend(["-n", "4"])
     return tuple(command)
 
