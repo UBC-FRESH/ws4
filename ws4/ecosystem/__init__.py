@@ -9,6 +9,7 @@ dataset remains the contract; this package is the optional ecological layer over
 from __future__ import annotations
 
 from .bridge import BRIDGE_VERSION, BridgeError, SpeciesVolumeBridge, VolumeBridgeConfig
+from .dataset import ProcessDataset, ProcessDatasetError
 from .ensemble import (
     PROCESS_ENSEMBLE_VERSION,
     ProcessEnsembleConfig,
@@ -168,6 +169,8 @@ __all__ = [
     "OutOfSampleReport",
     "Process",
     "ProcessContext",
+    "ProcessDataset",
+    "ProcessDatasetError",
     "ProcessEnsembleConfig",
     "ProcessEnsembleError",
     "ProcessEnsembleResult",

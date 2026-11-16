@@ -59,7 +59,13 @@ from .ecosystem import (
     EcosystemPackageError,
     EventError,
     EventLog,
+    FireConfig,
+    ManagementError,
+    ProcessDataset,
+    ProcessDatasetError,
+    RegenerationConfig,
     load_ecosystem_package,
+    load_schedule,
     validate_ecosystem_package,
 )
 from .forest_condition import build_report_from_accounts
@@ -2428,6 +2434,88 @@ def ecosystem_validate_package(
     table.add_row("bridges", ", ".join(bridge.bridge_id for bridge in loaded.schema.bridges))
     table.add_row("fingerprint", loaded.fingerprint)
     print(table)
+
+
+@ecosystem_app.command("run-dataset")
+def ecosystem_run_dataset(
+    dataset: Path = typer.Option(
+        ..., "--dataset", exists=True, file_okay=False, help="Compiled dataset directory."
+    ),
+    schedule: Path = typer.Option(..., "--schedule", exists=True, help="Schedule CSV."),
+    output: Path = typer.Option(..., "--output", "-o", help="Process evaluation directory."),
+    years: int = typer.Option(5, "--years", help="Process transitions."),
+    species: str = typer.Option("PL", "--species", help="Provisional species label."),
+    initial_biomass: float = typer.Option(
+        100.0, "--initial-biomass", help="Initial live biomass, t/ha."
+    ),
+    initial_fuel: float = typer.Option(0.0, "--initial-fuel", help="Initial fuel, t/ha."),
+    volume_label: str | None = typer.Option(
+        None, "--volume-label", help="Feature label to use for every track."
+    ),
+    ignition_rate: float = typer.Option(
+        0.01, "--ignition-rate", help="Poisson ignitions per fragment-year."
+    ),
+    establishment_probability: float = typer.Option(
+        0.25, "--establishment-probability", help="Annual regeneration probability."
+    ),
+    max_blocks: int | None = typer.Option(
+        None, "--max-blocks", help="Keep only this many blocks for a bounded run."
+    ),
+    seed: int = typer.Option(1, "--seed", help="Random-tape seed."),
+    json_output: bool = typer.Option(False, "--json", help="Emit a stable JSON summary."),
+) -> None:
+    """Run a schedule through the process engine directly from a compiled dataset."""
+    try:
+        prepared = ProcessDataset.from_directory(
+            dataset,
+            species=species,
+            initial_biomass_t_ha=initial_biomass,
+            initial_fuel_t_ha=initial_fuel,
+            volume_label=volume_label,
+            max_blocks=max_blocks,
+        )
+        schedule_map = load_schedule(schedule)
+        evaluation = prepared.evaluate(
+            schedule_map,
+            horizon_years=years,
+            fire=FireConfig(ignition_rate_per_fragment_year=ignition_rate),
+            regeneration=RegenerationConfig(establishment_probability=establishment_probability),
+            seed=seed,
+        )
+    except (ManagementError, ProcessDatasetError, ValueError) as error:
+        raise typer.BadParameter(str(error)) from error
+    evaluation.write(output)
+    evaluation.log.write(output / "process_events.json")
+    metadata = {
+        "dataset": str(dataset),
+        "fragments": len(prepared.state.cohorts),
+        "blocks": len(prepared.block_fragments),
+        "volume_labels": list(prepared.volume_labels),
+        "species": prepared.species,
+        "horizon_years": years,
+        "seed": seed,
+    }
+    (output / "process_dataset.json").write_text(
+        json.dumps(metadata, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
+    summary = evaluation.summary()
+    if json_output:
+        typer.echo(json.dumps(summary, indent=2, sort_keys=True))
+        return
+    table = Table(title="Process dataset run")
+    table.add_row("dataset", str(dataset))
+    table.add_row("fragments", str(metadata["fragments"]))
+    table.add_row("blocks", str(metadata["blocks"]))
+    table.add_row("volume labels", ", ".join(prepared.volume_labels))
+    table.add_row("events", str(len(evaluation.log.events)))
+    table.add_row(
+        "final offset",
+        str(int(evaluation.accounts["offset"].max()) if len(evaluation.accounts) else 0),
+    )
+    for row in evaluation.accounts.itertuples(index=False):
+        table.add_row(str(row.account), f"{float(str(row.value)):.6g}")
+    print(table)
+    print(f"wrote {output}")
 
 
 recovery_app = typer.Typer(
