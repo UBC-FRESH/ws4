@@ -122,14 +122,14 @@ def _landis_config(
     return LandisSuccessionConfig(species=traits)
 
 
-def _dominant_species(
+def _species_fractions(
     fragments: pd.DataFrame,
     features: pd.DataFrame,
     curves: pd.DataFrame,
     *,
     default: str,
-) -> dict[int, str]:
-    """Return the dominant compiled species for each fragment."""
+) -> dict[int, dict[str, float]]:
+    """Return compiled species area fractions for each fragment."""
     by_track: dict[int, dict[str, int]] = {}
     for row in features.itertuples(index=False):
         label = str(row.label)
@@ -141,7 +141,9 @@ def _dominant_species(
                 row.curve_id, "curve_id"
             )
     if not by_track:
-        return {int(str(row.fragment_id)): default for row in fragments.itertuples(index=False)}
+        return {
+            int(str(row.fragment_id)): {default: 1.0} for row in fragments.itertuples(index=False)
+        }
     needed = {curve for values in by_track.values() for curve in values.values()}
     points: dict[int, tuple[np.ndarray, np.ndarray]] = {}
     for curve_id in needed:
@@ -152,21 +154,31 @@ def _dominant_species(
         y = subset["y"].to_numpy(dtype=float)
         order = np.argsort(x)
         points[curve_id] = (x[order], y[order])
-    dominant: dict[int, str] = {}
+    fractions: dict[int, dict[str, float]] = {}
     for track, group in fragments.groupby("track_id", sort=False):
         track_id = _as_int(track, "track_id")
         species_curves = by_track.get(track_id)
         ids = [int(str(value)) for value in group["fragment_id"]]
         if not species_curves:
-            dominant.update(dict.fromkeys(ids, default))
+            for fragment in ids:
+                fractions[fragment] = {default: 1.0}
             continue
         ages = group["age"].to_numpy(dtype=float)
         names = sorted(species_curves)
-        scores = np.column_stack([np.interp(ages, *points[species_curves[name]]) for name in names])
-        winners = np.argmax(scores, axis=1)
-        for fragment, column, row_scores in zip(ids, winners, scores, strict=True):
-            dominant[fragment] = names[int(column)] if float(row_scores[column]) > 0.0 else default
-    return dominant
+        values = np.column_stack([np.interp(ages, *points[species_curves[name]]) for name in names])
+        values = np.maximum(values, 0.0)
+        for fragment, row in zip(ids, values, strict=True):
+            total = float(row.sum())
+            if total <= 0.0:
+                fractions[fragment] = {default: 1.0}
+                continue
+            parts = {
+                name: float(value) / total
+                for name, value in zip(names, row, strict=True)
+                if float(value) > 0.0
+            }
+            fractions[fragment] = parts
+    return fractions
 
 
 def _fragment_edges(
@@ -315,8 +327,9 @@ class ProcessDataset:
             Feature label to use for every track. None selects ``feature.Volume``, then the
             managed/unmanaged ``feature.Yield.*.Total`` label that matches the track name.
         species_composition : bool, optional
-            Read ``feature.SpeciesProp.*`` curves and assign each fragment its dominant
-            compiled species (default True). False uses the fallback species everywhere.
+            Read ``feature.SpeciesProp.*`` curves and split each fragment into species
+            cohorts by area fraction (default True). False uses the fallback species
+            everywhere.
         species_traits : mapping of str to LandisSpeciesTraits or None, optional
             Explicit trait overrides by compiled species code. The default aliases map the
             common BC codes to the published reference traits.
@@ -408,28 +421,32 @@ class ProcessDataset:
         if not valid:
             raise ProcessDatasetError("the selected dataset has no positive-area fragments")
         fragment_frame = pd.DataFrame(valid)
-        dominant = (
-            _dominant_species(fragment_frame, features, curves, default=species.strip())
+        fallback = species.strip()
+        fractions = (
+            _species_fractions(fragment_frame, features, curves, default=fallback)
             if species_composition
-            else dict.fromkeys(
-                (int(str(value)) for value in fragment_frame["fragment_id"]), species.strip()
-            )
+            else {int(str(value)): {fallback: 1.0} for value in fragment_frame["fragment_id"]}
         )
-        rows = [
-            {
-                "fragment_id": int(str(row.fragment_id)),
-                "cohort_id": 1,
-                "species": dominant[int(str(row.fragment_id))],
-                "age": int(str(row.age)),
-                "area_fraction": 1.0,
-                "biomass_t_ha": biomass,
-                "fuel_t_ha": fuel,
-                "snag_t_ha": 0.0,
-                "attributes_json": "{}",
-                "track_id": int(str(row.track_id)),
-            }
-            for row in fragment_frame.itertuples(index=False)
-        ]
+        rows: list[dict[str, object]] = []
+        for row in fragment_frame.itertuples(index=False):
+            fragment = int(str(row.fragment_id))
+            for cohort_id, (name, fraction) in enumerate(
+                sorted(fractions[fragment].items()), start=1
+            ):
+                rows.append(
+                    {
+                        "fragment_id": fragment,
+                        "cohort_id": cohort_id,
+                        "species": name,
+                        "age": int(str(row.age)),
+                        "area_fraction": fraction,
+                        "biomass_t_ha": biomass,
+                        "fuel_t_ha": fuel,
+                        "snag_t_ha": 0.0,
+                        "attributes_json": "{}",
+                        "track_id": int(str(row.track_id)),
+                    }
+                )
         frame = pd.DataFrame(rows).astype(str)
         state = CohortState.from_tables(
             frame,
