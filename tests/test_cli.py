@@ -177,6 +177,7 @@ def test_ecosystem_run_dataset_writes_a_process_run(tmp_path: Path) -> None:
     assert summary["accounts"]["bridge.volume_m3"] == 390.0
     assert summary["event_counts"]["harvest"] == 1
     assert (out / "process_events.json").is_file()
+    assert (out / "fire_regime.json").is_file()
     metadata = json.loads((out / "process_dataset.json").read_text())
     assert metadata["edges"] == 1
 

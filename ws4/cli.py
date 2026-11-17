@@ -68,6 +68,7 @@ from .ecosystem import (
     load_schedule,
     validate_ecosystem_package,
 )
+from .fire.risk import summarize_event_log
 from .forest_condition import build_report_from_accounts
 from .forest_condition import write_report as write_condition_report
 from .io.hydrology import (
@@ -2484,6 +2485,9 @@ def ecosystem_run_dataset(
         "--batch-fire/--no-batch-fire",
         help="Aggregate fire mortality per year and apply it once.",
     ),
+    fire_cell_ha: float = typer.Option(
+        1.0, "--fire-cell-ha", help="Cell area for fire-size escape diagnostics, ha."
+    ),
     batch_regeneration: bool = typer.Option(
         True,
         "--batch-regeneration/--no-batch-regeneration",
@@ -2538,6 +2542,15 @@ def ecosystem_run_dataset(
         raise typer.BadParameter(str(error)) from error
     evaluation.write(output)
     evaluation.log.write(output / "process_events.json")
+    regime = summarize_event_log(
+        evaluation.log,
+        years=years,
+        burnable_area_ha=sum(prepared.state.fragment_areas.values()),
+        cell_size_ha=fire_cell_ha,
+    )
+    (output / "fire_regime.json").write_text(
+        json.dumps(regime.to_dict(), indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
     metadata = {
         "dataset": str(dataset),
         "fragments": len(prepared.state.cohorts),
@@ -2551,6 +2564,7 @@ def ecosystem_run_dataset(
         "biomass_expansion": biomass_expansion,
         "batch_succession": batch_succession,
         "batch_fire": batch_fire,
+        "fire_cell_ha": fire_cell_ha,
         "batch_regeneration": batch_regeneration,
         "horizon_years": years,
         "seed": seed,
