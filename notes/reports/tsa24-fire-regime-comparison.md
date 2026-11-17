@@ -96,8 +96,28 @@ This is a structural result: ignition rate and spread probability alone cannot c
 block-only graph to the TSA24 distribution. Spatial heterogeneity, fuel/weather variation, or
 a different spread closure is required.
 
+## Correction: use the FBP growth model
+
+The block-graph sweep above used `FireConfig(behaviour=None)`, the legacy percolation path.
+It does not test WS4's advanced fire model. The FBP raster growth engine already exists in
+`ws4/fire/growth.py` with head/crown behaviour, effective wind, slope, weather steps, wet
+lines/depth, containment, precipitation stops, wind grids, and spotting.
+
+A first 500 m TSA24 raster run:
+
+- 1,103,480 cells, 318,659 burnable
+- C2, FFMC 90, BUI 60, wind 20 km/h, flat ground
+- 240-minute growth, 12 ignition cells
+
+produced a mean fire size of **867 ha** (median **925 ha**, range **225–925 ha**). The
+historical mean is **758 ha**. That is the correct order of magnitude and comes from the
+FBP growth engine, not the block graph.
+
+The percolation result applies only to the fallback path. The next step is to wire
+`grow_fire` and `fragment_ignition_events` into the dataset process, then vary weather,
+wind, slope, fuel, and suppression over the historical record.
+
 ## Next
 
-Do not tune further on the homogeneous block graph. The next model change is a heterogeneous
-spread surface: fuel/weather classes or a raster support between blocks. The full TSA24 kNN
-graph and 50-seed results are recorded above as the evidence for that decision.
+Do not tune the legacy block graph further. Integrate the FBP growth engine into the dataset
+process, then calibrate against the historical perimeter sample.
