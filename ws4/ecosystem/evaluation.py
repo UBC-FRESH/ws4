@@ -334,6 +334,7 @@ def evaluate_process_schedule(
     regeneration: RegenerationConfig | None = None,
     bridge: VolumeBridgeConfig | None = None,
     succession_process: Process | None = None,
+    fire_source: Process | None = None,
     targets: Sequence[Target] = (),
     harvest_fraction: float = 1.0,
     track_transitions: Mapping[tuple[int, str], int] | None = None,
@@ -364,6 +365,8 @@ def evaluate_process_schedule(
         Provisional volume bridge parameters.
     succession_process : Process or None, optional
         Override the default succession source, e.g. a LANDIS process.
+    fire_source : Process or None, optional
+        Override the default graph fire source, e.g. a raster growth adapter.
     targets : sequence of Target, optional
         Level targets priced against the final accounts. Flow, risk-aggregated, snapshot,
         accumulating, unknown-account, and non-final-period targets are rejected.
@@ -409,6 +412,7 @@ def evaluate_process_schedule(
         bridge=bridge_config,
         management=source,
         succession_process=succession_process,
+        fire_source=fire_source,
     )
     result = run_process_scenario(state, edges, config, scenario_id=scenario_id, seed=seed_value)
     accounts = _accounts(result, bridge_config=bridge_config, horizon_years=horizon)
