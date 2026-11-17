@@ -224,7 +224,7 @@ def _accounts(
     harvest_fragments = {fragment for event in harvest for fragment in event.fragment_ids}
     harvest_area = sum(
         result.state.fragment_areas.get(fragment, 0.0) for fragment in harvest_fragments
-    )
+    ) + sum(event.area_ha or 0.0 for event in harvest if not event.fragment_ids)
     values = {
         "state.biomass_t": totals["biomass_t"],
         "state.fuel_t": totals["fuel_t"],

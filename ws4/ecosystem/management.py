@@ -156,6 +156,10 @@ class ScheduleSource(DecisionSource):
     track_transitions : mapping of (int, str) to int, optional
         Compiled ``(source_track, treatment)`` to target track transitions. Newly created
         cohorts take the target track; survivors keep the source track.
+    batch : bool, optional
+        Emit one event per treatment and year instead of one event per fragment (default
+        True). The batch event names its blocks and applies the harvest in one vectorized
+        pass.
     process_id : str
         Process id used by the executor.
     phases : tuple of str
@@ -169,6 +173,7 @@ class ScheduleSource(DecisionSource):
     harvest_fraction: float = 1.0
     scenario_id: str = "management"
     track_transitions: Mapping[tuple[int, str], int] = field(default_factory=dict)
+    batch: bool = True
 
     process_id: str = MANAGEMENT_PROCESS_ID
     phases: tuple[str, ...] = ("treatment",)
@@ -183,6 +188,8 @@ class ScheduleSource(DecisionSource):
         """Validate the schedule, mapping, fraction, and scenario."""
         if not self.scenario_id.strip():
             raise ManagementError("scenario_id must be non-empty")
+        if not isinstance(self.batch, bool):
+            raise ManagementError("batch must be a boolean")
         object.__setattr__(
             self, "harvest_fraction", _probability(self.harvest_fraction, "harvest_fraction")
         )
@@ -240,9 +247,45 @@ class ScheduleSource(DecisionSource):
         tuple of Event
             Harvest events not already in the current year.
         """
-        del state
         existing = {event.event_id for event in context.year_events}
-        events: list[Event] = []
+        if self.batch:
+            by_treatment: dict[str, list[int]] = {}
+            for block, items in sorted(self.schedule.items()):
+                for treatment, offset in items:
+                    if offset == context.year:
+                        by_treatment.setdefault(treatment, []).append(block)
+            events: list[Event] = []
+            for treatment, blocks in sorted(by_treatment.items()):
+                event_id = f"harvest-{context.year}-batch-{treatment}"
+                if event_id in existing:
+                    continue
+                ordered = tuple(sorted(blocks))
+                area = sum(
+                    state.fragment_areas[fragment]
+                    for block in ordered
+                    for fragment in self.block_fragments[block]
+                )
+                events.append(
+                    Event(
+                        event_id=event_id,
+                        process_id=self.process_id,
+                        event_type="harvest",
+                        time=float(context.year) + 0.4,
+                        year=context.year,
+                        phase="treatment",
+                        source=MANAGEMENT_SOURCE,
+                        scenario_id=context.scenario_id,
+                        block_ids=ordered,
+                        area_ha=area,
+                        attributes=(
+                            ("batch", True),
+                            ("treatment", treatment),
+                            ("harvest_fraction", self.harvest_fraction),
+                        ),
+                    )
+                )
+            return tuple(events)
+        events = []
         for block, items in sorted(self.schedule.items()):
             for treatment, offset in items:
                 if offset != context.year:
@@ -286,7 +329,12 @@ class ScheduleSource(DecisionSource):
         CohortState
             The updated state; other event types are returned unchanged.
         """
-        if event.event_type != "harvest" or not event.fragment_ids:
+        if event.event_type != "harvest":
+            return state
+        fragments = set(event.fragment_ids)
+        for block in event.block_ids:
+            fragments.update(self.block_fragments.get(block, ()))
+        if not fragments:
             return state
         fraction = self.harvest_fraction
         treatment = ""
@@ -295,51 +343,43 @@ class ScheduleSource(DecisionSource):
                 fraction = float(value)
             elif key == "treatment" and isinstance(value, str):
                 treatment = value.strip()
-        fragment = event.fragment_ids[0]
         frame = state.cohorts.copy()
-        group = frame[frame["fragment_id"] == fragment]
-        if group.empty:
-            return state
         has_track = "track_id" in frame.columns
         if self.track_transitions and not has_track:
             frame["track_id"] = 0
-            group = frame[frame["fragment_id"] == fragment]
             has_track = True
-        next_id = int(group["cohort_id"].max()) + 1
-        drop: list[int] = []
-        new_rows: list[dict[str, object]] = []
-        for index, row in group.iterrows():
-            area = float(row["area_fraction"])
-            removed = area * fraction
-            survivor = area - removed
-            source_track = 0
-            if has_track and pd.notna(row["track_id"]):
-                source_track = _track_key(row["track_id"])
-            new_track = self.track_transitions.get((source_track, treatment), source_track)
-            if survivor > FRACTION_TOLERANCE:
-                frame.at[index, "area_fraction"] = survivor
-            else:
-                drop.append(int(str(index)))
-            if removed > FRACTION_TOLERANCE:
-                new_rows.append(
-                    {
-                        "fragment_id": fragment,
-                        "cohort_id": next_id,
-                        "species": str(row["species"]),
-                        "age": 0,
-                        "area_fraction": removed,
-                        "biomass_t_ha": 0.0,
-                        "fuel_t_ha": 0.0,
-                        "snag_t_ha": 0.0,
-                        "attributes_json": "{}",
-                        **({"track_id": new_track} if has_track else {}),
-                    }
+        mask = frame["fragment_id"].isin(fragments)
+        group = frame.loc[mask]
+        if group.empty:
+            return state
+        removed = group["area_fraction"].astype(float) * fraction
+        survivor = group["area_fraction"].astype(float) - removed
+        frame.loc[group.index, "area_fraction"] = survivor
+        drop = group.index[survivor <= FRACTION_TOLERANCE]
+        new = group.loc[removed > FRACTION_TOLERANCE].copy()
+        if not new.empty:
+            new["age"] = 0
+            new["area_fraction"] = removed.loc[new.index]
+            new["biomass_t_ha"] = 0.0
+            new["fuel_t_ha"] = 0.0
+            new["snag_t_ha"] = 0.0
+            new["attributes_json"] = "{}"
+            if has_track:
+                source_tracks = new["track_id"].map(
+                    lambda value: _track_key(value) if pd.notna(value) else 0
                 )
-                next_id += 1
-        if drop:
+                new["track_id"] = source_tracks.map(
+                    lambda track: self.track_transitions.get((int(track), treatment), int(track))
+                )
+            maximum = group.groupby("fragment_id")["cohort_id"].max()
+            new["cohort_id"] = (
+                new.groupby("fragment_id").cumcount() + new["fragment_id"].map(maximum) + 1
+            )
+            new = new.reindex(columns=frame.columns)
+        if len(drop):
             frame = frame.drop(index=drop)
-        if new_rows:
-            frame = pd.concat([frame, pd.DataFrame(new_rows)], ignore_index=True)
+        if not new.empty:
+            frame = pd.concat([frame, new], ignore_index=True)
         return CohortState(
             cohorts=frame.reset_index(drop=True),
             schema=state.schema,

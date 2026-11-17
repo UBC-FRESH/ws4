@@ -91,6 +91,24 @@ def test_harvest_is_logged_before_growth_in_the_same_year() -> None:
     assert set(same_year[1:]) == {"landis_succession"}
 
 
+def test_batch_harvest_applies_multiple_blocks_and_tracks() -> None:
+    _schema, state, _edges = synthetic_grid(2, 2)
+    state.cohorts["track_id"] = 1
+    source = ScheduleSource(
+        {1: (("CC", 0),), 2: (("CC", 0),)},
+        {1: (1,), 2: (2,)},
+        track_transitions={(1, "CC"): 2},
+    )
+    events = source.events(state, ProcessContext(0, "treatment", "m"))
+
+    assert len(events) == 1
+    assert events[0].block_ids == (1, 2)
+    updated = source.apply(state, events[0])
+    updated.check_area_conservation()
+    harvested = updated.cohorts[updated.cohorts["fragment_id"].isin([1, 2])]
+    assert harvested["track_id"].tolist() == [2, 2]
+
+
 def test_harvest_splits_track_identity_between_survivor_and_recruit() -> None:
     _schema, state, _edges = synthetic_grid(2, 2)
     state.cohorts["track_id"] = 1
