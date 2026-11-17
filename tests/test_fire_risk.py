@@ -70,6 +70,24 @@ def _target() -> FireRegimeParameters:
     )
 
 
+def test_summary_groups_burned_events_by_ignition() -> None:
+    summary = summarize_fire_events(
+        (
+            FireEventRecord(year=0, area_ha=10.0, fire_id="fire-a"),
+            FireEventRecord(year=0, area_ha=20.0, fire_id="fire-a"),
+            FireEventRecord(year=0, area_ha=5.0, fire_id="fire-b"),
+        ),
+        years=1,
+        burnable_area_ha=100.0,
+        cell_size_ha=1.0,
+    )
+
+    assert summary.fire_count == 2
+    assert summary.total_burned_ha == pytest.approx(35.0)
+    assert summary.annual[0].sizes_ha == pytest.approx((30.0, 5.0))
+    assert summary.mean_fire_size_ha == pytest.approx(17.5)
+
+
 def test_summary_matches_the_synthetic_event_log() -> None:
     summary = summarize_fire_events(
         [
