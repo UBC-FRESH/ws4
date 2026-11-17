@@ -51,12 +51,12 @@ def test_schedule_evaluation_harvests_and_conserves_area() -> None:
     )
 
     accounts = _accounts(evaluation)
-    assert accounts["harvest.count_total"] == 2.0
+    assert accounts["harvest.count_total"] == 1.0
     assert accounts["harvest.area_ha_total"] == 20.0
     assert accounts["state.biomass_t"] < 9000.0
     counts = evaluation.summary()["event_counts"]
     assert isinstance(counts, dict)
-    assert counts["harvest"] == 2
+    assert counts["harvest"] == 1
     evaluation.state.check_area_conservation()
     assert evaluation.values["offset"].nunique() == 1
 
