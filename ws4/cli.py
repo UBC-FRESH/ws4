@@ -2440,8 +2440,8 @@ def ecosystem_validate_package(
     print(table)
 
 
-def _load_fire_sizes(path: Path) -> list[float]:
-    """Load historical fire sizes from a one-column or ``size_ha`` CSV."""
+def _load_fire_sizes(path: Path) -> tuple[list[float], int | None]:
+    """Load historical fire sizes and an optional year span from a CSV."""
     frame = pd.read_csv(path)
     if "size_ha" in frame.columns:
         values: list[object] = frame["size_ha"].tolist()
@@ -2460,7 +2460,12 @@ def _load_fire_sizes(path: Path) -> list[float]:
         sizes.append(number)
     if not sizes:
         raise ValueError("historical fire sizes must not be empty")
-    return sizes
+    years: int | None = None
+    if "year" in frame.columns:
+        numeric = pd.to_numeric(frame["year"], errors="coerce")
+        if numeric.notna().all():
+            years = int(numeric.max() - numeric.min()) + 1
+    return sizes, years
 
 
 @ecosystem_app.command("run-dataset")
@@ -2517,6 +2522,14 @@ def ecosystem_run_dataset(
         "--historical-fire-sizes",
         exists=True,
         help="CSV of historical fire sizes, with size_ha or one numeric column.",
+    ),
+    historical_years: int | None = typer.Option(
+        None, "--historical-years", help="Historical epoch length; inferred from a year column."
+    ),
+    historical_area_ha: float | None = typer.Option(
+        None,
+        "--historical-area-ha",
+        help="Area represented by the historical sample; defaults to the run area.",
     ),
     target_ignition_rate: float | None = typer.Option(
         None, "--target-ignition-rate", help="Override the historical ignition rate."
@@ -2592,12 +2605,19 @@ def ecosystem_run_dataset(
         (output / "fire_regime.json").write_text(
             json.dumps(regime.to_dict(), indent=2, sort_keys=True) + "\n", encoding="utf-8"
         )
+        historical_span: int | None = None
         if historical_fire_sizes is not None:
-            historical = _load_fire_sizes(historical_fire_sizes)
+            historical, inferred = _load_fire_sizes(historical_fire_sizes)
+            historical_span = historical_years if historical_years is not None else inferred
+            if historical_span is None or historical_span <= 0:
+                raise ValueError("historical fire sizes need a year column or --historical-years")
+            target_area = burnable_area if historical_area_ha is None else historical_area_ha
+            if target_area <= 0.0:
+                raise ValueError("historical area must be positive")
             parameters = fire_regime_parameters(
                 historical,
-                years=float(years),
-                burnable_area_ha=burnable_area,
+                years=float(historical_span),
+                burnable_area_ha=target_area,
                 cell_size_ha=fire_cell_ha,
             )
             rate = (
@@ -2611,6 +2631,11 @@ def ecosystem_run_dataset(
             if rate <= 0.0 or escape <= 0.0:
                 raise ValueError("historical fire sizes need a positive ignition and escape rate")
             simulated = [size for record in regime.annual for size in record.sizes_ha]
+            burn_rate = (
+                parameters.empirical_burn_rate
+                if empirical_burn_rate is None
+                else empirical_burn_rate
+            )
             diagnostics = fire_regime_diagnostics(
                 burnable_area_ha=burnable_area,
                 years=float(years),
@@ -2619,7 +2644,7 @@ def ecosystem_run_dataset(
                 historical_sizes_ha=historical,
                 simulated_sizes_ha=simulated,
                 cell_size_ha=fire_cell_ha,
-                empirical_burn_rate=empirical_burn_rate,
+                empirical_burn_rate=burn_rate,
             )
             (output / "fire_regime_diagnostics.json").write_text(
                 json.dumps(diagnostics.to_dict(), indent=2, sort_keys=True) + "\n",
@@ -2644,6 +2669,8 @@ def ecosystem_run_dataset(
         "historical_fire_sizes": (
             None if historical_fire_sizes is None else str(historical_fire_sizes)
         ),
+        "historical_years": historical_span,
+        "historical_area_ha": historical_area_ha,
         "batch_regeneration": batch_regeneration,
         "horizon_years": years,
         "seed": seed,
