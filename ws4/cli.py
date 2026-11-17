@@ -68,6 +68,7 @@ from .ecosystem import (
     load_schedule,
     validate_ecosystem_package,
 )
+from .fire.regime import fire_regime_diagnostics, fire_regime_parameters
 from .fire.risk import summarize_event_log
 from .forest_condition import build_report_from_accounts
 from .forest_condition import write_report as write_condition_report
@@ -2439,6 +2440,29 @@ def ecosystem_validate_package(
     print(table)
 
 
+def _load_fire_sizes(path: Path) -> list[float]:
+    """Load historical fire sizes from a one-column or ``size_ha`` CSV."""
+    frame = pd.read_csv(path)
+    if "size_ha" in frame.columns:
+        values: list[object] = frame["size_ha"].tolist()
+    elif len(frame.columns) == 1:
+        values = frame.iloc[:, 0].tolist()
+    else:
+        raise ValueError("historical fire sizes need a size_ha column or one numeric column")
+    sizes: list[float] = []
+    for value in values:
+        try:
+            number = float(str(value))
+        except ValueError as error:
+            raise ValueError("historical fire sizes must be numeric") from error
+        if not math.isfinite(number) or number < 0.0:
+            raise ValueError("historical fire sizes must be finite and non-negative")
+        sizes.append(number)
+    if not sizes:
+        raise ValueError("historical fire sizes must not be empty")
+    return sizes
+
+
 @ecosystem_app.command("run-dataset")
 def ecosystem_run_dataset(
     dataset: Path = typer.Option(
@@ -2487,6 +2511,21 @@ def ecosystem_run_dataset(
     ),
     fire_cell_ha: float = typer.Option(
         1.0, "--fire-cell-ha", help="Cell area for fire-size escape diagnostics, ha."
+    ),
+    historical_fire_sizes: Path | None = typer.Option(
+        None,
+        "--historical-fire-sizes",
+        exists=True,
+        help="CSV of historical fire sizes, with size_ha or one numeric column.",
+    ),
+    target_ignition_rate: float | None = typer.Option(
+        None, "--target-ignition-rate", help="Override the historical ignition rate."
+    ),
+    target_escape_probability: float | None = typer.Option(
+        None, "--target-escape-probability", help="Override the historical escape probability."
+    ),
+    empirical_burn_rate: float | None = typer.Option(
+        None, "--empirical-burn-rate", help="Override the historical annual burn rate."
     ),
     batch_regeneration: bool = typer.Option(
         True,
@@ -2542,15 +2581,52 @@ def ecosystem_run_dataset(
         raise typer.BadParameter(str(error)) from error
     evaluation.write(output)
     evaluation.log.write(output / "process_events.json")
-    regime = summarize_event_log(
-        evaluation.log,
-        years=years,
-        burnable_area_ha=sum(prepared.state.fragment_areas.values()),
-        cell_size_ha=fire_cell_ha,
-    )
-    (output / "fire_regime.json").write_text(
-        json.dumps(regime.to_dict(), indent=2, sort_keys=True) + "\n", encoding="utf-8"
-    )
+    burnable_area = sum(prepared.state.fragment_areas.values())
+    try:
+        regime = summarize_event_log(
+            evaluation.log,
+            years=years,
+            burnable_area_ha=burnable_area,
+            cell_size_ha=fire_cell_ha,
+        )
+        (output / "fire_regime.json").write_text(
+            json.dumps(regime.to_dict(), indent=2, sort_keys=True) + "\n", encoding="utf-8"
+        )
+        if historical_fire_sizes is not None:
+            historical = _load_fire_sizes(historical_fire_sizes)
+            parameters = fire_regime_parameters(
+                historical,
+                years=float(years),
+                burnable_area_ha=burnable_area,
+                cell_size_ha=fire_cell_ha,
+            )
+            rate = (
+                parameters.ignition_rate if target_ignition_rate is None else target_ignition_rate
+            )
+            escape = (
+                parameters.p_escape
+                if target_escape_probability is None
+                else target_escape_probability
+            )
+            if rate <= 0.0 or escape <= 0.0:
+                raise ValueError("historical fire sizes need a positive ignition and escape rate")
+            simulated = [size for record in regime.annual for size in record.sizes_ha]
+            diagnostics = fire_regime_diagnostics(
+                burnable_area_ha=burnable_area,
+                years=float(years),
+                ignition_rate=rate,
+                p_escape=escape,
+                historical_sizes_ha=historical,
+                simulated_sizes_ha=simulated,
+                cell_size_ha=fire_cell_ha,
+                empirical_burn_rate=empirical_burn_rate,
+            )
+            (output / "fire_regime_diagnostics.json").write_text(
+                json.dumps(diagnostics.to_dict(), indent=2, sort_keys=True) + "\n",
+                encoding="utf-8",
+            )
+    except ValueError as error:
+        raise typer.BadParameter(str(error)) from error
     metadata = {
         "dataset": str(dataset),
         "fragments": len(prepared.state.cohorts),
@@ -2565,6 +2641,9 @@ def ecosystem_run_dataset(
         "batch_succession": batch_succession,
         "batch_fire": batch_fire,
         "fire_cell_ha": fire_cell_ha,
+        "historical_fire_sizes": (
+            None if historical_fire_sizes is None else str(historical_fire_sizes)
+        ),
         "batch_regeneration": batch_regeneration,
         "horizon_years": years,
         "seed": seed,
