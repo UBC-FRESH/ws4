@@ -199,6 +199,8 @@ def test_ecosystem_run_dataset_writes_fire_regime_diagnostics(tmp_path: Path) ->
         str(schedule),
         "--historical-fire-sizes",
         str(historical),
+        "--historical-years",
+        "10",
         "--output",
         str(out),
         "--years",
