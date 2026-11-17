@@ -67,6 +67,8 @@ class ProcessEnsembleConfig:
         A controlled management source, such as a schedule harvest source.
     succession_process : Process or None, optional
         Override the default logistic succession source, e.g. with a LANDIS process.
+    fire_source : Process or None, optional
+        Override the default graph fire source, e.g. with a raster growth adapter.
     """
 
     horizon_years: int
@@ -76,6 +78,7 @@ class ProcessEnsembleConfig:
     bridge: VolumeBridgeConfig = field(default_factory=VolumeBridgeConfig)
     management: DecisionSource | None = None
     succession_process: Process | None = None
+    fire_source: Process | None = None
 
     def __post_init__(self) -> None:
         """Validate the horizon."""
@@ -317,11 +320,17 @@ def run_process_scenario(
     if isinstance(seed, bool) or not isinstance(seed, int) or seed < 0:
         raise ProcessEnsembleError("seed must be a non-negative integer")
     tape = RandomTape(seed)
-    fire = FireProcess(config.fire, edges, tape, scenario_id=scenario_id)
     salvage = SalvageSource(config.fire, scenario_id=scenario_id)
     regeneration = RegenerationProcess(config.regeneration, tape, scenario_id=scenario_id)
     succession = config.succession_process or SuccessionProcess(config.succession)
-    sources: list[Process | DecisionSource] = [FireProcessSource(fire), succession]
+    fire_source: Process | DecisionSource
+    if config.fire_source is not None:
+        fire_source = config.fire_source
+    else:
+        fire_source = FireProcessSource(
+            FireProcess(config.fire, edges, tape, scenario_id=scenario_id)
+        )
+    sources: list[Process | DecisionSource] = [fire_source, succession]
     if config.management is not None:
         sources.append(config.management)
     sources.extend((SalvageProcessSource(salvage), regeneration))
