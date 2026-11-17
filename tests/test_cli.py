@@ -182,6 +182,42 @@ def test_ecosystem_run_dataset_writes_a_process_run(tmp_path: Path) -> None:
     assert metadata["edges"] == 1
 
 
+def test_ecosystem_run_dataset_writes_fire_regime_diagnostics(tmp_path: Path) -> None:
+    """A historical fire-size sample produces target-versus-achieved diagnostics."""
+    dataset = build_example(tmp_path)
+    schedule = tmp_path / "schedule.csv"
+    schedule.write_text("block_id,treatment,offset\n1,CC,2\n", encoding="utf-8")
+    historical = tmp_path / "historical.csv"
+    historical.write_text("size_ha\n5\n10\n20\n", encoding="utf-8")
+    out = tmp_path / "process"
+    result = run_ws4(
+        "ecosystem",
+        "run-dataset",
+        "--dataset",
+        str(dataset),
+        "--schedule",
+        str(schedule),
+        "--historical-fire-sizes",
+        str(historical),
+        "--output",
+        str(out),
+        "--years",
+        "4",
+        "--ignition-rate",
+        "10",
+        "--establishment-probability",
+        "0",
+        "--seed",
+        "1",
+    )
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    diagnostics = json.loads((out / "fire_regime_diagnostics.json").read_text())
+    assert diagnostics["target_ignitions"] > 0.0
+    assert diagnostics["achieved_ignitions"] >= 0.0
+    assert (out / "fire_regime.json").is_file()
+
+
 def test_ecosystem_optimize_writes_a_process_schedule(tmp_path: Path) -> None:
     """The process optimizer searches the compiled dataset and writes estate inputs."""
     dataset = build_example(tmp_path)
