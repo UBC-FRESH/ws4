@@ -52,8 +52,25 @@ The result separates three claims:
   than the TSA24 perimeter record.
 - **Model-to-model validation:** still separate; no LANDIS or LandR fire-regime run is used here.
 
+## Topology and calibration pilot
+
+The 3,700 fires/year figure comes from the no-topology run. A connected block graph changes
+the result qualitatively. On a 10,000-block subset with a k-nearest-neighbour graph
+(8 neighbours, 5 km maximum), 50 seeds, and no harvest or regeneration:
+
+| Parameters | Fires/year | Burn rate | Mean size | Median size |
+| --- | ---: | ---: | ---: | ---: |
+| ign 4e-5, spread 1.0, scale 2750 m | 0.38 | 0.00160 | 534 ha | 188 ha |
+| target scaled to the subset | 0.31 | 0.00171 | 758 ha | 27 ha |
+| ign 1e-4, spread 1.0, scale 2500 m | 0.88 | 0.00187 | 272 ha | 100 ha |
+
+The best candidate matches the scaled ignition count and annual burn rate within about 25%,
+but the size distribution is still too coarse: too few small fires and too few very large
+ones. The block graph is a kNN proxy; the full TSA24 topology and a larger seed ensemble are
+still needed.
+
 ## Next
 
-Calibrate ignition rate and fire growth against the historical sample, holding the
-observed-perimeter detection limit explicit. Do not tune a single coefficient to make the
-annual burn rate match while leaving the fire-size distribution wrong.
+Build the full TSA24 proximal graph, run a multi-seed calibration, and report the full
+size distribution rather than one coefficient. Do not tune the annual burn rate alone while
+leaving the fire-size distribution wrong.
