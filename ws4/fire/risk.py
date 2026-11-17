@@ -42,6 +42,17 @@ class FireEventLike(Protocol):
         ...
 
     @property
+    def event_id(self) -> str:
+        """Return the event id.
+
+        Returns
+        -------
+        str
+            The event id.
+        """
+        ...
+
+    @property
     def event_type(self) -> str:
         """Return the event type.
 
@@ -49,6 +60,17 @@ class FireEventLike(Protocol):
         -------
         str
             The event type.
+        """
+        ...
+
+    @property
+    def attributes(self) -> Sequence[tuple[str, object]]:
+        """Return the event attributes.
+
+        Returns
+        -------
+        sequence of (str, object) pairs
+            The event attributes.
         """
         ...
 
@@ -100,19 +122,27 @@ class FireEventRecord:
         Simulation year.
     area_ha : float
         Burned area in hectares.
+    fire_id : str or None, optional
+        Ignition id shared by the burned-fragment events of one fire. None treats the
+        record as a standalone fire.
     """
 
     year: int
     area_ha: float
+    fire_id: str | None = None
 
     def __post_init__(self) -> None:
-        """Validate the year and area."""
+        """Validate the year, area, and fire id."""
         if isinstance(self.year, bool) or not isinstance(self.year, int) or self.year < 0:
             raise FireRiskError("year must be a non-negative integer")
         if isinstance(self.area_ha, bool) or not isinstance(self.area_ha, (int, float)):
             raise FireRiskError("area_ha must be a number")
         if not math.isfinite(float(self.area_ha)) or self.area_ha < 0.0:
             raise FireRiskError("area_ha must be finite and non-negative")
+        if self.fire_id is not None and (
+            not isinstance(self.fire_id, str) or not self.fire_id.strip()
+        ):
+            raise FireRiskError("fire_id must be a non-empty string or None")
 
 
 @dataclass(frozen=True)
@@ -330,7 +360,15 @@ def events_from_log(log: EventLogLike) -> tuple[FireEventRecord, ...]:
             continue
         if event.area_ha is None:
             raise FireRiskError("a fire event must have an area_ha")
-        records.append(FireEventRecord(year=event.year, area_ha=float(event.area_ha)))
+        attributes = dict(event.attributes)
+        fire_id = attributes.get("ignition_event_id")
+        records.append(
+            FireEventRecord(
+                year=event.year,
+                area_ha=float(event.area_ha),
+                fire_id=str(fire_id) if isinstance(fire_id, str) and fire_id else event.event_id,
+            )
+        )
     return tuple(records)
 
 
@@ -389,7 +427,11 @@ def summarize_fire_events(
     annual: list[AnnualFireRecord] = []
     all_sizes: list[float] = []
     for year, year_records in enumerate(by_year):
-        sizes = tuple(record.area_ha for record in year_records)
+        grouped: dict[str, float] = {}
+        for index, record in enumerate(year_records):
+            key = record.fire_id or f"event-{year}-{index}"
+            grouped[key] = grouped.get(key, 0.0) + record.area_ha
+        sizes = tuple(grouped.values())
         all_sizes.extend(sizes)
         annual.append(
             AnnualFireRecord(
