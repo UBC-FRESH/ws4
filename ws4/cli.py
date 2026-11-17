@@ -2479,6 +2479,16 @@ def ecosystem_run_dataset(
     ignition_rate: float = typer.Option(
         0.01, "--ignition-rate", help="Poisson ignitions per fragment-year."
     ),
+    batch_fire: bool = typer.Option(
+        True,
+        "--batch-fire/--no-batch-fire",
+        help="Aggregate fire mortality per year and apply it once.",
+    ),
+    batch_regeneration: bool = typer.Option(
+        True,
+        "--batch-regeneration/--no-batch-regeneration",
+        help="Aggregate regeneration events per year.",
+    ),
     establishment_probability: float = typer.Option(
         0.25, "--establishment-probability", help="Annual regeneration probability."
     ),
@@ -2513,8 +2523,14 @@ def ecosystem_run_dataset(
         evaluation = prepared.evaluate(
             schedule_map,
             horizon_years=years,
-            fire=FireConfig(ignition_rate_per_fragment_year=ignition_rate),
-            regeneration=RegenerationConfig(establishment_probability=establishment_probability),
+            fire=FireConfig(
+                ignition_rate_per_fragment_year=ignition_rate,
+                batch_fire=batch_fire,
+            ),
+            regeneration=RegenerationConfig(
+                establishment_probability=establishment_probability,
+                batch=batch_regeneration,
+            ),
             batch_succession=batch_succession,
             seed=seed,
         )
@@ -2534,6 +2550,8 @@ def ecosystem_run_dataset(
         "wood_density_t_m3": wood_density,
         "biomass_expansion": biomass_expansion,
         "batch_succession": batch_succession,
+        "batch_fire": batch_fire,
+        "batch_regeneration": batch_regeneration,
         "horizon_years": years,
         "seed": seed,
     }
@@ -2597,6 +2615,16 @@ def ecosystem_optimize(
     ignition_rate: float = typer.Option(
         0.01, "--ignition-rate", help="Poisson ignitions per fragment-year."
     ),
+    batch_fire: bool = typer.Option(
+        True,
+        "--batch-fire/--no-batch-fire",
+        help="Aggregate fire mortality per year and apply it once.",
+    ),
+    batch_regeneration: bool = typer.Option(
+        True,
+        "--batch-regeneration/--no-batch-regeneration",
+        help="Aggregate regeneration events per year.",
+    ),
     establishment_probability: float = typer.Option(
         0.25, "--establishment-probability", help="Annual regeneration probability."
     ),
@@ -2636,8 +2664,14 @@ def ecosystem_optimize(
             horizon_years=years,
             targets=target_list,
             max_iterations=max_iterations,
-            fire=FireConfig(ignition_rate_per_fragment_year=ignition_rate),
-            regeneration=RegenerationConfig(establishment_probability=establishment_probability),
+            fire=FireConfig(
+                ignition_rate_per_fragment_year=ignition_rate,
+                batch_fire=batch_fire,
+            ),
+            regeneration=RegenerationConfig(
+                establishment_probability=establishment_probability,
+                batch=batch_regeneration,
+            ),
             seed=seed,
         )
     except (ManagementError, ProcessDatasetError, ValueError) as error:
@@ -2652,6 +2686,8 @@ def ecosystem_optimize(
         "treatments": treatments,
         "horizon_years": years,
         "max_iterations": max_iterations,
+        "batch_fire": batch_fire,
+        "batch_regeneration": batch_regeneration,
         "seed": seed,
     }
     (output / "process_optimization_metadata.json").write_text(

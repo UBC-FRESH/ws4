@@ -744,8 +744,8 @@ class ProcessDataset:
             schedule,
             self.block_fragments,
             horizon_years=horizon_years,
-            fire=fire or FireConfig(),
-            regeneration=regeneration or RegenerationConfig(),
+            fire=fire or FireConfig(batch_fire=True),
+            regeneration=regeneration or RegenerationConfig(batch=True),
             bridge=self.bridge,
             succession_process=succession_process
             or (
@@ -816,10 +816,10 @@ class ProcessDataset:
             candidates,
             self.block_fragments,
             horizon_years=horizon_years,
-            fire=fire or FireConfig(),
+            fire=fire or FireConfig(batch_fire=True),
             targets=targets,
             succession=succession,
-            regeneration=regeneration,
+            regeneration=regeneration or RegenerationConfig(batch=True),
             bridge=self.bridge,
             succession_process=succession_process
             or (
@@ -895,11 +895,11 @@ class ProcessDataset:
             initial,
             self.block_fragments,
             horizon_years=horizon_years,
-            fire=fire or FireConfig(),
+            fire=fire or FireConfig(batch_fire=True),
             targets=targets,
             max_iterations=max_iterations,
             succession=succession,
-            regeneration=regeneration,
+            regeneration=regeneration or RegenerationConfig(batch=True),
             bridge=self.bridge,
             succession_process=succession_process
             or (

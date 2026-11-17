@@ -173,6 +173,24 @@ def test_fire_effect_preserves_track_identity() -> None:
     assert updated.cohorts["track_id"].tolist() == [1, 1]
 
 
+def test_batch_fire_combines_mortality_and_conserves_area() -> None:
+    _, state, edges = synthetic_grid(1, 1)
+    state.cohorts["track_id"] = 1
+    process = FireProcess(FireConfig(snag_fraction=0.1), edges, RandomTape(1), "s")
+    first = fire_event(severity=0.5, mortality=0.5)
+    second = fire_event(severity=0.5, mortality=0.5)
+
+    updated = process.apply_many(state, (first, second))
+
+    updated.check_area_conservation()
+    live = updated.cohorts[updated.cohorts["biomass_t_ha"] > 0.0]
+    dead = updated.cohorts[updated.cohorts["biomass_t_ha"] == 0.0]
+    assert float(live["area_fraction"].sum()) == pytest.approx(0.25)
+    assert float(dead["area_fraction"].sum()) == pytest.approx(0.75)
+    assert float(dead["snag_t_ha"].sum()) > 0.0
+    assert updated.cohorts["track_id"].tolist() == [1, 1]
+
+
 def test_salvage_removes_snags_and_records_a_volume() -> None:
     _, state, edges = synthetic_grid(1, 1)
     config = FireConfig(mortality_factor=1.0, snag_fraction=0.1, salvage_delay_years=1)
@@ -189,6 +207,20 @@ def test_salvage_removes_snags_and_records_a_volume() -> None:
     salvaged = source.apply(burned, events[0])
     assert float(salvaged.cohorts["snag_t_ha"].sum()) == pytest.approx(0.0)
     assert source.events(salvaged, 2, (fire,)) == ()
+
+
+def test_batch_salvage_emits_one_event_for_all_fragments() -> None:
+    _, state, _edges = synthetic_grid(1, 2)
+    state.cohorts["snag_t_ha"] = 5.0
+    source = SalvageSource(FireConfig(batch_fire=True), "s")
+    fires = (fire_event(fragment=1), fire_event(fragment=2))
+
+    events = source.events(state, 1, fires)
+
+    assert len(events) == 1
+    assert events[0].fragment_ids == (1, 2)
+    salvaged = source.apply(state, events[0])
+    assert float(salvaged.cohorts["snag_t_ha"].sum()) == pytest.approx(0.0)
 
 
 def test_replay_is_exact_and_seed_sensitive() -> None:

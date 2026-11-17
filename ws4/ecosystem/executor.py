@@ -131,7 +131,18 @@ class Executor:
                             batch.append((event, source))
                     if not batch:
                         break
-                    for event, source in sorted(batch, key=lambda item: item[0].sort_key):
+                    ordered_batch = sorted(batch, key=lambda item: item[0].sort_key)
+                    sources = {id(source) for _event, source in ordered_batch}
+                    if self.on_event is None and len(sources) == 1:
+                        source = ordered_batch[0][1]
+                        apply_many = getattr(source, "apply_many", None)
+                        if callable(apply_many):
+                            self.state = apply_many(
+                                self.state, [event for event, _source in ordered_batch]
+                            )
+                            year_events.extend(event for event, _source in ordered_batch)
+                            continue
+                    for event, source in ordered_batch:
                         before = self.state
                         self.state = source.apply(self.state, event)
                         if self.on_event is not None:

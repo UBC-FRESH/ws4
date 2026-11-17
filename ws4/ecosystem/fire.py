@@ -256,6 +256,9 @@ class FireConfig:
         The merchantable volume per tonne of snag (default 1.0).
     max_spread_steps : int, optional
         The maximum burned fragments per fire, a guard against a runaway run (default 10000).
+    batch_fire : bool, optional
+        Aggregate all fire mortality in a year and apply it in one vectorized pass (default
+        False). This is the estate-scale mode; overlapping fires use combined mortality.
     behaviour : FireBehaviourConfig or None, optional
         When supplied, use the FBP surface/crown kernel and directional edge rates instead of
         the legacy graph-percolation probability. ``None`` keeps the legacy path for
@@ -275,6 +278,7 @@ class FireConfig:
     salvage_delay_years: int = 1
     salvage_volume_m3_per_t: float = 1.0
     max_spread_steps: int = 10_000
+    batch_fire: bool = False
     behaviour: FireBehaviourConfig | None = None
 
     def __post_init__(self) -> None:
@@ -307,6 +311,8 @@ class FireConfig:
             raise FireError("max_spread_steps must be an integer")
         if self.max_spread_steps <= 0:
             raise FireError("max_spread_steps must be positive")
+        if not isinstance(self.batch_fire, bool):
+            raise FireError("batch_fire must be a boolean")
         if self.behaviour is not None and not isinstance(self.behaviour, FireBehaviourConfig):
             raise FireError("behaviour must be a FireBehaviourConfig or None")
 
@@ -339,6 +345,8 @@ class FireProcess:
         self.config = config
         self.tape = tape
         self.scenario_id = scenario_id
+        self._fuel_key: int | None = None
+        self._fuel_cache: dict[int, float] = {}
         self._neighbors: dict[int, tuple[FireEdge, ...]] = {}
         for edge in edges:
             reverse = replace(
@@ -377,7 +385,7 @@ class FireProcess:
             raise FireError("year must be non-negative")
         if self.config.ignition_rate_per_fragment_year == 0.0:
             return ()
-        fuel = self._fragment_values(state, "fuel_t_ha")
+        fuel = self._fuel_values(state)
         events: list[Event] = []
         for fragment in sorted(fuel):
             if fuel[fragment] <= 0.0:
@@ -437,7 +445,7 @@ class FireProcess:
         start = ignition.fragment_ids[0]
         if start not in state.fragment_areas:
             return ()
-        fuel = self._fragment_values(state, "fuel_t_ha")
+        fuel = self._fuel_values(state)
         if self.config.behaviour is not None:
             return self._behaviour_spread(state, ignition, fuel)
         year = ignition.year
@@ -699,6 +707,72 @@ class FireProcess:
             fragment_areas=state.fragment_areas,
         )
 
+    def apply_many(self, state: CohortState, events: Sequence[Event]) -> CohortState:
+        """Apply a year's fire mortality in one vectorized pass.
+
+        Multiple fires on the same fragment combine as independent mortality,
+        ``1 - product(1 - m)``. The batch mode is for estate-scale runs; the per-event
+        ``apply`` path remains the exact replay path.
+
+        Parameters
+        ----------
+        state : CohortState
+            The state before the fire batch.
+        events : sequence of Event
+            Fire events for the batch.
+
+        Returns
+        -------
+        CohortState
+            The updated state.
+        """
+        mortality_by_fragment: dict[int, float] = {}
+        for event in events:
+            if event.event_type != "fire" or not event.fragment_ids:
+                continue
+            mortality = event.magnitude
+            if mortality is None or mortality <= 0.0:
+                continue
+            fraction = min(1.0, max(0.0, float(mortality)))
+            for fragment in event.fragment_ids:
+                previous = mortality_by_fragment.get(fragment, 0.0)
+                mortality_by_fragment[fragment] = 1.0 - (1.0 - previous) * (1.0 - fraction)
+        if not mortality_by_fragment:
+            return state
+        frame = state.cohorts.copy()
+        mask = frame["fragment_id"].isin(mortality_by_fragment)
+        group = frame.loc[mask]
+        if group.empty:
+            return state
+        mortality_fraction = group["fragment_id"].map(mortality_by_fragment).astype(float)
+        killed = group["area_fraction"].astype(float) * mortality_fraction
+        survivor = group["area_fraction"].astype(float) - killed
+        frame.loc[group.index, "area_fraction"] = survivor
+        drop = group.index[survivor <= 1e-12]
+        new = group.loc[killed > 1e-12].copy()
+        if not new.empty:
+            snags = new["biomass_t_ha"].astype(float) * self.config.snag_fraction
+            new["age"] = 0
+            new["area_fraction"] = killed.loc[new.index]
+            new["biomass_t_ha"] = 0.0
+            new["fuel_t_ha"] = 0.0
+            new["snag_t_ha"] = snags
+            new["attributes_json"] = "{}"
+            maximum = group.groupby("fragment_id")["cohort_id"].max()
+            new["cohort_id"] = (
+                new.groupby("fragment_id").cumcount() + new["fragment_id"].map(maximum) + 1
+            )
+            new = new.reindex(columns=frame.columns)
+        if len(drop):
+            frame = frame.drop(index=drop)
+        if not new.empty:
+            frame = pd.concat([frame, new], ignore_index=True)
+        return CohortState(
+            cohorts=frame.reset_index(drop=True),
+            schema=state.schema,
+            fragment_areas=state.fragment_areas,
+        )
+
     def _severity(self, fragment: int, year: int) -> float:
         """Draw the severity of one burned fragment."""
         return float(
@@ -732,6 +806,14 @@ class FireProcess:
             )
         probability = self.config.base_spread_probability * fuel * distance * wind
         return min(1.0, max(0.0, probability))
+
+    def _fuel_values(self, state: CohortState) -> dict[int, float]:
+        """Return (and cache) fragment fuel for the current cohort frame."""
+        key = id(state.cohorts)
+        if key != self._fuel_key:
+            self._fuel_key = key
+            self._fuel_cache = self._fragment_values(state, "fuel_t_ha")
+        return self._fuel_cache
 
     def _fragment_values(self, state: CohortState, column: str) -> dict[int, float]:
         """Return one area-weighted fragment value from the cohort state."""
@@ -778,6 +860,55 @@ class SalvageSource:
         tuple of Event
             The new salvage events, sorted by their execution key.
         """
+        if self.config.batch_fire:
+            eligible = [
+                fire
+                for fire in sorted(fires, key=lambda item: item.sort_key)
+                if fire.event_type == "fire"
+                and fire.fragment_ids
+                and fire.year + self.config.salvage_delay_years <= year
+                and fire.event_id not in self._salvaged
+            ]
+            if not eligible:
+                return ()
+            fragments = {fire.fragment_ids[0] for fire in eligible}
+            subset = state.cohorts[state.cohorts["fragment_id"].isin(fragments)]
+            if subset.empty:
+                return ()
+            area = subset["fragment_id"].map(state.fragment_areas).astype(float)
+            volumes = (
+                subset["snag_t_ha"].astype(float)
+                * subset["area_fraction"].astype(float)
+                * area
+                * self.config.salvage_volume_m3_per_t
+            )
+            by_fragment = volumes.groupby(subset["fragment_id"]).sum()
+            selected = by_fragment[by_fragment > 0.0]
+            if selected.empty:
+                return ()
+            self._salvaged.update(fire.event_id for fire in eligible)
+            ordered = tuple(sorted(int(str(fragment)) for fragment in selected.index))
+            return (
+                Event(
+                    event_id=f"salvage-{year}-batch",
+                    process_id=SALVAGE_PROCESS_ID,
+                    event_type="salvage",
+                    time=year + SALVAGE_TIME,
+                    year=year,
+                    phase="treatment",
+                    source=SALVAGE_SOURCE,
+                    scenario_id=self.scenario_id,
+                    fragment_ids=ordered,
+                    magnitude=float(selected.sum()),
+                    area_ha=sum(state.fragment_areas[fragment] for fragment in ordered),
+                    confidence=1.0,
+                    attributes=(
+                        ("batch", True),
+                        ("fire_count", len(eligible)),
+                        ("volume_m3", float(selected.sum())),
+                    ),
+                ),
+            )
         events: list[Event] = []
         for fire in sorted(fires, key=lambda item: item.sort_key):
             if fire.event_type != "fire" or not fire.fragment_ids:
@@ -831,9 +962,8 @@ class SalvageSource:
         """
         if event.event_type != "salvage" or not event.fragment_ids:
             return state
-        fragment = event.fragment_ids[0]
         frame = state.cohorts.copy()
-        mask = frame["fragment_id"] == fragment
+        mask = frame["fragment_id"].isin(event.fragment_ids)
         if not bool(mask.any()):
             return state
         frame.loc[mask, "snag_t_ha"] = 0.0
@@ -864,9 +994,11 @@ class SalvageSource:
 class FireProcessSource:
     """Adapt the fire process to the generic process protocol.
 
-    The source emits ignitions in the ``ignition`` phase and one ignition's spread batch in
-    the ``propagation`` phase. The executor applies each propagation batch before asking for
-    the next one, so a later ignition sees the fuel state left by earlier fire events.
+    The source emits ignitions in the ``ignition`` phase and spread events in the
+    ``propagation`` phase. In the default path it emits one ignition's spread batch at a time,
+    so a later ignition sees the fuel state left by earlier fire events. With
+    ``FireConfig.batch_fire`` it emits every ignition's spread batch together; the executor
+    then applies their combined mortality in one vectorized pass.
 
     Parameters
     ----------
@@ -933,6 +1065,16 @@ class FireProcessSource:
             for event in context.year_events
             if event.event_type == "fire" and event.fragment_ids
         }
+        if self.process.config.batch_fire:
+            events: list[Event] = []
+            for ignition in sorted(ignitions, key=lambda event: event.sort_key):
+                self._processed_ignitions.add(ignition.event_id)
+                if not ignition.fragment_ids or ignition.fragment_ids[0] in burned:
+                    continue
+                spread = self.process.spread(state, ignition)
+                events.extend(spread)
+                burned.update(event.fragment_ids[0] for event in spread if event.fragment_ids)
+            return tuple(sorted(events, key=lambda event: event.sort_key))
         for ignition in sorted(ignitions, key=lambda event: event.sort_key):
             if not ignition.fragment_ids:
                 self._processed_ignitions.add(ignition.event_id)
@@ -959,6 +1101,23 @@ class FireProcessSource:
             The state after the event.
         """
         return self.process.apply(state, event)
+
+    def apply_many(self, state: CohortState, events: Sequence[Event]) -> CohortState:
+        """Apply a batch of fire events in one vectorized pass.
+
+        Parameters
+        ----------
+        state : CohortState
+            The state before the batch.
+        events : sequence of Event
+            Fire events for the batch.
+
+        Returns
+        -------
+        CohortState
+            The state after the batch.
+        """
+        return self.process.apply_many(state, events)
 
 
 class SalvageProcessSource:
