@@ -66,11 +66,38 @@ the result qualitatively. On a 10,000-block subset with a k-nearest-neighbour gr
 
 The best candidate matches the scaled ignition count and annual burn rate within about 25%,
 but the size distribution is still too coarse: too few small fires and too few very large
-ones. The block graph is a kNN proxy; the full TSA24 topology and a larger seed ensemble are
-still needed.
+ones.
+
+## Full kNN topology attempt
+
+The full TSA24 k-nearest-neighbour graph with 8 neighbours and a 5 km maximum contains
+**2,111,955 edges**. One full-estate run with ign 4e-5, spread 1.0 and scale 2750 m burned
+**5.29 million ha** in five years. The block graph is close to a spanning cluster, so that
+candidate is far too connected at estate scale.
+
+An all-pairs 5 km topology was abandoned: 200,000 blocks produced 94 million edges and a
+2.6 GB partial file.
+
+## Near-critical instability
+
+A spatially contiguous 50,000-block subset (684,553 ha, 229,308 kNN edges) was used to test
+the transition. The fire size is not smoothly controllable:
+
+- spread 0.48: one fire, 118 ha
+- spread 0.49: one fire, 1,242 ha
+- spread 0.52, one seed: 1,255 ha
+- spread 0.52, 50 seeds: 272 fires, mean 39,251 ha, burn rate 0.0624
+
+The homogeneous kNN graph has a sharp percolation threshold. Below it, fires stay small;
+above it, a single ignition can burn most of the connected subset. There is no stable
+parameter pair in this graph that matches both the historical mean size and annual burn rate.
+
+This is a structural result: ignition rate and spread probability alone cannot calibrate the
+block-only graph to the TSA24 distribution. Spatial heterogeneity, fuel/weather variation, or
+a different spread closure is required.
 
 ## Next
 
-Build the full TSA24 proximal graph, run a multi-seed calibration, and report the full
-size distribution rather than one coefficient. Do not tune the annual burn rate alone while
-leaving the fire-size distribution wrong.
+Do not tune further on the homogeneous block graph. The next model change is a heterogeneous
+spread surface: fuel/weather classes or a raster support between blocks. The full TSA24 kNN
+graph and 50-seed results are recorded above as the evidence for that decision.
