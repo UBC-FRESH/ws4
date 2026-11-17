@@ -55,6 +55,9 @@ class RegenerationConfig:
         Fuel assigned on establishment.
     max_biomass_t_ha : float
         Juvenile biomass ceiling for eligibility.
+    batch : bool, optional
+        Emit one establishment event per year for all selected fragments and apply it in
+        one vectorized pass (default False).
     """
 
     establishment_probability: float = 0.25
@@ -62,6 +65,7 @@ class RegenerationConfig:
     initial_biomass_t_ha: float = 20.0
     initial_fuel_t_ha: float = 3.0
     max_biomass_t_ha: float = 25.0
+    batch: bool = False
 
     def __post_init__(self) -> None:
         """Validate the parameters."""
@@ -87,6 +91,8 @@ class RegenerationConfig:
         object.__setattr__(
             self, "max_biomass_t_ha", _non_negative(self.max_biomass_t_ha, "max_biomass_t_ha")
         )
+        if not isinstance(self.batch, bool):
+            raise RegenerationError("batch must be a boolean")
 
 
 class RegenerationProcess:
@@ -151,6 +157,44 @@ class RegenerationProcess:
             & (frame["area_fraction"] > 0.0)
         )
         counts = frame.loc[juvenile].groupby("fragment_id", sort=True).size()
+        if self.config.batch:
+            selected: list[int] = []
+            juvenile_count = 0
+            for fragment, count in counts.items():
+                fragment_id = int(str(fragment))
+                draw = self.tape.bernoulli(
+                    DrawKey(REGENERATION_PROCESS_ID, fragment_id, context.year, 0),
+                    self.config.establishment_probability,
+                )
+                if draw:
+                    selected.append(fragment_id)
+                    juvenile_count += int(count)
+            if not selected:
+                return ()
+            event_id = f"regeneration-{context.year}-batch"
+            if event_id in self._done:
+                return ()
+            self._done.add(event_id)
+            ordered = tuple(sorted(selected))
+            return (
+                Event(
+                    event_id=event_id,
+                    process_id=self.process_id,
+                    event_type="regeneration",
+                    time=float(context.year) + 0.75,
+                    year=context.year,
+                    phase="regeneration",
+                    source=REGENERATION_SOURCE,
+                    scenario_id=context.scenario_id,
+                    fragment_ids=ordered,
+                    area_ha=sum(state.fragment_areas[fragment] for fragment in ordered),
+                    attributes=(
+                        ("batch", True),
+                        ("establishment_probability", self.config.establishment_probability),
+                        ("juvenile_cohorts", juvenile_count),
+                    ),
+                ),
+            )
         events: list[Event] = []
         for fragment, count in counts.items():
             fragment_id = int(str(fragment))
@@ -202,10 +246,9 @@ class RegenerationProcess:
         """
         if event.event_type != "regeneration" or not event.fragment_ids:
             return state
-        fragment = event.fragment_ids[0]
         frame = state.cohorts.copy()
         mask = (
-            (frame["fragment_id"] == fragment)
+            frame["fragment_id"].isin(event.fragment_ids)
             & (frame["age"] <= self.config.max_regeneration_age)
             & (frame["biomass_t_ha"] <= self.config.max_biomass_t_ha)
         )

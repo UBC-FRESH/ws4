@@ -64,6 +64,21 @@ def test_regeneration_replay_is_exact() -> None:
     assert first.state.cohorts.equals(second.state.cohorts)
 
 
+def test_batch_regeneration_emits_one_event_for_all_fragments() -> None:
+    state = _juvenile_state()
+    process = RegenerationProcess(
+        RegenerationConfig(establishment_probability=1.0, batch=True),
+        RandomTape(13),
+        scenario_id="regen-test",
+    )
+    result = Executor(state, (process,), _metadata()).run(1)
+    events = [event for event in result.log.events if event.event_type == "regeneration"]
+
+    assert len(events) == 1
+    assert len(events[0].fragment_ids) == state.cohorts["fragment_id"].nunique()
+    assert (result.state.cohorts["biomass_t_ha"] >= 20.0).all()
+
+
 def test_regeneration_skips_old_cohorts() -> None:
     _schema, state, _edges = synthetic_grid(3, 3)
     frame = state.cohorts.copy()
