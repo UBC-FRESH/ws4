@@ -137,9 +137,32 @@ The median is close, but the simulated tail is far too heavy. The historical til
 small (seven fires in 75 years), so the comparison has wide uncertainty, but the large-fire
 tail is not reproduced by this duration/weather sampling.
 
+## Suppression-bounded ensemble
+
+The same real-layer setup was rerun with a suppression assumption:
+
+- seven-day FWI weather windows
+- VRI water-edge wetting
+- a containment ring from 0.625 to 1.125 km around ignition
+- line completion sampled from 0, 15, 30, 45, or 60 minutes
+- precipitation stop at 2 mm in 24 hours
+
+Results over 50 simulated fires:
+
+| Statistic | Simulated | Historical tile |
+| --- | ---: | ---: |
+| fires | 50 | 7 |
+| mean | 88.1 ha | 58.8 ha |
+| median | 118.8 ha | 49.9 ha |
+| p90 | 131.2 ha | 104.2 ha |
+| maximum | 131.2 ha | 139.9 ha |
+
+The tail is now bounded close to the historical maximum instead of reaching tens of thousands
+of hectares. The median is high, so the suppression assumption is not calibrated; it is an
+explicit response-time scenario.
+
 ## Boundary
 
 The multi-day weather run is homogeneous C2 and flat; the containment run is a single hot
-weather state. The real-layer ensemble has real fuel, terrain, water, and weather, but samples
-duration uniformly and does not model containment or suppression crews. It is not a calibrated
-regime.
+weather state. The suppression-bounded ensemble uses an explicit response-time assumption, not
+observed crew resources. It is a calibration diagnostic, not a calibrated regime.
