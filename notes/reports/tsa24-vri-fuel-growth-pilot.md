@@ -113,8 +113,33 @@ The free-burn 12-hour case was 25,531 ha. In this weather, the line contains the
 it closes within about two hours; after three hours the fire has crossed the line and the
 containment has little effect.
 
+## Real-layer ensemble
+
+Fifty simulated fires on the 20 km VRI/DEM tile, using:
+
+- real fuel, crown closure, conifer fraction
+- real slope, aspect, elevation
+- VRI water-edge wetting
+- daily 2023 FWI weather sampled from May–September
+- random ignition cell and duration of 4, 8, 12, or 24 hours
+
+Results:
+
+| Statistic | Simulated | Historical tile |
+| --- | ---: | ---: |
+| fires | 50 | 7 |
+| mean | 961.5 ha | 58.8 ha |
+| median | 65.6 ha | 49.9 ha |
+| p90 | 2,885.6 ha | 104.2 ha |
+| maximum | 14,668.8 ha | 139.9 ha |
+
+The median is close, but the simulated tail is far too heavy. The historical tile sample is
+small (seven fires in 75 years), so the comparison has wide uncertainty, but the large-fire
+tail is not reproduced by this duration/weather sampling.
+
 ## Boundary
 
 The multi-day weather run is homogeneous C2 and flat; the containment run is a single hot
-weather state. The result demonstrates the existing weather-step and containment paths in the
-growth engine; it is not a calibrated fire regime.
+weather state. The real-layer ensemble has real fuel, terrain, water, and weather, but samples
+duration uniformly and does not model containment or suppression crews. It is not a calibrated
+regime.
