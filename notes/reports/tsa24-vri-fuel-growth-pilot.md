@@ -73,8 +73,24 @@ The VRI fuel grid, DEM slope/aspect, and that weather state together produced **
 172 cells, and head ROS **8.25 m/min**. The same fuel/terrain with FFMC 90, BUI 60 and 20 km/h
 wind produced 350 ha.
 
+## Water and wet lines
+
+The same VRI tile contains 97 non-vegetated polygons; 86 are lake, river, reservoir, or lake
+shoreline features. At 250 m they occupy **463 cells**, and **329 forest-edge cells** are
+within one cell of water.
+
+One ignition on a wet forest edge, FFMC 90, BUI 60, 20 km/h wind, 240 minutes:
+
+- dry fuel: **68.8 ha**, 11 cells
+- wet-edge depth 1.0 mm, 1,440-minute decay, 0.75 mm suppression threshold:
+  **25.0 ha**, 4 cells
+
+The wet line cuts the perimeter by about 64%. This is the existing `GrowthConfig` water-depth
+and suppression path, driven by real VRI water polygons.
+
 ## Boundary
 
-This is a single weather state, not a time-dependent weather sequence. Wet lines, water depth,
-containment, and suppression remain scalar defaults. The result demonstrates real VRI fuel,
-SRTM terrain, and FWI weather in the growth engine; it is not a calibrated fire regime.
+This is a single weather state, not a time-dependent weather sequence. Containment and
+suppression crews are not yet represented; the wet-line result uses the water-depth threshold.
+The result demonstrates real VRI fuel, SRTM terrain, FWI weather, and water-edge suppression
+in the growth engine; it is not a calibrated fire regime.
