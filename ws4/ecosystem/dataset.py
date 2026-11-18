@@ -18,7 +18,7 @@ from typing import TYPE_CHECKING, Final
 import numpy as np
 import pandas as pd
 
-from ..fire.growth import GrowthConfig, SiteGrid
+from ..fire.growth import FragmentSupport, GrowthConfig, SiteGrid
 from ..opt.objective import Target
 from ..patch.accounts import load_patch_edges_detailed
 from .bridge import BridgeError, VolumeBridgeConfig, track_age_volume_curves_from_frame
@@ -328,38 +328,45 @@ def _curve_ids(
     return chosen, tuple(sorted(labels))
 
 
-def _fragment_grid(value: np.ndarray, areas: set[int]) -> np.ndarray:
-    """Validate a fragment-id raster against the retained dataset fragments.
+def _fragment_grid(
+    value: np.ndarray | FragmentSupport,
+    areas: set[int],
+) -> np.ndarray | FragmentSupport:
+    """Validate a fragment raster or support grid against the retained fragments.
 
     Parameters
     ----------
-    value : numpy.ndarray
-        Candidate two-dimensional fragment-id raster.
+    value : numpy.ndarray or FragmentSupport
+        Candidate fragment-id raster or area-weighted support grid.
     areas : set of int
         Retained dataset fragment ids.
 
     Returns
     -------
-    numpy.ndarray
-        The validated integer raster.
+    numpy.ndarray or FragmentSupport
+        The validated raster or support grid.
 
     Raises
     ------
     ProcessDatasetError
-        If the raster is not two-dimensional, integer, non-negative, or misses a
-        retained fragment.
+        If the raster is invalid or either representation misses a retained fragment.
     """
-    grid = np.asarray(value)
-    if grid.ndim != 2 or not np.issubdtype(grid.dtype, np.integer):
-        raise ProcessDatasetError("fragment_grid must be a two-dimensional integer array")
-    if np.any(grid < 0):
-        raise ProcessDatasetError("fragment_grid ids must be non-negative")
-    present = {int(item) for item in np.unique(grid) if int(item) != 0}
+    if isinstance(value, FragmentSupport):
+        present = {int(item) for item in np.unique(value.fragment_id)}
+        source = "fragment_support"
+    else:
+        grid = np.asarray(value)
+        if grid.ndim != 2 or not np.issubdtype(grid.dtype, np.integer):
+            raise ProcessDatasetError("fragment_grid must be a two-dimensional integer array")
+        if np.any(grid < 0):
+            raise ProcessDatasetError("fragment_grid ids must be non-negative")
+        present = {int(item) for item in np.unique(grid) if int(item) != 0}
+        source = "fragment_grid"
     missing = sorted(areas - present)
     if missing:
         preview = ", ".join(str(item) for item in missing[:5])
-        raise ProcessDatasetError(f"fragment_grid is missing dataset fragments: {preview}")
-    return grid
+        raise ProcessDatasetError(f"{source} is missing dataset fragments: {preview}")
+    return value
 
 
 @dataclass(frozen=True)
@@ -390,9 +397,9 @@ class ProcessDataset:
         Block topology file, when one was supplied.
     edges : tuple of FireEdge
         Fragment fire edges mapped from the block topology.
-    fragment_grid : numpy.ndarray or None
-        Optional two-dimensional raster of fragment ids. Cells with zero are not burnable.
-        Every dataset fragment must appear at least once in the grid.
+    fragment_grid : numpy.ndarray, FragmentSupport, or None
+        Optional single-valued fragment raster or area-weighted support grid. Every dataset
+        fragment must appear at least once.
     """
 
     dataset_dir: Path
@@ -406,7 +413,7 @@ class ProcessDataset:
     landis_config: LandisSuccessionConfig
     topology: Path | None
     edges: tuple[FireEdge, ...]
-    fragment_grid: np.ndarray | None = None
+    fragment_grid: np.ndarray | FragmentSupport | None = None
 
     @classmethod
     def from_directory(
@@ -425,7 +432,7 @@ class ProcessDataset:
         species_traits: Mapping[str, LandisSpeciesTraits] | None = None,
         topology: Path | None = None,
         max_blocks: int | None = None,
-        fragment_grid: np.ndarray | None = None,
+        fragment_grid: np.ndarray | FragmentSupport | None = None,
     ) -> ProcessDataset:
         """Build a process dataset from a compiled dataset directory.
 
@@ -467,9 +474,9 @@ class ProcessDataset:
             edges, so fire can spread between adjacent blocks.
         max_blocks : int or None, optional
             Keep only this many blocks, for a bounded trial run.
-        fragment_grid : numpy.ndarray or None, optional
-            Two-dimensional non-negative integer raster of fragment ids. Zero marks a
-            non-burnable cell. Every retained dataset fragment must occur in the grid.
+        fragment_grid : numpy.ndarray, FragmentSupport, or None, optional
+            Two-dimensional fragment-id raster or area-weighted support grid. Every
+            retained dataset fragment must occur in the representation.
 
         Returns
         -------
@@ -670,7 +677,7 @@ class ProcessDataset:
         Parameters
         ----------
         grid : SiteGrid
-            Raster site grid with the same shape as the dataset fragment raster.
+            Raster site grid with the same shape as the dataset fragment representation.
         config : GrowthConfig
             Growth parameters; ignition cells are replaced for each year.
         ignitions_by_year : mapping of int to sequence of (int, int)
