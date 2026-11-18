@@ -161,8 +161,33 @@ The tail is now bounded close to the historical maximum instead of reaching tens
 of hectares. The median is high, so the suppression assumption is not calibrated; it is an
 explicit response-time scenario.
 
+## Observed-duration ensemble
+
+The BC Wildfire historical incident point layer for the tile contains five actual fires in
+2016-2023 with valid ignition and out dates:
+
+- durations: 0.13, 0.21, 0.31, 1.17, 1.46 days
+- all five carried the `Full` response type
+
+Those five durations replaced the uniform duration sampling. The ensemble kept the real VRI
+fuel/crown, SRTM terrain, FWI weather, water-edge wetting, and containment ring with 0-60
+minute completion:
+
+| Statistic | Simulated | Historical tile |
+| --- | ---: | ---: |
+| fires | 50 | 7 |
+| mean | 74.4 ha | 58.8 ha |
+| median | 87.5 ha | 49.9 ha |
+| p90 | 131.2 ha | 104.2 ha |
+| maximum | 131.2 ha | 139.9 ha |
+
+The mean, p90, and maximum are now close to the observed tile. The median is still high.
+The historical tile has only seven perimeter fires and five incident durations, so the target
+uncertainty is large.
+
 ## Boundary
 
 The multi-day weather run is homogeneous C2 and flat; the containment run is a single hot
-weather state. The suppression-bounded ensemble uses an explicit response-time assumption, not
-observed crew resources. It is a calibration diagnostic, not a calibrated regime.
+weather state. The observed-duration ensemble uses observed durations but an assumed
+response-time distribution, not observed crew resources. It is a calibration diagnostic, not a
+calibrated regime.
