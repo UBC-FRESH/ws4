@@ -783,6 +783,61 @@ class FragmentIgnition:
 
 
 @dataclass(frozen=True)
+class FragmentSupport:
+    """Area-weighted fragment memberships over a raster grid.
+
+    A cell can belong to more than one dataset fragment. This is the support representation
+    for block inventories whose smallest blocks do not fill a raster cell.
+
+    Attributes
+    ----------
+    rows : int
+        Number of raster rows.
+    cols : int
+        Number of raster columns.
+    cell_index : numpy.ndarray
+        One-dimensional flattened cell index for each membership.
+    fragment_id : numpy.ndarray
+        Positive fragment id for each membership.
+    weight : numpy.ndarray
+        Share of the cell area assigned to each membership.
+    """
+
+    rows: int
+    cols: int
+    cell_index: np.ndarray
+    fragment_id: np.ndarray
+    weight: np.ndarray
+
+    def __post_init__(self) -> None:
+        """Validate and canonicalize the membership arrays."""
+        if isinstance(self.rows, bool) or not isinstance(self.rows, int) or self.rows <= 0:
+            raise FireFuelError("support rows must be a positive integer")
+        if isinstance(self.cols, bool) or not isinstance(self.cols, int) or self.cols <= 0:
+            raise FireFuelError("support cols must be a positive integer")
+        cells = np.asarray(self.cell_index)
+        fragments = np.asarray(self.fragment_id)
+        weights = np.asarray(self.weight, dtype=float)
+        if cells.ndim != 1 or fragments.ndim != 1 or weights.ndim != 1:
+            raise FireFuelError("support arrays must be one-dimensional")
+        if not (len(cells) == len(fragments) == len(weights)):
+            raise FireFuelError("support arrays must have the same length")
+        if not np.issubdtype(cells.dtype, np.integer):
+            raise FireFuelError("support cell_index must be an integer array")
+        if not np.issubdtype(fragments.dtype, np.integer):
+            raise FireFuelError("support fragment_id must be an integer array")
+        if bool((cells < 0).any()) or bool((cells >= self.rows * self.cols).any()):
+            raise FireFuelError("support cell_index is outside the grid")
+        if bool((fragments <= 0).any()):
+            raise FireFuelError("support fragment ids must be positive")
+        if not bool(np.isfinite(weights).all()) or bool((weights <= 0.0).any()):
+            raise FireFuelError("support weights must be finite and positive")
+        object.__setattr__(self, "cell_index", cells.astype(np.int64, copy=True))
+        object.__setattr__(self, "fragment_id", fragments.astype(np.int64, copy=True))
+        object.__setattr__(self, "weight", weights.copy())
+
+
+@dataclass(frozen=True)
 class GrowthResult:
     """The output of one growth run.
 
@@ -1886,7 +1941,7 @@ def _fragment_grid(value: object, shape: tuple[int, int]) -> np.ndarray:
 
 def fragment_ignition_times(
     result: GrowthResult,
-    fragment_grid: np.ndarray,
+    fragment_grid: np.ndarray | FragmentSupport,
 ) -> tuple[FragmentIgnition, ...]:
     """Summarize the growth front by dataset fragment.
 
@@ -1894,9 +1949,9 @@ def fragment_ignition_times(
     ----------
     result : GrowthResult
         A completed growth run.
-    fragment_grid : numpy.ndarray
-        A two-dimensional integer grid of fragment ids, shape ``(rows, cols)``. Zero means
-        no fragment.
+    fragment_grid : numpy.ndarray or FragmentSupport
+        A two-dimensional integer grid of fragment ids, shape ``(rows, cols)``, or an
+        area-weighted support grid. Zero grid cells mean no fragment.
 
     Returns
     -------
@@ -1906,13 +1961,41 @@ def fragment_ignition_times(
     Raises
     ------
     FireFuelError
-        If the fragment grid is invalid.
+        If the fragment grid or support is invalid.
     """
     if not isinstance(result, GrowthResult):
         raise FireFuelError("result must be a GrowthResult")
+    if isinstance(fragment_grid, FragmentSupport):
+        if (fragment_grid.rows, fragment_grid.cols) != (
+            result.grid.rows,
+            result.grid.cols,
+        ):
+            raise FireFuelError("support shape must match the growth grid")
+        flat_times = result.ignition_time_min.ravel()
+        times = flat_times[fragment_grid.cell_index]
+        reached = np.isfinite(times)
+        if not bool(reached.any()):
+            return ()
+        reached_ids = fragment_grid.fragment_id[reached]
+        reached_times = times[reached]
+        reached_areas = result.grid.cell_area_ha * fragment_grid.weight[reached]
+        entries: list[FragmentIgnition] = []
+        for fragment_id in np.unique(reached_ids):
+            selected = reached_ids == fragment_id
+            entries.append(
+                FragmentIgnition(
+                    fragment_id=int(fragment_id),
+                    ignition_time_min=float(np.min(reached_times[selected])),
+                    area_ha=float(np.sum(reached_areas[selected])),
+                    burned_cells=int(selected.sum()),
+                )
+            )
+        return tuple(
+            sorted(entries, key=lambda entry: (entry.ignition_time_min, entry.fragment_id))
+        )
     grid = _fragment_grid(fragment_grid, (result.grid.rows, result.grid.cols))
     burned = np.isfinite(result.ignition_time_min)
-    entries: list[FragmentIgnition] = []
+    entries = []
     for fragment_id in sorted(int(value) for value in np.unique(grid) if int(value) > 0):
         cells = grid == fragment_id
         reached = cells & burned
@@ -1933,7 +2016,7 @@ def fragment_ignition_times(
 
 def fragment_ignition_events(
     result: GrowthResult,
-    fragment_grid: np.ndarray,
+    fragment_grid: np.ndarray | FragmentSupport,
     *,
     scenario_id: str = "default",
     year: int = 0,
@@ -1952,8 +2035,8 @@ def fragment_ignition_events(
     ----------
     result : GrowthResult
         A completed growth run.
-    fragment_grid : numpy.ndarray
-        A two-dimensional integer grid of fragment ids. Zero means no fragment.
+    fragment_grid : numpy.ndarray or FragmentSupport
+        A two-dimensional integer grid of fragment ids, or an area-weighted support grid.
     scenario_id : str, optional
         The scenario id stamped on every event (default ``default``).
     year : int, optional

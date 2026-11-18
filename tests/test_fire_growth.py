@@ -17,6 +17,7 @@ from ws4.fire.fuel import FireFuelError
 from ws4.fire.growth import (
     GROWTH_MODEL_VERSION,
     EffectiveWind,
+    FragmentSupport,
     GrowthConfig,
     SiteGrid,
     WeatherStep,
@@ -310,6 +311,45 @@ def test_fragment_bridge_matches_the_growth_front() -> None:
     assert attributes["ignition_time_min"] == pytest.approx(entries[0].ignition_time_min)
     assert attributes["head_ros_m_min"] == pytest.approx(result.head_ros_m_min)
     assert len({event.event_id for event in events}) == 2
+
+
+def test_fragment_support_splits_one_burned_cell_between_fragments() -> None:
+    grid = make_grid(rows=41, cols=41, wind_kmh=20.0, wind_direction_deg=270.0)
+    result = grow_fire(
+        grid,
+        GrowthConfig(
+            ignition_cells=((20, 5),),
+            max_time_min=60.0,
+            snapshot_interval_min=60.0,
+        ),
+    )
+    cell = 20 * 41 + 5
+    support = FragmentSupport(
+        rows=41,
+        cols=41,
+        cell_index=np.array([cell, cell]),
+        fragment_id=np.array([1, 2]),
+        weight=np.array([0.25, 0.75]),
+    )
+
+    entries = fragment_ignition_times(result, support)
+
+    assert [entry.fragment_id for entry in entries] == [1, 2]
+    assert entries[0].ignition_time_min == pytest.approx(0.0)
+    assert entries[0].area_ha == pytest.approx(grid.cell_area_ha * 0.25)
+    assert entries[1].area_ha == pytest.approx(grid.cell_area_ha * 0.75)
+    assert sum(entry.burned_cells for entry in entries) == 2
+
+
+def test_fragment_support_rejects_invalid_memberships() -> None:
+    with pytest.raises(FireFuelError, match="same length"):
+        FragmentSupport(1, 1, np.array([0]), np.array([1, 2]), np.array([1.0, 1.0]))
+    with pytest.raises(FireFuelError, match="outside"):
+        FragmentSupport(1, 1, np.array([1]), np.array([1]), np.array([1.0]))
+    with pytest.raises(FireFuelError, match="positive"):
+        FragmentSupport(1, 1, np.array([0]), np.array([0]), np.array([1.0]))
+    with pytest.raises(FireFuelError, match="finite and positive"):
+        FragmentSupport(1, 1, np.array([0]), np.array([1]), np.array([0.0]))
 
 
 def test_fragment_bridge_rejects_bad_grids_and_time_spans() -> None:
