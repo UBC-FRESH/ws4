@@ -39,8 +39,35 @@ One-year full-estate accounts:
 | `fire.burned_area_ha_total` | 43.75 |
 | `fire.count_total` | 7 |
 
+## 60-minute risk run
+
+Three 60-minute scenarios on the full estate gave:
+
+| Scenario | Fire (ha) | Final volume (m3) |
+| --- | ---: | ---: |
+| 1 | 82.2 | 832,710,443.6 |
+| 2 | 48.6 | 832,711,527.7 |
+| 3 | 111.3 | 832,705,697.7 |
+
+The growth source took about 30 s per scenario and the full dataset evaluation about 8.5 s.
+The 90% lower-tail CVaR was 832,705,697.7 m3.
+
+## Full-estate optimizer
+
+Five eligible blocks were selected from the full compiled state. Their combined area was
+25.7 ha. `ProcessDataset.optimize` completed four rounds:
+
+- objective: 2.2 (23.5 ha harvested of the 25.7 ha target)
+- optimizer time: 1,056.8 s
+- final volume: 848,731,300 m3
+- burned area: 115.325 ha
+- fire events: 13
+
+The full-state optimizer is not yet practical for routine iteration; it is roughly 17 minutes
+for four rounds on this host.
+
 ## Boundary
 
 The full-estate fire uses homogeneous fuel and flat terrain, not full TSA24 VRI/SRTM layers.
-The run is a 30-minute bounded test, not a fire-regime or suppression run. The support map's
-small-block weights are cell shares, not sub-cell geometry.
+The runs are bounded tests, not fire-regime or suppression runs. The support map's small-block
+weights are cell shares, not sub-cell geometry.
