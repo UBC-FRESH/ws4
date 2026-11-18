@@ -44,6 +44,9 @@ if TYPE_CHECKING:
 
 DATASET_PROCESS_VERSION: Final[str] = "ws4.process-dataset.v1"
 
+#: Optional area-weighted fragment support sidecar in a compiled dataset directory.
+FRAGMENT_SUPPORT_FILE: Final[str] = "fragment_support.npz"
+
 
 class ProcessDatasetError(ValueError):
     """Raised when a compiled dataset cannot be loaded into the process engine."""
@@ -369,6 +372,38 @@ def _fragment_grid(
     return value
 
 
+def _load_fragment_support(path: Path) -> FragmentSupport:
+    """Load an area-weighted support sidecar.
+
+    Parameters
+    ----------
+    path : Path
+        ``fragment_support.npz`` file with rows, cols, cell_index, fragment_id, and weight.
+
+    Returns
+    -------
+    FragmentSupport
+        The validated support grid.
+
+    Raises
+    ------
+    ProcessDatasetError
+        If the file is missing a required array or cannot be read.
+    """
+    try:
+        with np.load(path, allow_pickle=False) as payload:
+            support = FragmentSupport(
+                rows=int(payload["rows"]),
+                cols=int(payload["cols"]),
+                cell_index=payload["cell_index"],
+                fragment_id=payload["fragment_id"],
+                weight=payload["weight"],
+            )
+    except (KeyError, OSError, ValueError, TypeError) as error:
+        raise ProcessDatasetError(f"cannot read fragment support: {error}") from error
+    return support
+
+
 @dataclass(frozen=True)
 class ProcessDataset:
     """A compiled dataset prepared for the process evaluator.
@@ -645,6 +680,10 @@ class ProcessDataset:
                 edges = _fragment_edges(topology_path, ordered_blocks)
             except (OSError, ValueError) as error:
                 raise ProcessDatasetError(f"cannot read topology: {error}") from error
+        if fragment_grid is None:
+            sidecar = directory / FRAGMENT_SUPPORT_FILE
+            if sidecar.is_file():
+                fragment_grid = _load_fragment_support(sidecar)
         if fragment_grid is not None:
             fragment_grid = _fragment_grid(fragment_grid, set(areas))
         return cls(
@@ -661,6 +700,39 @@ class ProcessDataset:
             edges=edges,
             fragment_grid=fragment_grid,
         )
+
+    def write_fragment_support(self, path: Path | None = None) -> Path:
+        """Write the area-weighted support grid as a dataset sidecar.
+
+        Parameters
+        ----------
+        path : Path or None, optional
+            Destination ``.npz`` file. None writes ``fragment_support.npz`` in the dataset
+            directory.
+
+        Returns
+        -------
+        Path
+            The written sidecar path.
+
+        Raises
+        ------
+        ProcessDatasetError
+            If the dataset has no area-weighted support grid.
+        """
+        if not isinstance(self.fragment_grid, FragmentSupport):
+            raise ProcessDatasetError("dataset has no area-weighted fragment support")
+        target = self.dataset_dir / FRAGMENT_SUPPORT_FILE if path is None else Path(path)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        np.savez_compressed(
+            target,
+            rows=np.array(self.fragment_grid.rows),
+            cols=np.array(self.fragment_grid.cols),
+            cell_index=self.fragment_grid.cell_index,
+            fragment_id=self.fragment_grid.fragment_id,
+            weight=self.fragment_grid.weight,
+        )
+        return target
 
     def growth_fire_source(
         self,

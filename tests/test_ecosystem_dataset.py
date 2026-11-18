@@ -390,6 +390,33 @@ def test_dataset_accepts_an_area_weighted_fragment_support(tmp_path: Path) -> No
     assert sum(entry.area_ha for entry in source.ignitions[0]) == pytest.approx(6.25)
 
 
+def test_dataset_round_trips_a_fragment_support_sidecar(tmp_path: Path) -> None:
+    support = FragmentSupport(
+        rows=1,
+        cols=1,
+        cell_index=np.array([0, 0]),
+        fragment_id=np.array([1, 2]),
+        weight=np.array([0.25, 0.75]),
+    )
+    prepared = ProcessDataset.from_directory(_dataset(tmp_path), fragment_grid=support)
+    written = prepared.write_fragment_support()
+
+    reloaded = ProcessDataset.from_directory(_dataset(tmp_path))
+
+    assert written.name == "fragment_support.npz"
+    assert isinstance(reloaded.fragment_grid, FragmentSupport)
+    assert reloaded.fragment_grid.rows == 1
+    assert reloaded.fragment_grid.cols == 1
+    np.testing.assert_allclose(reloaded.fragment_grid.weight, [0.25, 0.75])
+
+
+def test_dataset_without_support_cannot_write_a_sidecar(tmp_path: Path) -> None:
+    prepared = ProcessDataset.from_directory(_dataset(tmp_path))
+
+    with pytest.raises(ProcessDatasetError, match="no area-weighted"):
+        prepared.write_fragment_support()
+
+
 def test_dataset_rejects_a_fragment_grid_missing_a_fragment(tmp_path: Path) -> None:
     with pytest.raises(ProcessDatasetError, match="missing dataset fragments"):
         ProcessDataset.from_directory(
