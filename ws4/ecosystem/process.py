@@ -66,10 +66,49 @@ class Process(Protocol):
     events for the phase, applying each batch in event-key order before asking again.
     """
 
-    process_id: str
-    phases: tuple[str, ...]
-    state_reads: frozenset[str]
-    state_writes: frozenset[str]
+    @property
+    def process_id(self) -> str:
+        """Return the stable process identifier.
+
+        Returns
+        -------
+        str
+            The process id.
+        """
+        ...
+
+    @property
+    def phases(self) -> tuple[str, ...]:
+        """Return the phases this source participates in.
+
+        Returns
+        -------
+        tuple of str
+            The declared executor phases.
+        """
+        ...
+
+    @property
+    def state_reads(self) -> frozenset[str]:
+        """Return the cohort-state variables this source reads.
+
+        Returns
+        -------
+        frozenset of str
+            Names of the state variables read by the source.
+        """
+        ...
+
+    @property
+    def state_writes(self) -> frozenset[str]:
+        """Return the cohort-state variables this source writes.
+
+        Returns
+        -------
+        frozenset of str
+            Names of the state variables written by the source.
+        """
+        ...
 
     def events(self, state: CohortState, context: ProcessContext) -> Sequence[Event]:
         """Return the next batch of events for the context phase.
@@ -114,10 +153,49 @@ class DecisionSource(Protocol):
     process events the same way; the distinction is for provenance and future policy search.
     """
 
-    process_id: str
-    phases: tuple[str, ...]
-    state_reads: frozenset[str]
-    state_writes: frozenset[str]
+    @property
+    def process_id(self) -> str:
+        """Return the stable process identifier.
+
+        Returns
+        -------
+        str
+            The process id.
+        """
+        ...
+
+    @property
+    def phases(self) -> tuple[str, ...]:
+        """Return the phases this source participates in.
+
+        Returns
+        -------
+        tuple of str
+            The declared executor phases.
+        """
+        ...
+
+    @property
+    def state_reads(self) -> frozenset[str]:
+        """Return the cohort-state variables this source reads.
+
+        Returns
+        -------
+        frozenset of str
+            Names of the state variables read by the source.
+        """
+        ...
+
+    @property
+    def state_writes(self) -> frozenset[str]:
+        """Return the cohort-state variables this source writes.
+
+        Returns
+        -------
+        frozenset of str
+            Names of the state variables written by the source.
+        """
+        ...
 
     def events(self, state: CohortState, context: ProcessContext) -> Sequence[Event]:
         """Return the next batch of controlled events for the context phase.

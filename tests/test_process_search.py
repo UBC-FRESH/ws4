@@ -8,6 +8,8 @@ from pathlib import Path
 import pytest
 from ws4.ecosystem.evaluation import evaluate_process_schedule
 from ws4.ecosystem.fire import FireConfig, synthetic_grid
+from ws4.ecosystem.growth_fire import GrowthFireSource
+from ws4.fire.growth import FragmentIgnition
 from ws4.opt.objective import Target
 from ws4.opt.process_search import (
     PROCESS_SEARCH_VERSION,
@@ -132,6 +134,45 @@ def test_candidate_search_rejects_invalid_inputs() -> None:
         _search((ProcessSearchCandidate("a", {}),), seed=-1)
     with pytest.raises(ProcessSearchError, match="candidate_id"):
         ProcessSearchCandidate("", {})
+
+
+def test_candidate_search_accepts_a_growth_fire_source() -> None:
+    _schema, state, edges = synthetic_grid(3, 3)
+    source = GrowthFireSource(
+        {0: (FragmentIgnition(fragment_id=1, ignition_time_min=0.0, area_ha=5.0, burned_cells=1),)}
+    )
+    target = Target(account="state.biomass_t", period=1, maximum=9000.0)
+
+    without = search_process_candidates(
+        state,
+        edges,
+        (ProcessSearchCandidate("none", {}),),
+        {1: (1, 2), 2: (3,)},
+        horizon_years=1,
+        fire=_fire(),
+        targets=(target,),
+        seed=3,
+    )
+    with_source = search_process_candidates(
+        state,
+        edges,
+        (ProcessSearchCandidate("none", {}),),
+        {1: (1, 2), 2: (3,)},
+        horizon_years=1,
+        fire=_fire(),
+        targets=(target,),
+        fire_source=source,
+        seed=3,
+    )
+
+    assert without.best.objective == pytest.approx(360.0)
+    assert with_source.best.objective == pytest.approx(0.0)
+    accounts = {
+        str(row.account): float(str(row.value))
+        for row in with_source.best.evaluation.accounts.itertuples(index=False)
+    }
+    assert accounts["fire.burned_area_ha_total"] == pytest.approx(5.0)
+    assert accounts["state.biomass_t"] == pytest.approx(8840.0)
 
 
 def test_evaluation_without_objective_cannot_be_ranked() -> None:

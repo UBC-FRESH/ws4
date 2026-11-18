@@ -7,6 +7,8 @@ from pathlib import Path
 
 import pytest
 from ws4.ecosystem.fire import FireConfig, synthetic_grid
+from ws4.ecosystem.growth_fire import GrowthFireSource
+from ws4.fire.growth import FragmentIgnition
 from ws4.opt.objective import Target
 from ws4.opt.process_optimization import (
     PROCESS_OPTIMIZATION_VERSION,
@@ -65,6 +67,34 @@ def test_optimization_reaches_the_full_harvest() -> None:
     assert result.search.iterations == 2
     assert result.search.history[1].improved is False
     assert result.summary()["best_candidate"] == schedule_id({1: (("CC", 0),)})
+
+
+def test_optimization_accepts_a_growth_fire_source() -> None:
+    _schema, state, edges = synthetic_grid(3, 3)
+    source = GrowthFireSource(
+        {0: (FragmentIgnition(fragment_id=1, ignition_time_min=0.0, area_ha=5.0, burned_cells=1),)}
+    )
+    result = optimize_process_schedule(
+        state,
+        edges,
+        _grammar(),
+        ProcessSearchCandidate(schedule_id({}), {}),
+        {1: (1, 2), 2: (3,)},
+        horizon_years=1,
+        fire=FireConfig(ignition_rate_per_fragment_year=0.0),
+        targets=(_target(), Target(account="state.biomass_t", period=1, maximum=9000.0)),
+        max_iterations=3,
+        fire_source=source,
+        seed=5,
+    )
+
+    from ws4.opt.process_optimization import ProcessOptimizationResult
+
+    assert isinstance(result, ProcessOptimizationResult)
+    values = result.best.evaluation.values
+    assert float(values.loc[values["account"] == "fire.burned_area_ha", "value"].sum()) == (
+        pytest.approx(5.0)
+    )
 
 
 def test_optimization_is_deterministic() -> None:

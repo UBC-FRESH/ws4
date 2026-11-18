@@ -200,6 +200,7 @@ def search_process_neighbourhood(
     regeneration: RegenerationConfig | None = None,
     bridge: VolumeBridgeConfig | None = None,
     succession_process: Process | None = None,
+    fire_source: Process | None = None,
     harvest_fraction: float = 1.0,
     track_transitions: Mapping[tuple[int, str], int] | None = None,
     seed: int = 0,
@@ -234,6 +235,8 @@ def search_process_neighbourhood(
         Provisional volume bridge parameters.
     succession_process : Process or None, optional
         Override the default succession source.
+    fire_source : Process or None, optional
+        Override the default graph fire source, e.g. a raster growth adapter.
     harvest_fraction : float, optional
         Fraction removed by a harvest (default 1.0).
     track_transitions : mapping of (int, str) to int or None, optional
@@ -270,6 +273,7 @@ def search_process_neighbourhood(
         regeneration=regeneration,
         bridge=bridge,
         succession_process=succession_process,
+        fire_source=fire_source,
         harvest_fraction=harvest_fraction,
         track_transitions=track_transitions,
         seed=seed,
@@ -310,6 +314,7 @@ def search_process_neighbourhood(
             regeneration=regeneration,
             bridge=bridge,
             succession_process=succession_process,
+            fire_source=fire_source,
             harvest_fraction=harvest_fraction,
             track_transitions=track_transitions,
             seed=seed,

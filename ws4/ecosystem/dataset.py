@@ -774,6 +774,7 @@ class ProcessDataset:
         succession: SuccessionConfig | None = None,
         regeneration: RegenerationConfig | None = None,
         succession_process: Process | None = None,
+        fire_source: Process | None = None,
         batch_succession: bool = True,
         edges: Sequence[FireEdge] | None = None,
         harvest_fraction: float = 1.0,
@@ -797,6 +798,8 @@ class ProcessDataset:
             Regeneration parameters.
         succession_process : Process or None, optional
             Succession source; the default is the LANDIS process.
+        fire_source : Process or None, optional
+            Fire source override, such as a raster growth adapter.
         batch_succession : bool, optional
             Use the vectorized landscape LANDIS process when no source is supplied
             (default True).
@@ -831,6 +834,7 @@ class ProcessDataset:
                 if batch_succession
                 else LandisSuccessionProcess(self.landis_config)
             ),
+            fire_source=fire_source,
             harvest_fraction=harvest_fraction,
             track_transitions=self.track_transitions,
             seed=seed,
@@ -848,6 +852,7 @@ class ProcessDataset:
         succession: SuccessionConfig | None = None,
         regeneration: RegenerationConfig | None = None,
         succession_process: Process | None = None,
+        fire_source: Process | None = None,
         batch_succession: bool = True,
         edges: Sequence[FireEdge] | None = None,
         harvest_fraction: float = 1.0,
@@ -875,6 +880,8 @@ class ProcessDataset:
             Regeneration parameters.
         succession_process : Process or None, optional
             Succession source; the default is the LANDIS process.
+        fire_source : Process or None, optional
+            Fire source override, such as a raster growth adapter.
         batch_succession : bool, optional
             Use the vectorized landscape LANDIS process when no source is supplied
             (default True).
@@ -911,6 +918,7 @@ class ProcessDataset:
                 if batch_succession
                 else LandisSuccessionProcess(self.landis_config)
             ),
+            fire_source=fire_source,
             harvest_fraction=harvest_fraction,
             track_transitions=self.track_transitions,
             seed=seed,
