@@ -5,6 +5,9 @@ on:
   push:
     branches:
       - main
+  schedule:
+    # Full suite once a day; pull requests use the focused gate.
+    - cron: "17 8 * * *"
 
 permissions:
   contents: read
@@ -105,8 +108,8 @@ jobs:
     name: Green dashboard summary
     runs-on: ubuntu-24.04
     timeout-minutes: 30
-    # Keep the hosted dashboard serial. xdist is available for local runs, but it
-    # intermittently deadlocks this job on the hosted runner.
+    # Pull requests run the focused test set. The full suite and coverage gate run
+    # on main and on the nightly schedule, where a long job cannot block a merge.
     steps:
       - name: Check out repository
         uses: actions/checkout@v5
@@ -127,7 +130,19 @@ jobs:
       - name: Install pandoc (nbsphinx renders the example notebooks)
         run: sudo apt-get update && sudo apt-get install -y pandoc
 
-      - name: Run the dashboard
+      - name: Run the focused dashboard
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          set +e
+          mkdir -p runtime
+          python scripts/dashboard.py --fast --markdown --json runtime/dashboard.json > runtime/dashboard.md
+          status=$?
+          cat runtime/dashboard.md >> "$GITHUB_STEP_SUMMARY"
+          exit $status
+
+      - name: Run the full dashboard
+        if: github.event_name != 'pull_request'
         shell: bash
         run: |
           set +e

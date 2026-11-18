@@ -178,6 +178,21 @@ def test_test_command_defers_to_inherited_pytest_options(
     assert db._test_command("python") == ("python", "-m", "pytest", "-q")
 
 
+def test_fast_test_command_uses_the_focused_set(tmp_path: Path) -> None:
+    tests = tmp_path / "tests"
+    tests.mkdir()
+    (tests / "test_dashboard.py").write_text("", encoding="utf-8")
+    (tests / "test_ecosystem_fire.py").write_text("", encoding="utf-8")
+    (tests / "test_web.py").write_text("", encoding="utf-8")
+
+    command = db._test_command("python", tmp_path, fast=True)
+
+    assert command[:6] == ("python", "-m", "pytest", "-q", "--no-cov", "-n")
+    assert "tests/test_dashboard.py" in command
+    assert "tests/test_ecosystem_fire.py" in command
+    assert "tests/test_web.py" not in command
+
+
 def test_default_gates_include_seed_gates_only_when_the_generator_exists(tmp_path: Path) -> None:
     """A repository without the project generator does not get the seed gates."""
     bare = {gate.name for gate in db.default_gates(tmp_path, python="python")}
@@ -235,7 +250,10 @@ def test_main_uses_the_default_gates_when_none_are_given(
     """Without explicit gates, the command runs the gates from :func:`default_gates`."""
     chosen = (python_gate("only", "pass"),)
 
-    def fake_defaults(root: Path, python: str = sys.executable) -> tuple[db.Gate, ...]:
+    def fake_defaults(
+        root: Path, python: str = sys.executable, *, fast: bool = False
+    ) -> tuple[db.Gate, ...]:
+        del root, python, fast
         return chosen
 
     monkeypatch.setattr(db, "default_gates", fake_defaults)
