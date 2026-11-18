@@ -51,8 +51,30 @@ flat ground, 240-minute growth:
 The homogeneous C2 case on a full TSA raster produced 925 ha for the same duration. Real
 fuel heterogeneity reduces the perimeter, which is the expected direction.
 
+## Terrain
+
+SRTM terrain (AWS Terrain Tiles) was resampled to the same 250 m EPSG:3005 grid. The tile is
+gentle: elevation 710-957 m, mean slope 2.5%, maximum 20%. With the homogeneous C2 case,
+flat ground burned 975 ha and the DEM slope/aspect grid burned 1,006 ha.
+
+## Weather
+
+Hourly Open-Meteo reanalysis at 54.35 N, 124.30 W was reduced to 13:00 daily observations and
+run through the FWI System for 2023-05-01 to 2023-09-30. The hottest day was 2023-07-13:
+
+- temperature 27.3 C
+- relative humidity 23%
+- wind 6.8 km/h
+- FFMC 93.8
+- BUI 108.2
+- FWI 33.4
+
+The VRI fuel grid, DEM slope/aspect, and that weather state together produced **1,075 ha**,
+172 cells, and head ROS **8.25 m/min**. The same fuel/terrain with FFMC 90, BUI 60 and 20 km/h
+wind produced 350 ha.
+
 ## Boundary
 
-Slope, weather time series, wet lines, containment, and suppression are still scalar defaults.
-The result demonstrates the real VRI fuel/crown layer in the growth engine; it is not a
-calibrated fire regime.
+This is a single weather state, not a time-dependent weather sequence. Wet lines, water depth,
+containment, and suppression remain scalar defaults. The result demonstrates real VRI fuel,
+SRTM terrain, and FWI weather in the growth engine; it is not a calibrated fire regime.
