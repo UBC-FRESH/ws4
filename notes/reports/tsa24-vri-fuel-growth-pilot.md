@@ -185,9 +185,44 @@ The mean, p90, and maximum are now close to the observed tile. The median is sti
 The historical tile has only seven perimeter fires and five incident durations, so the target
 uncertainty is large.
 
+## Two-tier response on a 30 km tile
+
+The 20 km tile has only seven perimeter fires. A 30 km tile (90,000 ha, 120 by 120 cells at
+250 m) was built around the same area to get a larger historical sample:
+
+- 6,316 VRI polygons; 11,203 burnable cells
+- 1,707 water cells and 575 wet forest-edge cells
+- 19 historical perimeter fires in 1950-2024
+- historical sizes: mean 155.9 ha, median 35.8 ha, p90 474.0 ha, maximum 986.2 ha
+- 5 of 19 fires exceeded 100 ha; 2 exceeded 500 ha
+
+The growth bridge was given the observed 2016-2023 incident durations (0.11, 0.13, 0.21,
+0.31, 1.17, 1.46, 3.33, 6.97, and 8.75 days) and a two-tier response:
+
+- 78 of 100 fires: initial attack ring at 0.375-0.875 km, completed in 0-30 minutes
+- 22 of 100 fires: extended attack ring at 1.625-2.125 km, completed in 0-180 minutes
+
+Both tiers used the real VRI fuel/crown, SRTM terrain, VRI water-edge wetting, and 2023 FWI
+weather.
+
+| Statistic | Simulated | Historical tile |
+| --- | ---: | ---: |
+| fires | 100 | 19 |
+| mean | 128.8 ha | 155.9 ha |
+| median | 50.0 ha | 35.8 ha |
+| p90 | 524.4 ha | 474.0 ha |
+| maximum | 856.2 ha | 986.2 ha |
+| over 100 ha | 16% | 26% |
+| over 500 ha | 11% | 11% |
+
+The two-tier response restores the large-fire tail that the single ring removed. The
+count-matched burn rate is 32.6 ha/yr (0.00036) against 39.5 ha/yr (0.00044) observed, using
+the historical 19 fires per 75 years.
+
 ## Boundary
 
 The multi-day weather run is homogeneous C2 and flat; the containment run is a single hot
 weather state. The observed-duration ensemble uses observed durations but an assumed
-response-time distribution, not observed crew resources. It is a calibration diagnostic, not a
-calibrated regime.
+response-time distribution, not observed crew resources. The 30 km two-tier response is an
+explicit scenario, not an observed suppression model. The historical samples are small (7 and
+19 perimeter fires), so the target uncertainty is large.
