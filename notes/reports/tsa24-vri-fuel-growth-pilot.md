@@ -88,9 +88,33 @@ One ignition on a wet forest edge, FFMC 90, BUI 60, 20 km/h wind, 240 minutes:
 The wet line cuts the perimeter by about 64%. This is the existing `GrowthConfig` water-depth
 and suppression path, driven by real VRI water polygons.
 
+## Multi-day weather
+
+A four-day FWI sequence for 2023-07-12 to 2023-07-15 was used as `WeatherStep` intervals:
+FFMC 92.6-93.8, BUI 102.8-116.9, wind 2.7-7.8 km/h. On an 80 x 80, 250 m homogeneous C2 grid
+the free-burn case filled the entire 40,000 ha tile within four days.
+
+## Containment
+
+To isolate the containment timing, an 80 x 80, 250 m homogeneous C2 grid used the hot
+2023-07-13 state (FFMC 93.8, BUI 108.2, wind 6.8 km/h) for 12 hours. A closed ring at about
+2.5 km radius was assigned different completion times:
+
+| Line completion | Burned area | Cells |
+| ---: | ---: | ---: |
+| 0 min | 1,556 ha | 249 |
+| 60 min | 1,556 ha | 249 |
+| 120 min | 1,556 ha | 249 |
+| 180 min | 19,038 ha | 3,046 |
+| 240 min | 25,325 ha | 4,052 |
+| 360 min | 25,531 ha | 4,085 |
+
+The free-burn 12-hour case was 25,531 ha. In this weather, the line contains the fire only if
+it closes within about two hours; after three hours the fire has crossed the line and the
+containment has little effect.
+
 ## Boundary
 
-This is a single weather state, not a time-dependent weather sequence. Containment and
-suppression crews are not yet represented; the wet-line result uses the water-depth threshold.
-The result demonstrates real VRI fuel, SRTM terrain, FWI weather, and water-edge suppression
-in the growth engine; it is not a calibrated fire regime.
+The multi-day weather run is homogeneous C2 and flat; the containment run is a single hot
+weather state. The result demonstrates the existing weather-step and containment paths in the
+growth engine; it is not a calibrated fire regime.
