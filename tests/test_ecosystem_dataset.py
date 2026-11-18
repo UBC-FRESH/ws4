@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 import pytest
 from ws4.build.compiler import build_canonical_dataset
@@ -11,7 +12,7 @@ from ws4.ecosystem.dataset import ProcessDataset, ProcessDatasetError
 from ws4.ecosystem.fire import FireConfig, FireEdge
 from ws4.ecosystem.growth_fire import GrowthFireSource
 from ws4.ecosystem.regeneration import RegenerationConfig
-from ws4.fire.growth import FragmentIgnition
+from ws4.fire.growth import FragmentIgnition, GrowthConfig, SiteGrid
 from ws4.opt.account_compare import compare_accounts
 from ws4.opt.objective import Target
 from ws4.opt.process_search import ProcessSearchCandidate
@@ -326,6 +327,73 @@ def test_dataset_grammar_uses_compiled_treatment_windows(tmp_path: Path) -> None
     grammar.validate({1: (("CC", 2),)})
     with pytest.raises(ValueError, match="CC window"):
         grammar.validate({1: (("CC", 0),)})
+
+
+def test_dataset_builds_a_growth_source_from_its_fragment_grid(tmp_path: Path) -> None:
+    prepared = ProcessDataset.from_directory(
+        _dataset(tmp_path), fragment_grid=np.array([[1, 2]], dtype=np.int32)
+    )
+    grid = SiteGrid(
+        fuel_type="C2",
+        rows=1,
+        cols=2,
+        cell_size_m=250.0,
+        ffmc=90.0,
+        bui=60.0,
+        wind_kmh=10.0,
+        wind_direction_deg=270.0,
+        slope_percent=0.0,
+        aspect_deg=0.0,
+        burnable=np.ones((1, 2), dtype=bool),
+    )
+
+    source = prepared.growth_fire_source(
+        grid,
+        GrowthConfig(ignition_cells=((0, 0),), max_time_min=10.0, snapshot_interval_min=5.0),
+        {0: ((0, 0),)},
+    )
+
+    assert source.ignitions[0][0].fragment_id == 1
+    assert source.ignitions[0][0].area_ha > 0.0
+
+
+def test_dataset_rejects_a_fragment_grid_missing_a_fragment(tmp_path: Path) -> None:
+    with pytest.raises(ProcessDatasetError, match="missing dataset fragments"):
+        ProcessDataset.from_directory(
+            _dataset(tmp_path), fragment_grid=np.array([[1, 0]], dtype=np.int32)
+        )
+    with pytest.raises(ProcessDatasetError, match="two-dimensional integer"):
+        ProcessDataset.from_directory(
+            _dataset(tmp_path), fragment_grid=np.array([1, 2], dtype=np.int32)
+        )
+    with pytest.raises(ProcessDatasetError, match="non-negative"):
+        ProcessDataset.from_directory(
+            _dataset(tmp_path), fragment_grid=np.array([[1, -2]], dtype=np.int32)
+        )
+
+
+def test_dataset_without_a_fragment_grid_rejects_a_growth_source(tmp_path: Path) -> None:
+    prepared = ProcessDataset.from_directory(_dataset(tmp_path))
+    grid = SiteGrid(
+        fuel_type="C2",
+        rows=1,
+        cols=1,
+        cell_size_m=250.0,
+        ffmc=90.0,
+        bui=60.0,
+        wind_kmh=10.0,
+        wind_direction_deg=270.0,
+        slope_percent=0.0,
+        aspect_deg=0.0,
+        burnable=np.ones((1, 1), dtype=bool),
+    )
+
+    with pytest.raises(ProcessDatasetError, match="no fragment_grid"):
+        prepared.growth_fire_source(
+            grid,
+            GrowthConfig(ignition_cells=((0, 0),), max_time_min=10.0, snapshot_interval_min=5.0),
+            {0: ((0, 0),)},
+        )
 
 
 def test_dataset_limit_keeps_a_bounded_run(tmp_path: Path) -> None:
