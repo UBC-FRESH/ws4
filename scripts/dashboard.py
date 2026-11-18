@@ -80,13 +80,36 @@ class GateResult:
     tail: str
 
 
-def _test_command(python: str) -> tuple[str, ...]:
+FAST_TEST_GLOBS: tuple[str, ...] = (
+    "tests/test_dashboard.py",
+    "tests/test_cli.py",
+    "tests/test_workflow.py",
+    "tests/test_ecosystem_*.py",
+    "tests/test_landis_*.py",
+    "tests/test_fire_*.py",
+    "tests/test_process_*.py",
+)
+
+
+def _fast_test_paths(root: Path) -> tuple[str, ...]:
+    """Return the focused test files for a pull-request dashboard."""
+    paths: list[str] = []
+    for pattern in FAST_TEST_GLOBS:
+        paths.extend(str(path.relative_to(root)) for path in sorted(root.glob(pattern)))
+    return tuple(dict.fromkeys(paths))
+
+
+def _test_command(python: str, root: Path | None = None, *, fast: bool = False) -> tuple[str, ...]:
     """Return the pytest command, honoring an inherited ``PYTEST_ADDOPTS``.
 
     Parameters
     ----------
     python : str
         Interpreter for the test process.
+    root : Path or None, optional
+        Repository root, used to resolve the focused test set.
+    fast : bool, optional
+        Run the focused pull-request test set without coverage (default False).
 
     Returns
     -------
@@ -95,6 +118,11 @@ def _test_command(python: str) -> tuple[str, ...]:
         workers with module-scoped distribution. ``PYTEST_ADDOPTS`` overrides both.
     """
     command = [python, "-m", "pytest", "-q"]
+    if fast:
+        command.extend(["--no-cov", "-n", "2", "--dist", "loadscope"])
+        if root is not None:
+            command.extend(_fast_test_paths(root))
+        return tuple(command)
     if "PYTEST_ADDOPTS" not in os.environ:
         if "GITHUB_ACTIONS" in os.environ:
             command.extend(["-n", "2", "--dist", "loadscope"])
@@ -103,7 +131,9 @@ def _test_command(python: str) -> tuple[str, ...]:
     return tuple(command)
 
 
-def default_gates(root: Path, python: str = sys.executable) -> tuple[Gate, ...]:
+def default_gates(
+    root: Path, python: str = sys.executable, *, fast: bool = False
+) -> tuple[Gate, ...]:
     """Build the gates that apply to a repository.
 
     Parameters
@@ -114,6 +144,8 @@ def default_gates(root: Path, python: str = sys.executable) -> tuple[Gate, ...]:
     python : str, optional
         Interpreter for every command. The default is the interpreter that runs the
         dashboard.
+    fast : bool, optional
+        Run the focused pull-request test set without coverage (default False).
 
     Returns
     -------
@@ -127,8 +159,8 @@ def default_gates(root: Path, python: str = sys.executable) -> tuple[Gate, ...]:
         Gate("types", (python, "-m", "mypy"), "mypy --strict passes on the configured files"),
         Gate(
             "tests",
-            _test_command(python),
-            "tests pass and the coverage gate holds",
+            _test_command(python, root, fast=fast),
+            "focused tests pass" if fast else "tests pass and the coverage gate holds",
         ),
         Gate(
             "validator",
@@ -332,8 +364,13 @@ def main(
     parser = argparse.ArgumentParser(description="Run every quality gate and report.")
     parser.add_argument("--markdown", action="store_true", help="print a Markdown table")
     parser.add_argument("--json", type=Path, metavar="PATH", help="also write a JSON record")
+    parser.add_argument(
+        "--fast",
+        action="store_true",
+        help="run the focused pull-request tests instead of the full suite",
+    )
     args = parser.parse_args(argv)
-    chosen = gates if gates is not None else default_gates(root)
+    chosen = gates if gates is not None else default_gates(root, fast=args.fast)
     results = run_gates(chosen, root)
     print(render_markdown(results) if args.markdown else render_text(results))
     if args.json is not None:
