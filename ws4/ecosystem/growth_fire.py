@@ -17,6 +17,7 @@ import numpy as np
 
 from ..fire.growth import (
     FragmentIgnition,
+    FragmentSupport,
     GrowthConfig,
     SiteGrid,
     fragment_ignition_times,
@@ -202,7 +203,7 @@ class GrowthFireSource:
 def build_growth_fire_source(
     grid: SiteGrid,
     config: GrowthConfig,
-    fragment_grid: np.ndarray,
+    fragment_grid: np.ndarray | FragmentSupport,
     ignitions_by_year: Mapping[int, Sequence[tuple[int, int]]],
     *,
     scenario_id: str = "growth-fire",
@@ -217,8 +218,8 @@ def build_growth_fire_source(
         Raster site grid.
     config : GrowthConfig
         Growth configuration; its ignition cells are replaced per year.
-    fragment_grid : numpy.ndarray
-        Two-dimensional fragment-id raster.
+    fragment_grid : numpy.ndarray or FragmentSupport
+        Two-dimensional fragment-id raster or an area-weighted support grid.
     ignitions_by_year : mapping of int to sequence of (int, int)
         Ignition cells for each year.
     scenario_id : str, optional
@@ -238,11 +239,17 @@ def build_growth_fire_source(
     ValueError
         If a year, cell, or growth result is invalid.
     """
-    arrays = np.asarray(fragment_grid)
-    if arrays.ndim != 2 or not np.issubdtype(arrays.dtype, np.integer):
-        raise ValueError("fragment_grid must be a two-dimensional integer array")
-    if arrays.shape != (grid.rows, grid.cols):
-        raise ValueError("fragment_grid shape must match the site grid")
+    if isinstance(fragment_grid, FragmentSupport):
+        if (fragment_grid.rows, fragment_grid.cols) != (grid.rows, grid.cols):
+            raise ValueError("fragment_grid shape must match the site grid")
+        support: np.ndarray | FragmentSupport = fragment_grid
+    else:
+        arrays = np.asarray(fragment_grid)
+        if arrays.ndim != 2 or not np.issubdtype(arrays.dtype, np.integer):
+            raise ValueError("fragment_grid must be a two-dimensional integer array")
+        if arrays.shape != (grid.rows, grid.cols):
+            raise ValueError("fragment_grid shape must match the site grid")
+        support = arrays
     ignitions: dict[int, tuple[FragmentIgnition, ...]] = {}
     for year, cells in sorted(ignitions_by_year.items()):
         if isinstance(year, bool) or not isinstance(year, int) or year < 0:
@@ -251,7 +258,7 @@ def build_growth_fire_source(
             ignitions[year] = ()
             continue
         result = grow_fire(grid, replace(config, ignition_cells=tuple(cells)))
-        ignitions[year] = fragment_ignition_times(result, arrays)
+        ignitions[year] = fragment_ignition_times(result, support)
     return GrowthFireSource(
         ignitions=ignitions,
         scenario_id=scenario_id,
