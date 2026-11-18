@@ -12,7 +12,7 @@ from ws4.ecosystem.dataset import ProcessDataset, ProcessDatasetError
 from ws4.ecosystem.fire import FireConfig, FireEdge
 from ws4.ecosystem.growth_fire import GrowthFireSource
 from ws4.ecosystem.regeneration import RegenerationConfig
-from ws4.fire.growth import FragmentIgnition, GrowthConfig, SiteGrid
+from ws4.fire.growth import FragmentIgnition, FragmentSupport, GrowthConfig, SiteGrid
 from ws4.opt.account_compare import compare_accounts
 from ws4.opt.objective import Target
 from ws4.opt.process_search import ProcessSearchCandidate
@@ -357,6 +357,39 @@ def test_dataset_builds_a_growth_source_from_its_fragment_grid(tmp_path: Path) -
     assert source.ignitions[0][0].area_ha > 0.0
 
 
+def test_dataset_accepts_an_area_weighted_fragment_support(tmp_path: Path) -> None:
+    support = FragmentSupport(
+        rows=1,
+        cols=1,
+        cell_index=np.array([0, 0]),
+        fragment_id=np.array([1, 2]),
+        weight=np.array([0.25, 0.75]),
+    )
+    prepared = ProcessDataset.from_directory(_dataset(tmp_path), fragment_grid=support)
+    grid = SiteGrid(
+        fuel_type="C2",
+        rows=1,
+        cols=1,
+        cell_size_m=250.0,
+        ffmc=90.0,
+        bui=60.0,
+        wind_kmh=10.0,
+        wind_direction_deg=270.0,
+        slope_percent=0.0,
+        aspect_deg=0.0,
+        burnable=np.ones((1, 1), dtype=bool),
+    )
+
+    source = prepared.growth_fire_source(
+        grid,
+        GrowthConfig(ignition_cells=((0, 0),), max_time_min=10.0, snapshot_interval_min=5.0),
+        {0: ((0, 0),)},
+    )
+
+    assert {entry.fragment_id for entry in source.ignitions[0]} == {1, 2}
+    assert sum(entry.area_ha for entry in source.ignitions[0]) == pytest.approx(6.25)
+
+
 def test_dataset_rejects_a_fragment_grid_missing_a_fragment(tmp_path: Path) -> None:
     with pytest.raises(ProcessDatasetError, match="missing dataset fragments"):
         ProcessDataset.from_directory(
@@ -369,6 +402,17 @@ def test_dataset_rejects_a_fragment_grid_missing_a_fragment(tmp_path: Path) -> N
     with pytest.raises(ProcessDatasetError, match="non-negative"):
         ProcessDataset.from_directory(
             _dataset(tmp_path), fragment_grid=np.array([[1, -2]], dtype=np.int32)
+        )
+    with pytest.raises(ProcessDatasetError, match="fragment_support is missing"):
+        ProcessDataset.from_directory(
+            _dataset(tmp_path),
+            fragment_grid=FragmentSupport(
+                rows=1,
+                cols=1,
+                cell_index=np.array([0]),
+                fragment_id=np.array([1]),
+                weight=np.array([1.0]),
+            ),
         )
 
 
