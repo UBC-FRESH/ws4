@@ -9,7 +9,9 @@ import pytest
 from ws4.build.compiler import build_canonical_dataset
 from ws4.ecosystem.dataset import ProcessDataset, ProcessDatasetError
 from ws4.ecosystem.fire import FireConfig, FireEdge
+from ws4.ecosystem.growth_fire import GrowthFireSource
 from ws4.ecosystem.regeneration import RegenerationConfig
+from ws4.fire.growth import FragmentIgnition
 from ws4.opt.account_compare import compare_accounts
 from ws4.opt.objective import Target
 from ws4.opt.process_search import ProcessSearchCandidate
@@ -263,6 +265,49 @@ def test_dataset_search_carries_track_transitions_into_candidates(tmp_path: Path
     }
     assert accounts["bridge.volume_m3"] == pytest.approx(390.0)
     assert result.best.objective == pytest.approx(0.0)
+
+
+def test_dataset_search_forwards_a_growth_fire_source(tmp_path: Path) -> None:
+    prepared = ProcessDataset.from_directory(_dataset(tmp_path))
+    source = GrowthFireSource(
+        {0: (FragmentIgnition(fragment_id=1, ignition_time_min=0.0, area_ha=3.0, burned_cells=1),)}
+    )
+    result = prepared.search(
+        (ProcessSearchCandidate("none", {}),),
+        horizon_years=4,
+        targets=(Target("state.biomass_t", period=4, maximum=1.0),),
+        fire=FireConfig(ignition_rate_per_fragment_year=0.0),
+        fire_source=source,
+        seed=1,
+    )
+
+    accounts = {
+        str(row.account): float(str(row.value))
+        for row in result.best.evaluation.accounts.itertuples(index=False)
+    }
+    assert accounts["fire.burned_area_ha_total"] == pytest.approx(3.0)
+
+
+def test_dataset_optimize_forwards_a_growth_fire_source(tmp_path: Path) -> None:
+    prepared = ProcessDataset.from_directory(_dataset(tmp_path))
+    source = GrowthFireSource(
+        {0: (FragmentIgnition(fragment_id=1, ignition_time_min=0.0, area_ha=3.0, burned_cells=1),)}
+    )
+    result = prepared.optimize(
+        prepared.grammar(4),
+        ProcessSearchCandidate("initial", {}),
+        horizon_years=4,
+        targets=(Target("state.biomass_t", period=4, maximum=1.0),),
+        max_iterations=1,
+        fire=FireConfig(ignition_rate_per_fragment_year=0.0),
+        fire_source=source,
+        seed=1,
+    )
+
+    values = result.best.evaluation.values
+    assert float(values.loc[values["account"] == "fire.burned_area_ha", "value"].sum()) == (
+        pytest.approx(3.0)
+    )
 
 
 def test_dataset_grammar_uses_compiled_treatment_windows(tmp_path: Path) -> None:

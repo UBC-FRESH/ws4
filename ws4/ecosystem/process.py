@@ -66,10 +66,25 @@ class Process(Protocol):
     events for the phase, applying each batch in event-key order before asking again.
     """
 
-    process_id: str
-    phases: tuple[str, ...]
-    state_reads: frozenset[str]
-    state_writes: frozenset[str]
+    @property
+    def process_id(self) -> str:
+        """Return the stable process identifier."""
+        ...
+
+    @property
+    def phases(self) -> tuple[str, ...]:
+        """Return the phases this source participates in."""
+        ...
+
+    @property
+    def state_reads(self) -> frozenset[str]:
+        """Return the cohort-state variables this source reads."""
+        ...
+
+    @property
+    def state_writes(self) -> frozenset[str]:
+        """Return the cohort-state variables this source writes."""
+        ...
 
     def events(self, state: CohortState, context: ProcessContext) -> Sequence[Event]:
         """Return the next batch of events for the context phase.
@@ -114,10 +129,25 @@ class DecisionSource(Protocol):
     process events the same way; the distinction is for provenance and future policy search.
     """
 
-    process_id: str
-    phases: tuple[str, ...]
-    state_reads: frozenset[str]
-    state_writes: frozenset[str]
+    @property
+    def process_id(self) -> str:
+        """Return the stable process identifier."""
+        ...
+
+    @property
+    def phases(self) -> tuple[str, ...]:
+        """Return the phases this source participates in."""
+        ...
+
+    @property
+    def state_reads(self) -> frozenset[str]:
+        """Return the cohort-state variables this source reads."""
+        ...
+
+    @property
+    def state_writes(self) -> frozenset[str]:
+        """Return the cohort-state variables this source writes."""
+        ...
 
     def events(self, state: CohortState, context: ProcessContext) -> Sequence[Event]:
         """Return the next batch of controlled events for the context phase.
