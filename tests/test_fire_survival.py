@@ -6,7 +6,12 @@ import random
 
 import pytest
 from ws4.fire.fuel import FireFuelError
-from ws4.fire.survival import SurvivalConfig, draw_survival
+from ws4.fire.survival import (
+    RelativeSuppressionConfig,
+    SurvivalConfig,
+    draw_relative_suppression,
+    draw_survival,
+)
 
 
 def test_escape_probability_increases_with_duration_and_weather() -> None:
@@ -69,4 +74,61 @@ def test_survival_config_rejects_invalid_sizes_and_inputs() -> None:
             fwi=30.0,
             bui=80.0,
             wind_kmh=15.0,
+        )
+
+
+def test_relative_suppression_keeps_a_fraction_of_potential() -> None:
+    config = RelativeSuppressionConfig(
+        intercept=-100.0,
+        contained_fraction_median=0.2,
+        contained_fraction_sigma=0.01,
+    )
+    outcome = draw_relative_suppression(
+        config,
+        random.Random(3),
+        potential_area_ha=100.0,
+        active_days=2.0,
+        fwi=30.0,
+        bui=80.0,
+        wind_kmh=10.0,
+    )
+
+    assert outcome.escaped is False
+    assert outcome.target_area_ha == pytest.approx(20.0, rel=0.1)
+    assert outcome.target_area_ha < 100.0
+
+
+def test_relative_escape_is_bounded_by_cap() -> None:
+    config = RelativeSuppressionConfig(
+        intercept=100.0,
+        escaped_fraction_median=0.9,
+        escaped_fraction_sigma=0.01,
+        escape_cap_ha=50.0,
+    )
+    outcome = draw_relative_suppression(
+        config,
+        random.Random(4),
+        potential_area_ha=200.0,
+        active_days=5.0,
+        fwi=40.0,
+        bui=120.0,
+        wind_kmh=20.0,
+    )
+
+    assert outcome.escaped is True
+    assert outcome.target_area_ha == pytest.approx(50.0)
+
+
+def test_relative_suppression_rejects_invalid_fractions() -> None:
+    with pytest.raises(FireFuelError, match="contained_fraction_median"):
+        RelativeSuppressionConfig(contained_fraction_median=1.5)
+    with pytest.raises(FireFuelError, match="potential_area_ha"):
+        draw_relative_suppression(
+            RelativeSuppressionConfig(),
+            random.Random(5),
+            potential_area_ha=0.0,
+            active_days=1.0,
+            fwi=20.0,
+            bui=60.0,
+            wind_kmh=5.0,
         )

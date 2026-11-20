@@ -24,7 +24,12 @@ from ..fire.growth import (
     fragment_ignition_times,
     grow_fire,
 )
-from ..fire.survival import SurvivalConfig, draw_survival
+from ..fire.survival import (
+    RelativeSuppressionConfig,
+    SurvivalConfig,
+    draw_relative_suppression,
+    draw_survival,
+)
 from .events import Event
 from .fire import FireConfig, FireProcess
 from .process import ProcessContext
@@ -444,6 +449,101 @@ def build_two_stage_fire_source(
                 containment_start_min=None,
             )
             potential = grow_fire(grid, base)
+            if potential.burned_area_ha > outcome.max_burned_area_ha:
+                result = grow_fire(
+                    grid,
+                    replace(base, max_burned_area_ha=outcome.max_burned_area_ha),
+                )
+            else:
+                result = potential
+            drawn[year].extend(fragment_ignition_times(result, support))
+    return GrowthFireSource(
+        ignitions={year: tuple(entries) for year, entries in drawn.items()},
+        scenario_id=scenario_id,
+        snag_fraction=snag_fraction,
+        minutes_per_year=minutes_per_year,
+    )
+
+
+def build_relative_fire_source(
+    grid: SiteGrid,
+    config: GrowthConfig,
+    fragment_grid: np.ndarray | FragmentSupport,
+    ignitions_by_year: Mapping[int, Sequence[SurvivalIgnition]],
+    suppression: RelativeSuppressionConfig,
+    *,
+    seed: int = 0,
+    scenario_id: str = "relative-fire",
+    snag_fraction: float = 0.1,
+    minutes_per_year: float = 525_600.0,
+) -> GrowthFireSource:
+    """Grow potential fires, then retain a relative suppression fraction.
+
+    Parameters
+    ----------
+    grid : SiteGrid
+        Raster site grid.
+    config : GrowthConfig
+        Base growth configuration; time and area cap are replaced per fire.
+    fragment_grid : numpy.ndarray or FragmentSupport
+        Fragment raster or area-weighted support grid.
+    ignitions_by_year : mapping of int to sequence of SurvivalIgnition
+        Ignition and weather inputs by year.
+    suppression : RelativeSuppressionConfig
+        Relative contained/escaped fraction parameters.
+    seed : int, optional
+        Deterministic suppression seed.
+    scenario_id : str, optional
+        Scenario id stamped on events.
+    snag_fraction : float, optional
+        Fraction of killed biomass left as snags.
+    minutes_per_year : float, optional
+        Minutes per simulation year.
+
+    Returns
+    -------
+    GrowthFireSource
+        Adapter ready for the process executor.
+    """
+    if isinstance(seed, bool) or not isinstance(seed, int) or seed < 0:
+        raise ValueError("seed must be a non-negative integer")
+    if isinstance(fragment_grid, FragmentSupport):
+        if (fragment_grid.rows, fragment_grid.cols) != (grid.rows, grid.cols):
+            raise ValueError("fragment_grid shape must match the site grid")
+        support: np.ndarray | FragmentSupport = fragment_grid
+    else:
+        arrays = np.asarray(fragment_grid)
+        if arrays.ndim != 2 or not np.issubdtype(arrays.dtype, np.integer):
+            raise ValueError("fragment_grid must be a two-dimensional integer array")
+        if arrays.shape != (grid.rows, grid.cols):
+            raise ValueError("fragment_grid shape must match the site grid")
+        support = arrays
+    drawn: dict[int, list[FragmentIgnition]] = {}
+    for year, entries in sorted(ignitions_by_year.items()):
+        if isinstance(year, bool) or not isinstance(year, int) or year < 0:
+            raise ValueError("ignition years must be non-negative integers")
+        drawn[year] = []
+        for index, entry in enumerate(entries):
+            if not isinstance(entry, SurvivalIgnition):
+                raise ValueError("ignition entries must be SurvivalIgnition values")
+            base = replace(
+                config,
+                ignition_cells=(entry.cell,),
+                max_time_min=max(1.0, entry.active_days * 1440.0),
+                max_burned_area_ha=None,
+                containment_start_min=None,
+            )
+            potential = grow_fire(grid, base)
+            outcome = draw_relative_suppression(
+                suppression,
+                random.Random(seed + year * 1_000_003 + index),
+                potential_area_ha=potential.burned_area_ha,
+                active_days=entry.active_days,
+                fwi=entry.fwi,
+                bui=entry.bui,
+                wind_kmh=entry.wind_kmh,
+                fuel_hazard=entry.fuel_hazard,
+            )
             if potential.burned_area_ha > outcome.max_burned_area_ha:
                 result = grow_fire(
                     grid,

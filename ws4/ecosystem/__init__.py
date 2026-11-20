@@ -43,6 +43,7 @@ from .growth_fire import (
     GrowthFireSource,
     SurvivalIgnition,
     build_growth_fire_source,
+    build_relative_fire_source,
     build_survival_fire_source,
     build_two_stage_fire_source,
 )
@@ -214,6 +215,7 @@ __all__ = [
     "TapeError",
     "VolumeBridgeConfig",
     "build_growth_fire_source",
+    "build_relative_fire_source",
     "build_survival_fire_source",
     "build_two_stage_fire_source",
     "calculate_age_mortality",
