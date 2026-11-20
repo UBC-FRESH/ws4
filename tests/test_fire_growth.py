@@ -275,6 +275,27 @@ def test_wind_and_slope_combine_into_one_vector() -> None:
     assert float(np.mean(cols)) > 100.0
 
 
+def test_max_burned_area_stops_adding_cells() -> None:
+    grid = make_grid(rows=41, cols=41, wind_kmh=20.0, wind_direction_deg=270.0)
+    result = grow_fire(
+        grid,
+        GrowthConfig(
+            ignition_cells=((20, 5),),
+            max_time_min=180.0,
+            max_burned_area_ha=0.50,
+            snapshot_interval_min=60.0,
+        ),
+    )
+
+    assert result.burned_area_ha == pytest.approx(0.50, abs=grid.cell_area_ha)
+    assert result.burned_area_ha > 0.0
+
+
+def test_max_burned_area_must_be_positive() -> None:
+    with pytest.raises(FireFuelError, match="max_burned_area_ha"):
+        GrowthConfig(ignition_cells=((0, 0),), max_burned_area_ha=0.0)
+
+
 def test_fragment_bridge_matches_the_growth_front() -> None:
     grid = make_grid(rows=41, cols=41, wind_kmh=20.0, wind_direction_deg=270.0)
     result = grow_fire(
