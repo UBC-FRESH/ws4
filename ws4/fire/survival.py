@@ -221,7 +221,26 @@ class RelativeSuppressionConfig:
         wind_kmh: float,
         fuel_hazard: float = 0.0,
     ) -> float:
-        """Return the probability that a potential fire escapes suppression."""
+        """Return the probability that a potential fire escapes suppression.
+
+        Parameters
+        ----------
+        active_days : float
+            Active-spread duration in days.
+        fwi : float
+            Fire Weather Index.
+        bui : float
+            Buildup Index.
+        wind_kmh : float
+            Ten-metre wind speed.
+        fuel_hazard : float, optional
+            Additional fuel/landscape hazard contribution (default zero).
+
+        Returns
+        -------
+        float
+            Escape probability in ``(0, 1)``.
+        """
         days = _finite(active_days, "active_days")
         fwi_value = _finite(fwi, "fwi")
         bui_value = _finite(bui, "bui")
