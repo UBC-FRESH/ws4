@@ -142,7 +142,6 @@ def test_survival_ignition_rejects_negative_weather() -> None:
         SurvivalIgnition(cell=(0, 0), active_days=1.0, fwi=-1.0, bui=60.0, wind_kmh=5.0)
 
 
-
 def test_two_stage_source_caps_only_when_potential_exceeds_target() -> None:
     grid = SiteGrid(
         fuel_type="C2",
