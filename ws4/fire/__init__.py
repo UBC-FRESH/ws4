@@ -109,7 +109,14 @@ from .rothermel import (
     RothermelResult,
     surface_fire,
 )
-from .survival import SurvivalConfig, SurvivalOutcome, draw_survival
+from .survival import (
+    RelativeSuppressionConfig,
+    RelativeSuppressionOutcome,
+    SurvivalConfig,
+    SurvivalOutcome,
+    draw_relative_suppression,
+    draw_survival,
+)
 from .vri import (
     VRI_FBP_VERSION,
     FbpFuelAssignment,
@@ -177,6 +184,8 @@ __all__ = [
     "GrowthConfig",
     "GrowthResult",
     "GrowthSnapshot",
+    "RelativeSuppressionConfig",
+    "RelativeSuppressionOutcome",
     "RothermelResult",
     "SiteGrid",
     "SpotIgnition",
@@ -197,6 +206,7 @@ __all__ = [
     "crown_fraction_burned",
     "crown_rate_of_spread_c6",
     "directional_ros",
+    "draw_relative_suppression",
     "draw_survival",
     "drought_code",
     "duff_moisture_code",
