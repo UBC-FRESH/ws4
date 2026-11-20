@@ -211,3 +211,35 @@ def test_survival_ignition_rejects_invalid_active_hours() -> None:
             wind_kmh=5.0,
             active_hours_per_day=0.0,
         )
+
+
+def test_relative_fire_source_accepts_region_configs() -> None:
+    grid = SiteGrid(
+        fuel_type="C2",
+        rows=5,
+        cols=5,
+        cell_size_m=10.0,
+        ffmc=90.0,
+        bui=60.0,
+        wind_kmh=20.0,
+        wind_direction_deg=270.0,
+        slope_percent=0.0,
+        aspect_deg=0.0,
+        burnable=np.ones((5, 5), dtype=bool),
+    )
+    fragments = np.ones((5, 5), dtype=int)
+    regions = np.ones((5, 5), dtype=int)
+    regions[:, 2:] = 2
+    source = build_relative_fire_source(
+        grid,
+        GrowthConfig(ignition_cells=((2, 2),), max_time_min=30.0, snapshot_interval_min=10.0),
+        fragments,
+        {0: (SurvivalIgnition(cell=(2, 1), active_days=1.0, fwi=20.0, bui=60.0, wind_kmh=10.0),)},
+        {
+            1: RelativeSuppressionConfig(intercept=-100.0, contained_fraction_median=0.1),
+            2: RelativeSuppressionConfig(intercept=-100.0, contained_fraction_median=0.1),
+        },
+        region_grid=regions,
+    )
+
+    assert source.ignitions[0]

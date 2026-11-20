@@ -478,8 +478,9 @@ def build_relative_fire_source(
     config: GrowthConfig,
     fragment_grid: np.ndarray | FragmentSupport,
     ignitions_by_year: Mapping[int, Sequence[SurvivalIgnition]],
-    suppression: RelativeSuppressionConfig,
+    suppression: RelativeSuppressionConfig | Mapping[int, RelativeSuppressionConfig],
     *,
+    region_grid: np.ndarray | None = None,
     seed: int = 0,
     scenario_id: str = "relative-fire",
     snag_fraction: float = 0.1,
@@ -497,8 +498,10 @@ def build_relative_fire_source(
         Fragment raster or area-weighted support grid.
     ignitions_by_year : mapping of int to sequence of SurvivalIgnition
         Ignition and weather inputs by year.
-    suppression : RelativeSuppressionConfig
-        Relative contained/escaped fraction parameters.
+    suppression : RelativeSuppressionConfig or mapping of int to RelativeSuppressionConfig
+        Relative contained/escaped fraction parameters, globally or by region id.
+    region_grid : numpy.ndarray or None, optional
+        Two-dimensional non-negative region ids used when ``suppression`` is a mapping.
     seed : int, optional
         Deterministic suppression seed.
     scenario_id : str, optional
@@ -515,6 +518,19 @@ def build_relative_fire_source(
     """
     if isinstance(seed, bool) or not isinstance(seed, int) or seed < 0:
         raise ValueError("seed must be a non-negative integer")
+    regioned = isinstance(suppression, Mapping)
+    if regioned:
+        if region_grid is None:
+            raise ValueError("region_grid is required for region-level suppression")
+        regions = np.asarray(region_grid)
+        if (
+            regions.ndim != 2
+            or not np.issubdtype(regions.dtype, np.integer)
+            or regions.shape != (grid.rows, grid.cols)
+        ):
+            raise ValueError("region_grid must be a two-dimensional integer grid")
+        if bool((regions < 0).any()):
+            raise ValueError("region_grid ids must be non-negative")
     if isinstance(fragment_grid, FragmentSupport):
         if (fragment_grid.rows, fragment_grid.cols) != (grid.rows, grid.cols):
             raise ValueError("fragment_grid shape must match the site grid")
@@ -541,9 +557,16 @@ def build_relative_fire_source(
                 max_burned_area_ha=None,
                 containment_start_min=None,
             )
+            chosen = suppression
+            if regioned:
+                chosen = suppression[int(regions[entry.cell])]  # type: ignore[index]
+            if not isinstance(chosen, RelativeSuppressionConfig):
+                raise ValueError(
+                    "suppression mapping must contain RelativeSuppressionConfig values"
+                )
             potential = grow_fire(grid, base)
             outcome = draw_relative_suppression(
-                suppression,
+                chosen,
                 random.Random(seed + year * 1_000_003 + index),
                 potential_area_ha=potential.burned_area_ha,
                 active_days=entry.active_days,
