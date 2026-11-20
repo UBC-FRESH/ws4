@@ -566,6 +566,8 @@ class GrowthConfig:
         Ignition cells as ``(row, col)``.
     max_time_min : float, optional
         The maximum simulated time in minutes (default 240).
+    max_burned_area_ha : float or None, optional
+        Stop adding cells once the burned area reaches this cap. None preserves free growth.
     snapshot_interval_min : float, optional
         The snapshot interval in minutes (default 30).
     allow_diagonal : bool, optional
@@ -614,6 +616,7 @@ class GrowthConfig:
 
     ignition_cells: tuple[tuple[int, int], ...]
     max_time_min: float = 240.0
+    max_burned_area_ha: float | None = None
     snapshot_interval_min: float = 30.0
     allow_diagonal: bool = True
     neighbor_radius: int = 2
@@ -643,6 +646,10 @@ class GrowthConfig:
                 raise FireFuelError("ignition cells must be (row, col) pairs")
         if _non_negative(self.max_time_min, "max_time_min") <= 0.0:
             raise FireFuelError("max_time_min must be positive")
+        if self.max_burned_area_ha is not None and (
+            _non_negative(self.max_burned_area_ha, "max_burned_area_ha") <= 0.0
+        ):
+            raise FireFuelError("max_burned_area_ha must be positive")
         if _non_negative(self.snapshot_interval_min, "snapshot_interval_min") <= 0.0:
             raise FireFuelError("snapshot_interval_min must be positive")
         if isinstance(self.neighbor_radius, bool) or not isinstance(self.neighbor_radius, int):
@@ -1587,10 +1594,18 @@ def _grow_fire_time_dependent(grid: SiteGrid, config: GrowthConfig) -> GrowthRes
     for row, col in config.ignition_cells:
         ignition[row, col] = 0.0
         heapq.heappush(queue, (0.0, row, col))
+    max_cells = (
+        None
+        if config.max_burned_area_ha is None
+        else max(1, math.ceil(config.max_burned_area_ha / grid.cell_area_ha))
+    )
+    ignited_cells = len(set(config.ignition_cells))
     offsets = _neighbor_offsets(config.allow_diagonal, config.neighbor_radius)
     while queue:
         time, row, col = heapq.heappop(queue)
         if time > config.max_time_min:
+            break
+        if max_cells is not None and ignited_cells >= max_cells:
             break
         if time > ignition[row, col] + 1e-12:
             continue
@@ -1708,6 +1723,8 @@ def _grow_fire_time_dependent(grid: SiteGrid, config: GrowthConfig) -> GrowthRes
                     arrival,
                 )
             ):
+                if not math.isfinite(ignition[nrow, ncol]):
+                    ignited_cells += 1
                 ignition[nrow, ncol] = arrival
                 heapq.heappush(queue, (arrival, nrow, ncol))
     snapshots: list[GrowthSnapshot] = []
@@ -1801,10 +1818,18 @@ def grow_fire(grid: SiteGrid, config: GrowthConfig) -> GrowthResult:
     for row, col in config.ignition_cells:
         ignition[row, col] = 0.0
         heapq.heappush(queue, (0.0, row, col))
+    max_cells = (
+        None
+        if config.max_burned_area_ha is None
+        else max(1, math.ceil(config.max_burned_area_ha / grid.cell_area_ha))
+    )
+    ignited_cells = len(set(config.ignition_cells))
     offsets = _neighbor_offsets(config.allow_diagonal, config.neighbor_radius)
     while queue:
         time, row, col = heapq.heappop(queue)
         if time > config.max_time_min:
+            break
+        if max_cells is not None and ignited_cells >= max_cells:
             break
         if time > ignition[row, col] + 1e-12:
             continue
@@ -1854,6 +1879,8 @@ def grow_fire(grid: SiteGrid, config: GrowthConfig) -> GrowthResult:
                     arrival,
                 )
             ):
+                if not math.isfinite(ignition[nrow, ncol]):
+                    ignited_cells += 1
                 ignition[nrow, ncol] = arrival
                 heapq.heappush(queue, (arrival, nrow, ncol))
     snapshots: list[GrowthSnapshot] = []
