@@ -44,6 +44,7 @@ from .growth_fire import (
     SurvivalIgnition,
     build_growth_fire_source,
     build_survival_fire_source,
+    build_two_stage_fire_source,
 )
 from .landis import (
     LANDIS_KERNEL_VERSION,
@@ -214,6 +215,7 @@ __all__ = [
     "VolumeBridgeConfig",
     "build_growth_fire_source",
     "build_survival_fire_source",
+    "build_two_stage_fire_source",
     "calculate_age_mortality",
     "calculate_anpp",
     "calculate_competition",
