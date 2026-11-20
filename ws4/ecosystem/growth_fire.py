@@ -225,6 +225,8 @@ class SurvivalIgnition:
         Ten-metre wind speed at ignition.
     fuel_hazard : float, optional
         Additional fuel/landscape hazard contribution (default zero).
+    active_hours_per_day : float, optional
+        Hours of active spread per day (default 24).
     """
 
     cell: tuple[int, int]
@@ -233,6 +235,7 @@ class SurvivalIgnition:
     bui: float
     wind_kmh: float
     fuel_hazard: float = 0.0
+    active_hours_per_day: float = 24.0
 
     def __post_init__(self) -> None:
         """Validate the ignition inputs."""
@@ -253,6 +256,11 @@ class SurvivalIgnition:
                 raise ValueError(f"{field} must be finite and non-negative")
         if not math.isfinite(self.fuel_hazard):
             raise ValueError("fuel_hazard must be finite")
+        hours = self.active_hours_per_day
+        if isinstance(hours, bool) or not isinstance(hours, (int, float)):
+            raise ValueError("active_hours_per_day must be a number")
+        if not math.isfinite(float(hours)) or not 0.0 < float(hours) <= 24.0:
+            raise ValueError("active_hours_per_day must be in (0, 24]")
 
 
 def _containment_ring(
@@ -357,7 +365,7 @@ def build_survival_fire_source(
             fire_config = replace(
                 config,
                 ignition_cells=(entry.cell,),
-                max_time_min=max(1.0, entry.active_days * 1440.0),
+                max_time_min=max(1.0, entry.active_days * entry.active_hours_per_day * 60.0),
                 max_burned_area_ha=outcome.max_burned_area_ha,
                 containment_start_min=closure,
             )
@@ -444,7 +452,7 @@ def build_two_stage_fire_source(
             base = replace(
                 config,
                 ignition_cells=(entry.cell,),
-                max_time_min=max(1.0, entry.active_days * 1440.0),
+                max_time_min=max(1.0, entry.active_days * entry.active_hours_per_day * 60.0),
                 max_burned_area_ha=None,
                 containment_start_min=None,
             )
@@ -529,7 +537,7 @@ def build_relative_fire_source(
             base = replace(
                 config,
                 ignition_cells=(entry.cell,),
-                max_time_min=max(1.0, entry.active_days * 1440.0),
+                max_time_min=max(1.0, entry.active_days * entry.active_hours_per_day * 60.0),
                 max_burned_area_ha=None,
                 containment_start_min=None,
             )

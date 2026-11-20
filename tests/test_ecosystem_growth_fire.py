@@ -199,3 +199,15 @@ def test_relative_fire_source_retains_a_suppression_fraction() -> None:
 
     assert source.ignitions[0]
     assert all(entry.area_ha > 0.0 for entry in source.ignitions[0])
+
+
+def test_survival_ignition_rejects_invalid_active_hours() -> None:
+    with pytest.raises(ValueError, match="active_hours_per_day"):
+        SurvivalIgnition(
+            cell=(0, 0),
+            active_days=1.0,
+            fwi=20.0,
+            bui=60.0,
+            wind_kmh=5.0,
+            active_hours_per_day=0.0,
+        )
