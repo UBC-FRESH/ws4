@@ -1,0 +1,72 @@
+"""Tests for the survival/escape fire process."""
+
+from __future__ import annotations
+
+import random
+
+import pytest
+from ws4.fire.fuel import FireFuelError
+from ws4.fire.survival import SurvivalConfig, draw_survival
+
+
+def test_escape_probability_increases_with_duration_and_weather() -> None:
+    config = SurvivalConfig()
+    low = config.escape_probability(active_days=0.5, fwi=10.0, bui=50.0, wind_kmh=5.0)
+    high = config.escape_probability(active_days=7.0, fwi=40.0, bui=120.0, wind_kmh=30.0)
+
+    assert 0.0 < low < high < 1.0
+
+
+def test_forced_escape_is_bounded_by_the_cap() -> None:
+    config = SurvivalConfig(intercept=100.0, escape_median_ha=8_000.0, escape_cap_ha=10_000.0)
+    outcome = draw_survival(
+        config,
+        random.Random(1),
+        active_days=3.0,
+        fwi=40.0,
+        bui=120.0,
+        wind_kmh=20.0,
+    )
+
+    assert outcome.escaped is True
+    assert outcome.target_area_ha == pytest.approx(outcome.max_burned_area_ha)
+    assert 0.0 < outcome.max_burned_area_ha <= 10_000.0
+
+
+def test_forced_containment_returns_the_contained_distribution() -> None:
+    config = SurvivalConfig(intercept=-100.0, contained_median_ha=20.0)
+    outcome = draw_survival(
+        config,
+        random.Random(2),
+        active_days=3.0,
+        fwi=40.0,
+        bui=120.0,
+        wind_kmh=20.0,
+    )
+
+    assert outcome.escaped is False
+    assert 0.0 < outcome.target_area_ha < 100.0
+    assert outcome.target_area_ha == pytest.approx(outcome.max_burned_area_ha)
+
+
+def test_survival_draw_is_deterministic() -> None:
+    config = SurvivalConfig()
+    kwargs = {"active_days": 2.0, "fwi": 30.0, "bui": 80.0, "wind_kmh": 15.0}
+    first = draw_survival(config, random.Random(7), **kwargs)
+    second = draw_survival(config, random.Random(7), **kwargs)
+
+    assert first == second
+
+
+def test_survival_config_rejects_invalid_sizes_and_inputs() -> None:
+    with pytest.raises(FireFuelError, match="contained_median_ha"):
+        SurvivalConfig(contained_median_ha=0.0)
+    with pytest.raises(FireFuelError, match="escape_median_ha"):
+        SurvivalConfig(escape_median_ha=20_000.0, escape_cap_ha=10_000.0)
+    with pytest.raises(FireFuelError, match="non-negative"):
+        SurvivalConfig().escape_probability(
+            active_days=-1.0,
+            fwi=30.0,
+            bui=80.0,
+            wind_kmh=15.0,
+        )

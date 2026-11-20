@@ -109,6 +109,7 @@ from .rothermel import (
     RothermelResult,
     surface_fire,
 )
+from .survival import SurvivalConfig, SurvivalOutcome, draw_survival
 from .vri import (
     VRI_FBP_VERSION,
     FbpFuelAssignment,
@@ -180,6 +181,8 @@ __all__ = [
     "SiteGrid",
     "SpotIgnition",
     "SpottingConfig",
+    "SurvivalConfig",
+    "SurvivalOutcome",
     "VriError",
     "VriStand",
     "WindNinjaGrid",
@@ -194,6 +197,7 @@ __all__ = [
     "crown_fraction_burned",
     "crown_rate_of_spread_c6",
     "directional_ros",
+    "draw_survival",
     "drought_code",
     "duff_moisture_code",
     "effective_wind",
