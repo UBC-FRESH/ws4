@@ -1671,6 +1671,8 @@ def _grow_fire_time_dependent(grid: SiteGrid, config: GrowthConfig) -> GrowthRes
                 next_spot_min += spotting.interval_min
         step_index = max(0, bisect.bisect_right(starts, time) - 1)
         for drow, dcol in offsets:
+            if max_cells is not None and ignited_cells >= max_cells:
+                break
             nrow = row + drow
             ncol = col + dcol
             if nrow < 0 or nrow >= grid.rows or ncol < 0 or ncol >= grid.cols:
@@ -1834,6 +1836,8 @@ def grow_fire(grid: SiteGrid, config: GrowthConfig) -> GrowthResult:
         if time > ignition[row, col] + 1e-12:
             continue
         for drow, dcol in offsets:
+            if max_cells is not None and ignited_cells >= max_cells:
+                break
             nrow = row + drow
             ncol = col + dcol
             if nrow < 0 or nrow >= grid.rows or ncol < 0 or ncol >= grid.cols:

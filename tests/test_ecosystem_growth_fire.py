@@ -6,10 +6,16 @@ import numpy as np
 import pytest
 from ws4.ecosystem.events import Event
 from ws4.ecosystem.fire import synthetic_grid
-from ws4.ecosystem.growth_fire import GrowthFireSource, build_growth_fire_source
+from ws4.ecosystem.growth_fire import (
+    GrowthFireSource,
+    SurvivalIgnition,
+    build_growth_fire_source,
+    build_survival_fire_source,
+)
 from ws4.ecosystem.process import ProcessContext
 from ws4.ecosystem.state import CohortState
 from ws4.fire.growth import FragmentIgnition, FragmentSupport, GrowthConfig, SiteGrid
+from ws4.fire.survival import SurvivalConfig
 
 
 def _state() -> CohortState:
@@ -101,3 +107,35 @@ def test_growth_source_builds_from_a_fragment_support() -> None:
 
     assert source.ignitions[0][0].fragment_id == 7
     assert source.ignitions[0][0].area_ha == pytest.approx(0.5)
+
+
+def test_survival_fire_source_uses_the_escape_cap() -> None:
+    grid = SiteGrid(
+        fuel_type="C2",
+        rows=5,
+        cols=5,
+        cell_size_m=10.0,
+        ffmc=90.0,
+        bui=60.0,
+        wind_kmh=10.0,
+        wind_direction_deg=270.0,
+        slope_percent=0.0,
+        aspect_deg=0.0,
+        burnable=np.ones((5, 5), dtype=bool),
+    )
+    fragments = np.ones((5, 5), dtype=int)
+    source = build_survival_fire_source(
+        grid,
+        GrowthConfig(ignition_cells=((2, 2),), max_time_min=30.0, snapshot_interval_min=10.0),
+        fragments,
+        {0: (SurvivalIgnition(cell=(2, 2), active_days=3.0, fwi=40.0, bui=100.0, wind_kmh=20.0),)},
+        SurvivalConfig(intercept=100.0, escape_median_ha=0.05, escape_cap_ha=0.05),
+    )
+
+    assert source.ignitions[0]
+    assert all(entry.area_ha <= 0.06 for entry in source.ignitions[0])
+
+
+def test_survival_ignition_rejects_negative_weather() -> None:
+    with pytest.raises(ValueError, match="fwi"):
+        SurvivalIgnition(cell=(0, 0), active_days=1.0, fwi=-1.0, bui=60.0, wind_kmh=5.0)

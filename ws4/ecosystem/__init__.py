@@ -39,7 +39,12 @@ from .fire import (
     run_fire_demo,
     synthetic_grid,
 )
-from .growth_fire import GrowthFireSource, build_growth_fire_source
+from .growth_fire import (
+    GrowthFireSource,
+    SurvivalIgnition,
+    build_growth_fire_source,
+    build_survival_fire_source,
+)
 from .landis import (
     LANDIS_KERNEL_VERSION,
     LANDIS_REFERENCE_TRAITS,
@@ -204,9 +209,11 @@ __all__ = [
     "SuccessionConfig",
     "SuccessionError",
     "SuccessionProcess",
+    "SurvivalIgnition",
     "TapeError",
     "VolumeBridgeConfig",
     "build_growth_fire_source",
+    "build_survival_fire_source",
     "calculate_age_mortality",
     "calculate_anpp",
     "calculate_competition",
