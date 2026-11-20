@@ -9,6 +9,7 @@ growth run participate in the same annual executor.
 from __future__ import annotations
 
 import math
+import random
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, replace
 from typing import Final
@@ -23,6 +24,7 @@ from ..fire.growth import (
     fragment_ignition_times,
     grow_fire,
 )
+from ..fire.survival import SurvivalConfig, draw_survival
 from .events import Event
 from .fire import FireConfig, FireProcess
 from .process import ProcessContext
@@ -198,6 +200,170 @@ class GrowthFireSource:
             scenario_id=self.scenario_id,
         )
         return process.apply_many(state, events)
+
+
+@dataclass(frozen=True)
+class SurvivalIgnition:
+    """One ignition with the weather and duration inputs for survival.
+
+    Parameters
+    ----------
+    cell : tuple of int
+        Ignition cell as ``(row, col)``.
+    active_days : float
+        Active-spread duration in days.
+    fwi : float
+        Fire Weather Index at ignition.
+    bui : float
+        Buildup Index at ignition.
+    wind_kmh : float
+        Ten-metre wind speed at ignition.
+    fuel_hazard : float, optional
+        Additional fuel/landscape hazard contribution (default zero).
+    """
+
+    cell: tuple[int, int]
+    active_days: float
+    fwi: float
+    bui: float
+    wind_kmh: float
+    fuel_hazard: float = 0.0
+
+    def __post_init__(self) -> None:
+        """Validate the ignition inputs."""
+        if len(self.cell) != 2 or any(
+            isinstance(value, bool) or not isinstance(value, int) or value < 0
+            for value in self.cell
+        ):
+            raise ValueError("survival ignition cells must be non-negative (row, col) pairs")
+        for value, field in (
+            (self.active_days, "active_days"),
+            (self.fwi, "fwi"),
+            (self.bui, "bui"),
+            (self.wind_kmh, "wind_kmh"),
+        ):
+            if isinstance(value, bool) or not isinstance(value, (int, float)):
+                raise ValueError(f"{field} must be a number")
+            if not math.isfinite(float(value)) or float(value) < 0.0:
+                raise ValueError(f"{field} must be finite and non-negative")
+        if not math.isfinite(self.fuel_hazard):
+            raise ValueError("fuel_hazard must be finite")
+
+
+def _containment_ring(
+    shape: tuple[int, int],
+    cell: tuple[int, int],
+    area_ha: float,
+    cell_size_m: float,
+) -> np.ndarray:
+    """Build a closed containment ring around one ignition for a target area."""
+    rows, cols = shape
+    cell_area = cell_size_m * cell_size_m / 10_000.0
+    radius = math.sqrt(max(area_ha, cell_area) / (math.pi * cell_area))
+    rr = np.sqrt(
+        (np.arange(rows)[:, None] - cell[0]) ** 2 + (np.arange(cols)[None, :] - cell[1]) ** 2
+    )
+    ring = (rr >= max(1.0, radius - 0.75)) & (rr < radius + 0.75)
+    closure = np.full(shape, np.inf)
+    closure[ring] = 0.0
+    return closure
+
+
+def build_survival_fire_source(
+    grid: SiteGrid,
+    config: GrowthConfig,
+    fragment_grid: np.ndarray | FragmentSupport,
+    ignitions_by_year: Mapping[int, Sequence[SurvivalIgnition]],
+    survival: SurvivalConfig,
+    *,
+    seed: int = 0,
+    scenario_id: str = "survival-fire",
+    snag_fraction: float = 0.1,
+    minutes_per_year: float = 525_600.0,
+) -> GrowthFireSource:
+    """Draw survival outcomes, grow each fire, and return the cohort adapter.
+
+    Parameters
+    ----------
+    grid : SiteGrid
+        Raster site grid.
+    config : GrowthConfig
+        Base growth configuration; time, containment, and area cap are replaced per fire.
+    fragment_grid : numpy.ndarray or FragmentSupport
+        Fragment raster or area-weighted support grid.
+    ignitions_by_year : mapping of int to sequence of SurvivalIgnition
+        Survival ignition inputs by simulation year.
+    survival : SurvivalConfig
+        Survival and escape parameters.
+    seed : int, optional
+        Deterministic survival seed (default zero).
+    scenario_id : str, optional
+        Scenario id stamped on events.
+    snag_fraction : float, optional
+        Fraction of killed biomass left as snags.
+    minutes_per_year : float, optional
+        Minutes per simulation year.
+
+    Returns
+    -------
+    GrowthFireSource
+        Adapter ready for the process executor.
+    """
+    if isinstance(seed, bool) or not isinstance(seed, int) or seed < 0:
+        raise ValueError("seed must be a non-negative integer")
+    if isinstance(fragment_grid, FragmentSupport):
+        if (fragment_grid.rows, fragment_grid.cols) != (grid.rows, grid.cols):
+            raise ValueError("fragment_grid shape must match the site grid")
+        support: np.ndarray | FragmentSupport = fragment_grid
+    else:
+        arrays = np.asarray(fragment_grid)
+        if arrays.ndim != 2 or not np.issubdtype(arrays.dtype, np.integer):
+            raise ValueError("fragment_grid must be a two-dimensional integer array")
+        if arrays.shape != (grid.rows, grid.cols):
+            raise ValueError("fragment_grid shape must match the site grid")
+        support = arrays
+    drawn: dict[int, list[FragmentIgnition]] = {}
+    for year, entries in sorted(ignitions_by_year.items()):
+        if isinstance(year, bool) or not isinstance(year, int) or year < 0:
+            raise ValueError("ignition years must be non-negative integers")
+        drawn[year] = []
+        for index, entry in enumerate(entries):
+            if not isinstance(entry, SurvivalIgnition):
+                raise ValueError("ignition entries must be SurvivalIgnition values")
+            outcome = draw_survival(
+                survival,
+                random.Random(seed + year * 1_000_003 + index),
+                active_days=entry.active_days,
+                fwi=entry.fwi,
+                bui=entry.bui,
+                wind_kmh=entry.wind_kmh,
+                fuel_hazard=entry.fuel_hazard,
+            )
+            closure = (
+                None
+                if outcome.escaped
+                else _containment_ring(
+                    (grid.rows, grid.cols),
+                    entry.cell,
+                    outcome.target_area_ha,
+                    grid.cell_size_m,
+                )
+            )
+            fire_config = replace(
+                config,
+                ignition_cells=(entry.cell,),
+                max_time_min=max(1.0, entry.active_days * 1440.0),
+                max_burned_area_ha=outcome.max_burned_area_ha,
+                containment_start_min=closure,
+            )
+            result = grow_fire(grid, fire_config)
+            drawn[year].extend(fragment_ignition_times(result, support))
+    return GrowthFireSource(
+        ignitions={year: tuple(entries) for year, entries in drawn.items()},
+        scenario_id=scenario_id,
+        snag_fraction=snag_fraction,
+        minutes_per_year=minutes_per_year,
+    )
 
 
 def build_growth_fire_source(
