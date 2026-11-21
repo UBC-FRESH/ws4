@@ -86,7 +86,13 @@ class RegimeParameters:
                 raise RegimeCalibrationError(f"{field} is outside its pre-registered bounds")
 
     def to_dict(self) -> dict[str, float]:
-        """Return the parameters as a JSON-serializable mapping."""
+        """Return the parameters as a JSON-serializable mapping.
+
+        Returns
+        -------
+        dict
+            Parameter names and values.
+        """
         return {
             "contained_fraction_median": self.contained_fraction_median,
             "contained_fraction_sigma": self.contained_fraction_sigma,
@@ -97,7 +103,13 @@ class RegimeParameters:
         }
 
     def suppression(self) -> RelativeSuppressionConfig:
-        """Return the relative-suppression config for this parameter point."""
+        """Return the relative-suppression config for this parameter point.
+
+        Returns
+        -------
+        RelativeSuppressionConfig
+            The fixed-weight suppression configuration.
+        """
         return RelativeSuppressionConfig(
             contained_fraction_median=self.contained_fraction_median,
             contained_fraction_sigma=self.contained_fraction_sigma,
@@ -196,7 +208,13 @@ class RegimeMetrics:
     maximum: float
 
     def to_dict(self) -> dict[str, float | int]:
-        """Return the metrics as a JSON-serializable mapping."""
+        """Return the metrics as a JSON-serializable mapping.
+
+        Returns
+        -------
+        dict
+            Metric names and values.
+        """
         return {
             "count": self.count,
             "mean": self.mean,
@@ -273,7 +291,18 @@ def gate_results(metrics: RegimeMetrics) -> dict[str, bool]:
 
 
 def passes_gates(metrics: RegimeMetrics) -> bool:
-    """Return whether every pre-registered gate passes."""
+    """Return whether every pre-registered gate passes.
+
+    Parameters
+    ----------
+    metrics : RegimeMetrics
+        Candidate metrics.
+
+    Returns
+    -------
+    bool
+        True when every gate passes.
+    """
     return all(gate_results(metrics).values())
 
 
@@ -282,6 +311,16 @@ def training_score(metrics: RegimeMetrics) -> float:
 
     The score is a normalized distance from the gate midpoints. It is only used to rank
     candidates inside the training split; the validation split is never used for selection.
+
+    Parameters
+    ----------
+    metrics : RegimeMetrics
+        Candidate metrics.
+
+    Returns
+    -------
+    float
+        Lower-is-better training score.
     """
     median_mid = sum(MEDIAN_BAND) / 2.0
     p90_mid = sum(P90_BAND) / 2.0
@@ -448,7 +487,13 @@ class CalibrationResult:
     candidates: int
 
     def to_dict(self) -> dict[str, object]:
-        """Return the result as a JSON-serializable mapping."""
+        """Return the result as a JSON-serializable mapping.
+
+        Returns
+        -------
+        dict
+            Parameters, metrics, score, seed, candidates, and gates.
+        """
         return {
             "parameters": self.parameters.to_dict(),
             "metrics": self.metrics.to_dict(),
