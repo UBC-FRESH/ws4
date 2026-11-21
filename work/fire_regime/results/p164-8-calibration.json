@@ -1,0 +1,63 @@
+{
+  "candidates": 1500,
+  "protocol": "P164.8",
+  "seed": 0,
+  "training": {
+    "candidates": 1500,
+    "gates": {
+      "maximum": false,
+      "median": true,
+      "over_100": true,
+      "over_1000": true,
+      "over_500": true,
+      "over_5000": false,
+      "p90": true
+    },
+    "metrics": {
+      "count": 360,
+      "maximum": 6059.026431843578,
+      "mean": 246.30805174124973,
+      "median": 28.3702912202034,
+      "over_100": 0.26944444444444443,
+      "over_1000": 0.058333333333333334,
+      "over_500": 0.1,
+      "over_5000": 0.005555555555555556,
+      "p90": 493.11042973251864,
+      "p95": 1534.6353735450907
+    },
+    "parameters": {
+      "contained_fraction_median": 0.0020539559057898486,
+      "contained_fraction_sigma": 1.3815446465117482,
+      "escape_cap_ha": 26727.060890317025,
+      "escaped_fraction_median": 0.06030922453841871,
+      "escaped_fraction_sigma": 0.5034742702842467,
+      "intercept": -3.1797168034730805
+    },
+    "passes": false,
+    "score": 0.4318457087385015,
+    "seed": 0
+  },
+  "validation": {
+    "gates": {
+      "maximum": false,
+      "median": true,
+      "over_100": true,
+      "over_1000": true,
+      "over_500": true,
+      "over_5000": true,
+      "p90": false
+    },
+    "metrics": {
+      "count": 360,
+      "maximum": 9474.335824484255,
+      "mean": 331.3912471751748,
+      "median": 23.350579223027594,
+      "over_100": 0.25555555555555554,
+      "over_1000": 0.07777777777777778,
+      "over_500": 0.11944444444444445,
+      "over_5000": 0.013888888888888888,
+      "p90": 793.27819956137,
+      "p95": 1652.2883985962148
+    }
+  }
+}

@@ -9,6 +9,7 @@ from dataclasses import replace
 from pathlib import Path
 
 import pytest
+import ws4.fire.regime_calibration as regime
 from ws4.fire.regime_calibration import (
     ESCAPE_CAP_BOUNDS,
     PotentialFire,
@@ -179,3 +180,22 @@ def test_calibration_cli_writes_a_training_result(tmp_path: Path) -> None:
     assert payload["protocol"] == "P164.8"
     assert payload["candidates"] == 2
     assert payload["training"]["metrics"]["count"] == 1
+
+
+def test_search_prefers_a_gate_passing_candidate(monkeypatch: pytest.MonkeyPatch) -> None:
+    first = _parameters()
+    second = RegimeParameters(
+        contained_fraction_median=2e-3,
+        contained_fraction_sigma=0.9,
+        escaped_fraction_median=0.3,
+        escaped_fraction_sigma=0.2,
+        escape_cap_ha=20_000.0,
+        intercept=-4.0,
+    )
+    monkeypatch.setattr(regime, "parameter_candidates", lambda seed, count: (first, second))
+    monkeypatch.setattr(regime, "simulate", lambda parameters, records, seed: [1.0])
+    monkeypatch.setattr(regime, "passes_gates", lambda metrics: metrics.median == 1.0)
+
+    result = regime.search_training(_records(), seed=1, count=2)
+
+    assert result.parameters == first
