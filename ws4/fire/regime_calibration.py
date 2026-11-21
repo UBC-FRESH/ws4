@@ -528,17 +528,23 @@ def search_training(
         Best training candidate and its metrics.
     """
     best: CalibrationResult | None = None
+    best_passing: CalibrationResult | None = None
     for index, parameters in enumerate(parameter_candidates(seed, count)):
         metrics = size_metrics(simulate(parameters, records, seed + index * 1_000_003))
         score = training_score(metrics)
+        result = CalibrationResult(
+            parameters=parameters,
+            metrics=metrics,
+            score=score,
+            seed=seed,
+            candidates=count,
+        )
         if best is None or score < best.score:
-            best = CalibrationResult(
-                parameters=parameters,
-                metrics=metrics,
-                score=score,
-                seed=seed,
-                candidates=count,
-            )
+            best = result
+        if passes_gates(metrics) and (best_passing is None or score < best_passing.score):
+            best_passing = result
+    if best_passing is not None:
+        return best_passing
     if best is None:
         raise RegimeCalibrationError("no candidates were evaluated")
     return best
