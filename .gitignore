@@ -40,3 +40,7 @@ ws4_skeleton.zip
 # Coverage
 .coverage
 coverage.xml
+
+# Local fire calibration cache
+work/fire_regime/data/
+work/fire_regime/logs/
