@@ -8,7 +8,8 @@ real VRI/SRTM/water layers already cached for those tiles.
 ## Setup
 
 - full TSA24 support map: 1,957 × 2,237 cells at 250 m
-- 349,650 real-layer cells inside the 24 calibrated tiles
+- 349,650 grid cells lie inside the 24 calibrated tile rectangles
+- 311,648 support cells inside those rectangles have real layers (28.0%)
 - 799,917 support cells outside the calibrated tiles use a homogeneous C2 default
 - 1,080,986 burnable support cells
 - regional suppression configs from `work/fire_regime/results/region-calibration.json`
@@ -25,7 +26,8 @@ real VRI/SRTM/water layers already cached for those tiles.
 
 ## Boundary
 
-Only 31% of support cells have real VRI/SRTM layers. The remainder uses a homogeneous C2 default.
+Only 28.0% of support cells have real VRI/SRTM layers. The remainder uses a homogeneous C2
+default.
 This is a full-estate integration proof with partial real-layer coverage, not a full TSA24
 real-layer forecast.
 

@@ -9,8 +9,8 @@ region-config path and run against the full TSA24 compiled dataset.
 
 - TSA24 support grid: 1,957 × 2,237 cells at 250 m
 - 24 calibration tiles assigned from the fixed tile manifest
-- 349,650 grid cells assigned to a calibrated region
-- 31% of the 1,111,565 support cells
+- 349,650 grid cells lie inside the calibrated tile rectangles
+- 311,648 support cells are covered (28.0% of 1,111,565)
 - 25 region entries: 24 tiles plus a default for cells outside the calibrated tiles
 
 ## Dataset run
@@ -32,8 +32,8 @@ resulting fire events run through the compiled `ProcessDataset`.
 
 This integration run uses homogeneous C2 fuel and flat terrain for the full support grid because
 full TSA24 VRI/SRTM layers are not present. The regional parameters control suppression, not
-landscape fuel. The calibrated regions cover 31% of the support cells; cells outside the fixed
-tiles use the default config.
+landscape fuel. The calibrated regions cover 28.0% of the support cells (311,648 of 1,111,565); cells outside
+the fixed tiles use the default config.
 
 ## Next
 
