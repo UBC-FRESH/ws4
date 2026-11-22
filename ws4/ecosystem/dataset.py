@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import math
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Final
 
@@ -404,6 +404,36 @@ def _load_fragment_support(path: Path) -> FragmentSupport:
     return support
 
 
+def _track_species(directory: Path) -> dict[int, dict[str, float]]:
+    """Return the planted species composition of every track.
+
+    Parameters
+    ----------
+    directory : Path
+        Compiled dataset directory.
+
+    Returns
+    -------
+    dict of int to dict of str to float
+        Track id to species shares, read from the managed species-proportion curves.
+    """
+    features = _read_table(directory, "features", ("track_id", "label", "curve_id"))
+    curves = _read_table(directory, "curves", ("curve_id", "x", "y"))
+    species: dict[int, dict[str, float]] = {}
+    mask = features["label"].astype(str).str.startswith("feature.SpeciesProp.managed.")
+    for row in features.loc[mask].itertuples(index=False):
+        label = str(row.label)
+        name = label.rsplit(".", 1)[-1]
+        curve = curves.loc[curves["curve_id"] == row.curve_id].sort_values("x")
+        if curve.empty:
+            continue
+        value = float(curve["y"].iloc[0])
+        if value <= 0:
+            continue
+        species.setdefault(int(row.track_id), {})[name] = value
+    return species
+
+
 @dataclass(frozen=True)
 class ProcessDataset:
     """A compiled dataset prepared for the process evaluator.
@@ -449,6 +479,7 @@ class ProcessDataset:
     topology: Path | None
     edges: tuple[FireEdge, ...]
     fragment_grid: np.ndarray | FragmentSupport | None = None
+    track_species: Mapping[int, Mapping[str, float]] = field(default_factory=dict)
 
     @classmethod
     def from_directory(
@@ -699,6 +730,7 @@ class ProcessDataset:
             topology=topology_path,
             edges=edges,
             fragment_grid=fragment_grid,
+            track_species=_track_species(directory),
         )
 
     def write_fragment_support(self, path: Path | None = None) -> Path:
@@ -935,6 +967,7 @@ class ProcessDataset:
             targets=targets,
             harvest_fraction=harvest_fraction,
             track_transitions=self.track_transitions,
+            track_species=self.track_species,
             scenario_id=scenario_id,
             seed=seed,
         )

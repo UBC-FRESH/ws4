@@ -177,6 +177,7 @@ class ScheduleSource(DecisionSource):
     batch: bool = True
     volume_model: CohortVolumeModel | None = None
     harvested_volume: dict[int, dict[str, float]] = field(default_factory=dict)
+    track_species: Mapping[int, Mapping[str, float]] = field(default_factory=dict)
 
     process_id: str = MANAGEMENT_PROCESS_ID
     phases: tuple[str, ...] = ("treatment",)
@@ -195,6 +196,14 @@ class ScheduleSource(DecisionSource):
             raise ManagementError("batch must be a boolean")
         if self.volume_model is not None and not isinstance(self.volume_model, CohortVolumeModel):
             raise ManagementError("volume_model must be a CohortVolumeModel")
+        cleaned_species: dict[int, dict[str, float]] = {}
+        for track, composition in self.track_species.items():
+            shares = {str(sp): float(share) for sp, share in composition.items()}
+            if not shares or any(share <= 0 for share in shares.values()):
+                raise ManagementError("track_species shares must be positive")
+            total = sum(shares.values())
+            cleaned_species[int(track)] = {sp: share / total for sp, share in shares.items()}
+        object.__setattr__(self, "track_species", cleaned_species)
         object.__setattr__(
             self, "harvest_fraction", _probability(self.harvest_fraction, "harvest_fraction")
         )
@@ -385,12 +394,6 @@ class ScheduleSource(DecisionSource):
                     species, 0.0
                 ) + volume_per_ha * float(removed_area[position])
         if not new.empty:
-            new["age"] = 0
-            new["area_fraction"] = removed.loc[new.index]
-            new["biomass_t_ha"] = 0.0
-            new["fuel_t_ha"] = 0.0
-            new["snag_t_ha"] = 0.0
-            new["attributes_json"] = "{}"
             if has_track:
                 source_tracks = new["track_id"].map(
                     lambda value: _track_key(value) if pd.notna(value) else 0
@@ -398,6 +401,28 @@ class ScheduleSource(DecisionSource):
                 new["track_id"] = source_tracks.map(
                     lambda track: self.track_transitions.get((int(track), treatment), int(track))
                 )
+            new["age"] = 0
+            new["area_fraction"] = removed.loc[new.index]
+            new["biomass_t_ha"] = 0.0
+            new["fuel_t_ha"] = 0.0
+            new["snag_t_ha"] = 0.0
+            new["attributes_json"] = "{}"
+            if self.track_species:
+                regenerated: list[pd.Series] = []
+                for _fragment, group_fragment in new.groupby("fragment_id", sort=True):
+                    target = int(group_fragment["track_id"].iloc[0])
+                    composition = self.track_species.get(target)
+                    if not composition:
+                        regenerated.extend(row for _, row in group_fragment.iterrows())
+                        continue
+                    total = float(removed.loc[group_fragment.index].sum())
+                    base = group_fragment.iloc[0]
+                    for species, share in composition.items():
+                        row = base.copy()
+                        row["species"] = species
+                        row["area_fraction"] = total * share
+                        regenerated.append(row)
+                new = pd.DataFrame(regenerated, columns=frame.columns)
             maximum = group.groupby("fragment_id")["cohort_id"].max()
             new["cohort_id"] = (
                 new.groupby("fragment_id").cumcount() + new["fragment_id"].map(maximum) + 1

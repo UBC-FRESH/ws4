@@ -241,3 +241,55 @@ def test_partial_harvest_records_half_the_volume() -> None:
         result.values.loc[result.values["account"] == "harvest.volume_m3.PL", "value"].iloc[0]
     )
     assert value == pytest.approx(500.0)
+
+
+def test_regeneration_resets_species_to_target_track() -> None:
+    """A species-choice treatment regenerates the target track's composition."""
+    _schema, state, edges = synthetic_grid(2, 2)
+    state.cohorts["track_id"] = 1
+    bridge = VolumeBridgeConfig(
+        volume_m3_per_t={"PL": 2.0}, merchantable_fraction=0.5, default_volume_m3_per_t=0.0
+    )
+    source = ScheduleSource(
+        {1: (("CC", 0),)},
+        {1: (1,)},
+        track_transitions={(1, "CC"): 2},
+        track_species={2: {"AT": 1.0}},
+        volume_model=CohortVolumeModel(bridge),
+    )
+    config = ProcessEnsembleConfig(
+        horizon_years=1,
+        fire=FireConfig(ignition_rate_per_fragment_year=0.0),
+        management=source,
+        bridge=bridge,
+    )
+    result = run_process_scenario(state, edges, config, scenario_id="m", seed=1)
+    group = result.state.cohorts[result.state.cohorts["fragment_id"] == 1]
+    assert set(group["species"]) == {"AT"}
+    assert float(group["area_fraction"].sum()) == pytest.approx(1.0)
+
+
+def test_regeneration_splits_area_by_target_composition() -> None:
+    """A mixed prescription splits the removed area by its shares."""
+    _schema, state, edges = synthetic_grid(2, 2)
+    state.cohorts["track_id"] = 1
+    source = ScheduleSource(
+        {1: (("CC", 0),)},
+        {1: (1,)},
+        harvest_fraction=0.5,
+        track_transitions={(1, "CC"): 2},
+        track_species={2: {"AT": 0.55, "SX": 0.45}},
+    )
+    config = ProcessEnsembleConfig(
+        horizon_years=1,
+        fire=FireConfig(ignition_rate_per_fragment_year=0.0),
+        management=source,
+    )
+    result = run_process_scenario(state, edges, config, scenario_id="m", seed=1)
+    group = result.state.cohorts[
+        (result.state.cohorts["fragment_id"] == 1)
+        & (result.state.cohorts["species"].isin(["AT", "SX"]))
+    ]
+    shares = {row.species: float(row.area_fraction) for row in group.itertuples(index=False)}
+    assert shares["AT"] == pytest.approx(0.275)
+    assert shares["SX"] == pytest.approx(0.225)

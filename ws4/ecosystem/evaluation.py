@@ -338,6 +338,7 @@ def evaluate_process_schedule(
     targets: Sequence[Target] = (),
     harvest_fraction: float = 1.0,
     track_transitions: Mapping[tuple[int, str], int] | None = None,
+    track_species: Mapping[int, Mapping[str, float]] | None = None,
     scenario_id: str = "process-schedule",
     seed: int = 0,
 ) -> ProcessScheduleEvaluation:
@@ -402,6 +403,7 @@ def evaluate_process_schedule(
         block_fragments,
         harvest_fraction=harvest_fraction,
         track_transitions=track_transitions or {},
+        track_species=track_species or {},
         scenario_id=scenario_id,
         volume_model=CohortVolumeModel(bridge_config),
     )
