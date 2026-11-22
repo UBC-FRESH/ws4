@@ -428,22 +428,34 @@ The broader contribution is methodological: an open workflow that makes the inte
 seeds, and failure modes inspectable. That is a necessary step before any operational claim, and it
 is directly useful for transparent forest estate planning under wildfire risk.
 
-## Figures (planned)
+## Figures
+
+![Workflow](figures/fig1-workflow.png)
 
 **Figure 1.** Workflow: public VRI/SRTM/water data, FBP fuel mapping, spatial growth, reduced-form
 suppression/escape, LANDIS succession, estate process, risk accounts, and optimization.
 
-**Figure 2.** TSA24 support coverage: 133 aligned 30 km tiles, 1,111,565 support cells, and the 24
-tile calibration frame.
+![TSA24 support](figures/fig2-support.png)
 
-**Figure 3.** Observed and simulated fire-size distributions for the regional calibration, including
-the upper tail and the pre-registered global training result.
+**Figure 2.** TSA24 support coverage: 1,111,565 support cells and the 24 tile calibration frame.
+
+![Regional calibration](figures/fig3-calibration.png)
+
+**Figure 3.** Regional calibration residuals for the central quantiles and the upper tail.
+
+![Transfer scores](figures/fig4-transfer.png)
 
 **Figure 4.** Held-out transfer scores for the in-sample upper bound, global fit, training median,
-potential/weather analogue, oracle historical analogue, and hierarchical ridge.
+potential/weather analogue, oracle historical analogue, complete pooling, and hierarchical ridge.
 
-**Figure 5.** Five-seed burned-area distribution, volume loss, and the full-estate optimizer
-schedule/runtime summary.
+![Risk ensemble](figures/fig5-risk.png)
+
+**Figure 5.** Five-seed burned-area and volume-loss distributions. The dashed line is CVaR95.
+
+![Dogrib benchmark](figures/fig6-external.png)
+
+**Figure 6.** Dogrib external growth benchmark: area bias and spatial overlap for WS4 raw wind and
+FireSTARR. This is not a TSA24 calibration benchmark.
 
 ## Data and code availability
 
