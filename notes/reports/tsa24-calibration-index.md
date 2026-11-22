@@ -34,6 +34,10 @@ The calibrated estate API is tracked in `ws4/ecosystem/estate_fire.py` and expor
 | Bounded regional optimizer | `work/fire_regime/results/optimizer-regional.json` |
 | Full-estate sharded optimizer | `work/fire_regime/results/optimizer-full-estate.json` |
 | Full-estate schedule | `work/fire_regime/results/optimizer-full-estate-schedule.csv` |
+| Transfer validation | `notes/reports/p164-8-transfer-validation.md` |
+| Hierarchical validation | `notes/reports/p164-8-hierarchical-validation.md` |
+| Benchmark and reproducibility package | `notes/reports/p164-8-benchmark-reproducibility.md` |
+| Artifact manifest | `work/fire_regime/results/reproducibility-manifest.json` |
 
 ## Scripts
 
@@ -83,6 +87,8 @@ local and are not part of the repository contract.
 | Real-layer estate integration | `notes/reports/p164-8-real-layer-estate.md` | `209962e2` |
 | Support-coverage correction | `notes/reports/p164-8-real-layer-estate.md` | `c18e8357` |
 | Calibrated estate handoff API | `notes/reports/p164-8-estate-handoff.md` | `9918fb17` |
+| Transfer validation diagnostic | `notes/reports/p164-8-transfer-validation.md` | `7a255e55` |
+| Hierarchical validation diagnostic | `notes/reports/p164-8-hierarchical-validation.md` | `4e63ac46` |
 
 ## Key parameters and seeds
 
