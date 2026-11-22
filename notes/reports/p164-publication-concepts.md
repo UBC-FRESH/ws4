@@ -251,9 +251,12 @@ open framework. The WS4 global gate no-go and the 24-region calibration provide 
 **Target venues:** *International Journal of Wildland Fire* (first choice), *Fire* (open access),
 *Natural Hazards and Earth System Sciences* (if framed as risk/uncertainty).
 
-**Review risk:** the current calibration is in-sample and the tail is underproduced. This paper is
-only credible with an independent holdout and a clear negative/diagnostic framing. It may be more
-publishable as “limits of calibration” than as “a calibrated regime.”
+**Review risk:** the current calibration is in-sample and the tail is underproduced. A first
+holdout transfer test now exists: using the fixed `t13`–`t23` validation tiles, the in-sample score
+was 1.495, while a deployable potential/weather analogue scored 6.121 and the global fit 4.799.
+This paper is only credible with a clear negative/diagnostic framing. It may be more publishable as
+“limits of calibration” than as “a calibrated regime.” See
+`notes/reports/p164-8-transfer-validation.md`.
 
 ## Paper concept 3: the management/application paper
 
