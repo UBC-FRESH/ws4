@@ -237,6 +237,77 @@ class VolumeBridgeConfig:
         return destination
 
 
+def cohort_volume_per_ha(
+    config: VolumeBridgeConfig,
+    *,
+    species: str,
+    track_id: int | None,
+    age: float,
+    biomass_t_ha: float,
+) -> float:
+    """Return merchantable volume per hectare for one cohort.
+
+    Uses the track curve first, then the species curve, then the biomass rate, in the same
+    order as :class:`SpeciesVolumeBridge`.
+
+    Parameters
+    ----------
+    config : VolumeBridgeConfig
+        Bridge parameters.
+    species : str
+        Species label.
+    track_id : int or None
+        Compiled track id, when present.
+    age : float
+        Cohort age in years.
+    biomass_t_ha : float
+        Live biomass in tonnes per hectare.
+
+    Returns
+    -------
+    float
+        Merchantable volume in cubic metres per hectare.
+    """
+    if track_id is not None:
+        curve = config.track_age_volume_curves.get(int(track_id))
+        if curve:
+            points = sorted(curve)
+            return float(
+                np.interp(age, np.array(points), np.array([curve[point] for point in points]))
+            )
+    curve = config.age_volume_curves.get(species)
+    if curve:
+        points = sorted(curve)
+        return float(np.interp(age, np.array(points), np.array([curve[point] for point in points])))
+    rate = config.volume_m3_per_t.get(species, config.default_volume_m3_per_t)
+    return float(biomass_t_ha * rate * config.merchantable_fraction)
+
+
+@dataclass(frozen=True)
+class CohortVolumeModel:
+    """Per-cohort volume used when harvest removes area.
+
+    Parameters
+    ----------
+    config : VolumeBridgeConfig
+        Bridge parameters.
+    """
+
+    config: VolumeBridgeConfig
+
+    def volume_per_ha(
+        self, *, species: str, track_id: int | None, age: float, biomass_t_ha: float
+    ) -> float:
+        """Return merchantable volume per hectare for one cohort."""
+        return cohort_volume_per_ha(
+            self.config,
+            species=species,
+            track_id=track_id,
+            age=age,
+            biomass_t_ha=biomass_t_ha,
+        )
+
+
 class SpeciesVolumeBridge:
     """Map cohort biomass to merchantable volume without changing the dataset.
 

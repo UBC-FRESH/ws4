@@ -22,7 +22,7 @@ from typing import Final
 import pandas as pd
 
 from ..opt.objective import Target, accumulates, objective, objective_terms
-from .bridge import SpeciesVolumeBridge, VolumeBridgeConfig
+from .bridge import CohortVolumeModel, SpeciesVolumeBridge, VolumeBridgeConfig
 from .ensemble import ProcessEnsembleConfig, ProcessScenarioResult, run_process_scenario
 from .fire import FireConfig, FireEdge
 from .log import EventLog
@@ -396,14 +396,15 @@ def evaluate_process_schedule(
     seed_value = _positive_int(seed, "seed")
     if not isinstance(scenario_id, str) or not scenario_id.strip():
         raise ProcessEvaluationError("scenario_id must be a non-empty string")
+    bridge_config = bridge or VolumeBridgeConfig()
     source = ScheduleSource(
         schedule,
         block_fragments,
         harvest_fraction=harvest_fraction,
         track_transitions=track_transitions or {},
         scenario_id=scenario_id,
+        volume_model=CohortVolumeModel(bridge_config),
     )
-    bridge_config = bridge or VolumeBridgeConfig()
     config = ProcessEnsembleConfig(
         horizon_years=horizon,
         fire=fire,

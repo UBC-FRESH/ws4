@@ -16,6 +16,7 @@ from typing import Final
 
 import pandas as pd
 
+from .bridge import CohortVolumeModel
 from .events import Event
 from .process import DecisionSource, ProcessContext
 from .state import CohortState
@@ -174,6 +175,8 @@ class ScheduleSource(DecisionSource):
     scenario_id: str = "management"
     track_transitions: Mapping[tuple[int, str], int] = field(default_factory=dict)
     batch: bool = True
+    volume_model: CohortVolumeModel | None = None
+    harvested_volume: dict[int, dict[str, float]] = field(default_factory=dict)
 
     process_id: str = MANAGEMENT_PROCESS_ID
     phases: tuple[str, ...] = ("treatment",)
@@ -190,6 +193,8 @@ class ScheduleSource(DecisionSource):
             raise ManagementError("scenario_id must be non-empty")
         if not isinstance(self.batch, bool):
             raise ManagementError("batch must be a boolean")
+        if self.volume_model is not None and not isinstance(self.volume_model, CohortVolumeModel):
+            raise ManagementError("volume_model must be a CohortVolumeModel")
         object.__setattr__(
             self, "harvest_fraction", _probability(self.harvest_fraction, "harvest_fraction")
         )
@@ -357,6 +362,28 @@ class ScheduleSource(DecisionSource):
         frame.loc[group.index, "area_fraction"] = survivor
         drop = group.index[survivor <= FRACTION_TOLERANCE]
         new = group.loc[removed > FRACTION_TOLERANCE].copy()
+        if not new.empty and self.volume_model is not None:
+            areas = new["fragment_id"].map(state.fragment_areas).to_numpy(dtype=float)
+            removed_area = removed.loc[new.index].to_numpy(dtype=float) * areas
+            track_values = (
+                pd.to_numeric(new["track_id"], errors="coerce")
+                if "track_id" in new.columns
+                else pd.Series([None] * len(new), index=new.index)
+            )
+            for position, (index, row) in enumerate(new.iterrows()):
+                track = track_values.loc[index]
+                volume_per_ha = self.volume_model.volume_per_ha(
+                    species=str(row["species"]),
+                    track_id=int(track) if pd.notna(track) else None,
+                    age=float(row["age"]),
+                    biomass_t_ha=float(row["biomass_t_ha"]),
+                )
+                species = str(row["species"])
+                year = event.year
+                self.harvested_volume.setdefault(year, {})
+                self.harvested_volume[year][species] = self.harvested_volume[year].get(
+                    species, 0.0
+                ) + volume_per_ha * float(removed_area[position])
         if not new.empty:
             new["age"] = 0
             new["area_fraction"] = removed.loc[new.index]

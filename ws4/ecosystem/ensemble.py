@@ -363,6 +363,11 @@ def run_process_scenario(
             "state.snag_t": totals["snag_t"],
             "bridge.volume_m3": volume,
         }
+        management = config.management
+        if management is not None:
+            harvested = getattr(management, "harvested_volume", {})
+            for species, species_volume in harvested.pop(year, {}).items():
+                values[f"harvest.volume_m3.{species}"] = species_volume
         for account, value in values.items():
             rows.append({"offset": year, "account": account, "value": float(value)})
 

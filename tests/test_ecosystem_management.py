@@ -5,6 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
+from ws4.ecosystem.bridge import CohortVolumeModel, VolumeBridgeConfig
 from ws4.ecosystem.ensemble import (
     ProcessEnsembleConfig,
     ProcessScenarioResult,
@@ -190,3 +191,53 @@ def test_harvest_schedule_changes_process_metrics() -> None:
 
     assert final_metric(cleared, "state.biomass_t") < final_metric(baseline, "state.biomass_t")
     assert final_metric(cleared, "state.fuel_t") < final_metric(baseline, "state.fuel_t")
+
+
+def test_harvest_records_species_volume() -> None:
+    """A full harvest records the removed species volume for the year."""
+    _schema, state, edges = synthetic_grid(2, 2)
+    bridge = VolumeBridgeConfig(
+        volume_m3_per_t={"PL": 2.0}, merchantable_fraction=0.5, default_volume_m3_per_t=0.0
+    )
+    source = ScheduleSource(
+        {1: (("CC", 0),)},
+        {1: (1,)},
+        volume_model=CohortVolumeModel(bridge),
+    )
+    config = ProcessEnsembleConfig(
+        horizon_years=1,
+        fire=FireConfig(ignition_rate_per_fragment_year=0.0),
+        management=source,
+        bridge=bridge,
+    )
+    result = run_process_scenario(state, edges, config, scenario_id="m", seed=1)
+
+    rows = result.values.loc[result.values["account"] == "harvest.volume_m3.PL"]
+    assert len(rows) == 1
+    assert float(rows["value"].iloc[0]) == pytest.approx(1000.0)
+    assert float(rows["offset"].iloc[0]) == 0.0
+
+
+def test_partial_harvest_records_half_the_volume() -> None:
+    """A 50 percent harvest records half the cohort volume."""
+    _schema, state, edges = synthetic_grid(2, 2)
+    bridge = VolumeBridgeConfig(
+        volume_m3_per_t={"PL": 2.0}, merchantable_fraction=0.5, default_volume_m3_per_t=0.0
+    )
+    source = ScheduleSource(
+        {1: (("CC", 0),)},
+        {1: (1,)},
+        harvest_fraction=0.5,
+        volume_model=CohortVolumeModel(bridge),
+    )
+    config = ProcessEnsembleConfig(
+        horizon_years=1,
+        fire=FireConfig(ignition_rate_per_fragment_year=0.0),
+        management=source,
+        bridge=bridge,
+    )
+    result = run_process_scenario(state, edges, config, scenario_id="m", seed=1)
+    value = float(
+        result.values.loc[result.values["account"] == "harvest.volume_m3.PL", "value"].iloc[0]
+    )
+    assert value == pytest.approx(500.0)
