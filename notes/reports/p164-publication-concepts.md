@@ -255,8 +255,12 @@ open framework. The WS4 global gate no-go and the 24-region calibration provide 
 holdout transfer test now exists: using the fixed `t13`–`t23` validation tiles, the in-sample score
 was 1.495, while a deployable potential/weather analogue scored 6.121 and the global fit 4.799.
 This paper is only credible with a clear negative/diagnostic framing. It may be more publishable as
-“limits of calibration” than as “a calibrated regime.” See
-`notes/reports/p164-8-transfer-validation.md`.
+“limits of calibration” than as “a calibrated regime.” A subsequent ridge/partial-pooling test
+selected shrinkage by training-only simulation score and still failed on validation: the ridge
+score was 6.540 versus 5.182 for complete pooling and 5.287 for the global fit. The available
+potential/weather covariates do not carry transferable suppression signal. See
+`notes/reports/p164-8-transfer-validation.md` and
+`notes/reports/p164-8-hierarchical-validation.md`.
 
 ## Paper concept 3: the management/application paper
 
