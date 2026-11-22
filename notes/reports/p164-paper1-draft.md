@@ -457,6 +457,12 @@ confirm the redistribution terms for VRI, SRTM, Open-Meteo, and BC Wildfire prod
 the caches with a DOI. The external Dogrib comparison is documented in
 `notes/reports/p157-firestarr-comparison.md` and uses the public Prometheus sample data.
 
+Licence summary: BC VRI and BC Wildfire perimeter/incident data are published under the Open
+Government Licence - British Columbia; SRTM is public-domain NASA data with a requested citation;
+Open-Meteo data are CC BY 4.0. The Dogrib sample has no explicit licence file in the local archive,
+so raw Dogrib data are not redistributed; only the derived benchmark metrics are reported. The
+full audit is `notes/reports/p164-8-data-licenses.md`.
+
 ## Author contributions
 
 [to be completed]

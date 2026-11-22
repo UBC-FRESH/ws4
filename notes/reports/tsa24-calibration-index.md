@@ -38,6 +38,7 @@ The calibrated estate API is tracked in `ws4/ecosystem/estate_fire.py` and expor
 | Hierarchical validation | `notes/reports/p164-8-hierarchical-validation.md` |
 | Benchmark and reproducibility package | `notes/reports/p164-8-benchmark-reproducibility.md` |
 | Artifact manifest | `work/fire_regime/results/reproducibility-manifest.json` |
+| Data licences | `notes/reports/p164-8-data-licenses.md` |
 
 ## Scripts
 
