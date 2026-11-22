@@ -775,5 +775,58 @@
     "results/transfer-validation.json",
     "results/hierarchical-validation-simcv.json",
     "scripts/fire_regime/tiles.json"
-  ]
+  ],
+  "documentation": {
+    "notes/reports/p164-paper1-draft.md": {
+      "path": "notes/reports/p164-paper1-draft.md",
+      "bytes": 32657,
+      "sha256": "cf9af27ce2f071c1359fc3a289569f0c63afd7d0395cce1cc0216a123221009c"
+    },
+    "notes/reports/p164-8-data-licenses.md": {
+      "path": "notes/reports/p164-8-data-licenses.md",
+      "bytes": 5462,
+      "sha256": "4f73a389adc344a41f07a8b4bf3d7992e94dfba37828541baf053d33b46e6b25"
+    },
+    "notes/reports/p157-firestarr-comparison.md": {
+      "path": "notes/reports/p157-firestarr-comparison.md",
+      "bytes": 3991,
+      "sha256": "675b3db20de2b44f9c3f5b36dd9ebc8782b1070bf7d2515e0f174b7ac161e7a0"
+    },
+    "notes/reports/p157-firestarr-comparison.csv": {
+      "path": "notes/reports/p157-firestarr-comparison.csv",
+      "bytes": 290,
+      "sha256": "8a3ee7d6b62645102419b2a04e4bd6ca28b44acfd50bc7b3c209361655f809ee"
+    },
+    "notes/reports/figures/fig1-workflow.png": {
+      "path": "notes/reports/figures/fig1-workflow.png",
+      "bytes": 97854,
+      "sha256": "3761c7faa4fbaae1ad8622f4e4e4511aea311b48ce7a19e0b7f087ccc20af728"
+    },
+    "notes/reports/figures/fig2-support.png": {
+      "path": "notes/reports/figures/fig2-support.png",
+      "bytes": 79770,
+      "sha256": "657f4ebd8b7cb5b9292ac871b0907153eb5b5187798489772d2363f61287060d"
+    },
+    "notes/reports/figures/fig3-calibration.png": {
+      "path": "notes/reports/figures/fig3-calibration.png",
+      "bytes": 72927,
+      "sha256": "75073365a20c2eef524507d555bf2970c91b4d08e161cb6c4255a23c54c7dee9"
+    },
+    "notes/reports/figures/fig4-transfer.png": {
+      "path": "notes/reports/figures/fig4-transfer.png",
+      "bytes": 66582,
+      "sha256": "b4ddd47dc67365b5dbf8bcc28867d91d44040791151751b1d6cdab9e87c5cf8f"
+    },
+    "notes/reports/figures/fig5-risk.png": {
+      "path": "notes/reports/figures/fig5-risk.png",
+      "bytes": 55968,
+      "sha256": "9735a4e8d64bca35cc1e4068dce0d60fa4f6e18c5f57094cd127f216e02e1d6a"
+    },
+    "notes/reports/figures/fig6-external.png": {
+      "path": "notes/reports/figures/fig6-external.png",
+      "bytes": 66791,
+      "sha256": "0394ccc948bf9880dbe5f262525d2a716e0d90210f326316b10b1dfdebca3010"
+    }
+  },
+  "updated_utc": "2026-11-22T19:40:18.577625+00:00"
 }
