@@ -200,7 +200,9 @@ without proprietary components?
 - full-estate five-year evaluation;
 - sharded optimizer runtime and schedule;
 - comparison against a fire-blind or burn-probability baseline;
-- at least one external benchmark against FSim, BurnP3+, or Cell2Fire on a shared landscape.
+- at least one external benchmark against FSim, BurnP3+, or Cell2Fire on a shared landscape;
+  a first FireSTARR Dogrib growth benchmark is complete, but a TSA24-specific benchmark is still
+  needed.
 
 **Figures:**
 
