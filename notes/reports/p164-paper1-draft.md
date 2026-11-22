@@ -22,7 +22,7 @@ Wildfire is a spatial, stochastic disturbance that is rarely represented as an e
 
 A global suppression calibration under a pre-registered protocol failed its training gates. A 23-region in-sample calibration reproduced the median fire size (23.8 ha versus 23.0 ha historical) and the maximum (20,770.4 ha versus 25,114.8 ha), but remained low in the upper tail (p90 361.5 ha versus 490.2 ha). Independent transfer to 11 held-out tiles was negative: the in-sample score was 1.50, compared with 6.12 for a deployable potential/weather analogue and 4.80 for the global fit. An empirical-Bayes ridge selected by training-only cross-validation also failed on held-out tiles (6.54) and did not outperform complete pooling (5.18).
 
-A five-seed full-layer risk ensemble produced a median burned area of 7,889.6 ha and a CVaR95 volume loss of 1.04 million m3 against a no-fire baseline of 822.55 million m3. A five-year full-estate evaluation burned 8,374.1 ha and harvested 156,358.8 ha. A 36-worker sharded optimizer produced a 179-event schedule and a full-estate evaluation in 655.5 s.
+A five-seed full-layer risk ensemble produced a median burned area of 7,889.6 ha and a CVaR95 volume loss of 1.04 million m3 against a no-fire baseline of 822.55 million m3. A five-year full-estate evaluation burned 8,374.1 ha and harvested 156,358.8 ha. A 36-worker sharded optimizer produced a 179-event schedule and a full-estate evaluation in 655.5 s. On a documented Dogrib fire, the growth engine overpredicted area by 191% versus 36% for FireSTARR, but had higher overlap (IoU 0.252 versus 0.140); neither result is an operational validation.
 
 The contribution is an auditable open integration and a documented calibration/transfer diagnosis, not a validated operational fire forecast or a new fire-physics formulation. The results show both the practical value and the current limits of open, process-based fire risk in forest estate planning.
 
@@ -123,6 +123,15 @@ for tail-event sampling. An optional screening spotting model exists but is off 
 not used for the operational claims in this paper. The fire-growth model is not a coupled
 fire-atmosphere model and does not represent ember transport, fireline construction, or
 firefighter tactics.
+
+### 2.2.1 External growth benchmark
+
+We also compare the growth engine with FireSTARR on the documented Dogrib fire (RWF085, Alberta,
+2001), using the project's observed-fire benchmark. WS4 raw wind and FireSTARR v0.9.29
+deterministic were run on the same 200 m grid with the observed start perimeter, fuels, terrain,
+and weather. No Scenario 2b polygon wind patch was applied to either model. This is a
+growth-model comparison on one historical fire, not a TSA24 calibration benchmark and not an
+operational validation.
 
 ### 2.3 Reduced-form suppression and escape
 
@@ -305,7 +314,28 @@ five-year window. It scheduled 179 blocks/events, harvested 20,775.6 ha, produce
 m3, burned 74.25 ha in 16 fragment-level events, and finished in 655.5 s with 36 workers. These
 results demonstrate the computational path, not a global optimum.
 
-### 3.6 Runtime
+### 3.6 External growth benchmark
+
+The Dogrib comparison is a deliberately narrow external check on the growth engine, not a
+validation of the TSA24 calibration. On the common 200 m grid, WS4 raw wind and FireSTARR
+overpredicted the observed final area by different margins and had different spatial skill
+(Table 5).
+
+**Table 5. External Dogrib growth benchmark.**
+
+| Model | Area (ha) | Area bias | IoU | Sorensen | Centroid error (km) |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Observed final | 10,132 | — | 1.000 | 1.000 | 0.00 |
+| WS4 raw wind | 29,480 | +191.0% | 0.252 | 0.403 | 3.09 |
+| FireSTARR deterministic | 13,808 | +36.3% | 0.140 | 0.246 | 6.91 |
+
+FireSTARR was closer on total area; WS4 was closer on overlap and centroid. The models fail
+differently. The comparison does not include the Scenario 2b wind patch and is not an
+apples-to-apples test of the calibrated TSA24 regime. It supports the narrower claim that the
+growth engine is in the same order of magnitude as an external FBP implementation on a documented
+fire, while making different spatial errors.
+
+### 3.7 Runtime
 
 The full-layer cache build used 36 workers and completed 133 tiles without missing outputs. The
 five-seed source build was the dominant cost at roughly 19 minutes of wall time; the full dataset
@@ -365,15 +395,15 @@ decomposition with quality bounds.
 - Reduced-form suppression, not resource deployment.
 - In-sample regional calibration; negative independent transfer.
 - Five-seed risk tail; CVaR95 is the worst observed seed.
-- No external benchmark against FSim, BurnP3+, or Cell2Fire in this draft.
+- The external benchmark is one Dogrib fire, not the TSA24 calibration landscape; FSim, BurnP3+, and Cell2Fire comparisons on TSA24 remain future work.
 - Sharded optimization with local targets; no global optimum.
 - VRI, weather, and perimeter licences must be checked before data redistribution.
 - No carbon or treatment-effect analysis in this paper.
 
 ### 4.5 Future work
 
-1. Benchmark the fire-size and burn-probability distributions against FSim, BurnP3+, or Cell2Fire
-   on a shared landscape.
+1. Extend the external benchmark to the TSA24 landscape and to FSim, BurnP3+, or Cell2Fire,
+   including fire-size and burn-probability distributions.
 2. Add suppression-capacity, access, response, and management covariates to a hierarchical model.
 3. Extend the calibration to multi-year weather and observed active-spread durations.
 4. Replace the sharded local targets with a global coordination layer and report solution quality.
@@ -424,7 +454,8 @@ reproducibility manifest records commit, versions, seeds, sizes, and SHA-256 has
 
 The layer cache and DEM cache are not redistributed in Git. Before public release, the authors must
 confirm the redistribution terms for VRI, SRTM, Open-Meteo, and BC Wildfire products and archive
-the caches with a DOI.
+the caches with a DOI. The external Dogrib comparison is documented in
+`notes/reports/p157-firestarr-comparison.md` and uses the public Prometheus sample data.
 
 ## Author contributions
 
@@ -449,6 +480,8 @@ of accelerated forest management on long-term wildfire activity. *Ecological Mod
 108962. https://doi.org/10.1016/j.ecolmodel.2020.108962
 
 BurnP3+ documentation. https://burnp3.github.io/BurnP3Plus
+
+FireSTARR. Open-source wildfire growth model. https://github.com/CWFMF/firestarr-cpp
 
 Duff, T. J., and Tolhurst, K. G. (2015). Operational wildfire suppression modelling: a review.
 *International Journal of Wildland Fire* 24, 735-748. https://doi.org/10.1071/WF15018
