@@ -1,0 +1,11 @@
+offset,account,value
+4,bridge.volume_m3,398092.5879999999
+4,fire.burned_area_ha_total,6.25
+4,fire.count_total,1.0
+4,harvest.area_ha_total,217.2
+4,harvest.count_total,1.0
+4,regeneration.count_total,0.0
+4,salvage.count_total,0.0
+4,state.biomass_t,106869.61599999997
+4,state.fuel_t,24320.918249999995
+4,state.snag_t,0.0

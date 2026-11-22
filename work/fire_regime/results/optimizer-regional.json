@@ -1,0 +1,67 @@
+{
+  "region_id": 13,
+  "horizon_years": 5,
+  "selected_blocks": [
+    33111,
+    37059,
+    39869,
+    89778,
+    124510,
+    168070,
+    192202,
+    243436,
+    268572,
+    284683,
+    302566,
+    312186,
+    323591,
+    347869,
+    347979,
+    373166,
+    384379,
+    407047,
+    415466,
+    444316
+  ],
+  "selected_area_ha": 1907.7,
+  "source_events": 1,
+  "max_iterations": 3,
+  "elapsed_seconds": 475.3,
+  "optimize_seconds": 35.7,
+  "iterations": 2,
+  "evaluated": 181,
+  "best_candidate": "schedule-309690cd4db1def5",
+  "best_objective": 0.0,
+  "best_schedule": {
+    "268572": [
+      [
+        "CC",
+        4
+      ]
+    ]
+  },
+  "best_accounts": {
+    "bridge.volume_m3": 398092.5879999999,
+    "fire.burned_area_ha_total": 6.25,
+    "fire.count_total": 1.0,
+    "harvest.area_ha_total": 217.2,
+    "harvest.count_total": 1.0,
+    "regeneration.count_total": 0.0,
+    "salvage.count_total": 0.0,
+    "state.biomass_t": 106869.61599999997,
+    "state.fuel_t": 24320.918249999995,
+    "state.snag_t": 0.0
+  },
+  "initial_accounts": {
+    "bridge.volume_m3": 420006.0739999999,
+    "fire.burned_area_ha_total": 6.25,
+    "fire.count_total": 1.0,
+    "harvest.area_ha_total": 0.0,
+    "harvest.count_total": 0.0,
+    "regeneration.count_total": 0.0,
+    "salvage.count_total": 0.0,
+    "state.biomass_t": 126952.83362499997,
+    "state.fuel_t": 27347.084493749993,
+    "state.snag_t": 35.853865158691384
+  }
+}
