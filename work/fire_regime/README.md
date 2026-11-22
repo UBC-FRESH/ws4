@@ -5,7 +5,8 @@ package contract.
 
 - `data/` holds fetched VRI/SRTM layers, tile caches, potential samples, and generated grids.
 - `logs/` holds run logs.
-- `results/` holds tracked calibration/risk/optimizer result summaries and the local optimizer trace.
+- `results/` holds tracked calibration/risk/optimizer result summaries, the transfer diagnostics, and the reproducibility manifest.
+- `results/reproducibility-manifest.json` records hashes, versions, seeds, and the local layer/DEM cache inventory.
 - `*.py` are local analysis scripts driven by public BC VRI, SRTM, and wildfire sources.
 
 Scripts resolve paths relative to this directory. No large inputs or outputs are written under
