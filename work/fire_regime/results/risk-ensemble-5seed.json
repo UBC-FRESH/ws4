@@ -1,0 +1,332 @@
+{
+  "horizon_years": 5,
+  "seeds": [
+    20261122,
+    20261123,
+    20261124,
+    20261125,
+    20261126
+  ],
+  "layer_coverage": "full",
+  "support_cells": 1111565,
+  "baseline_volume_m3": 822552619.0941112,
+  "burned_area_ha": {
+    "median": 7889.585424726972,
+    "p90": 8600.834366656725,
+    "max": 8600.834366656725
+  },
+  "volume_loss_m3": {
+    "median": 917632.5926920176,
+    "worst": 1036485.9419580698,
+    "cvar95": 1036485.9419580698,
+    "tail_count": 1
+  },
+  "runs": [
+    {
+      "seed": 20261122,
+      "source_seconds": 1148.9,
+      "evaluate_seconds": 40.5,
+      "source_events": 885,
+      "burned_area_ha": 8374.056366436738,
+      "volume_m3": 821593697.9024024,
+      "volume_loss_m3": 958921.1917088032,
+      "accounts": [
+        {
+          "offset": 4,
+          "account": "bridge.volume_m3",
+          "value": 821593697.9024024
+        },
+        {
+          "offset": 4,
+          "account": "fire.burned_area_ha_total",
+          "value": 8374.056366436738
+        },
+        {
+          "offset": 4,
+          "account": "fire.count_total",
+          "value": 885.0
+        },
+        {
+          "offset": 4,
+          "account": "harvest.area_ha_total",
+          "value": 156358.80000000002
+        },
+        {
+          "offset": 4,
+          "account": "harvest.count_total",
+          "value": 5.0
+        },
+        {
+          "offset": 4,
+          "account": "regeneration.count_total",
+          "value": 0.0
+        },
+        {
+          "offset": 4,
+          "account": "salvage.count_total",
+          "value": 0.0
+        },
+        {
+          "offset": 4,
+          "account": "state.biomass_t",
+          "value": 463816077.8595653
+        },
+        {
+          "offset": 4,
+          "account": "state.fuel_t",
+          "value": 78566801.00116512
+        },
+        {
+          "offset": 4,
+          "account": "state.snag_t",
+          "value": 45180.65904416928
+        }
+      ]
+    },
+    {
+      "seed": 20261123,
+      "source_seconds": 1134.8,
+      "evaluate_seconds": 39.8,
+      "source_events": 393,
+      "burned_area_ha": 4148.953329045058,
+      "volume_m3": 822152857.7950203,
+      "volume_loss_m3": 399761.2990908623,
+      "accounts": [
+        {
+          "offset": 4,
+          "account": "bridge.volume_m3",
+          "value": 822152857.7950203
+        },
+        {
+          "offset": 4,
+          "account": "fire.burned_area_ha_total",
+          "value": 4148.953329045058
+        },
+        {
+          "offset": 4,
+          "account": "fire.count_total",
+          "value": 393.0
+        },
+        {
+          "offset": 4,
+          "account": "harvest.area_ha_total",
+          "value": 156358.80000000002
+        },
+        {
+          "offset": 4,
+          "account": "harvest.count_total",
+          "value": 5.0
+        },
+        {
+          "offset": 4,
+          "account": "regeneration.count_total",
+          "value": 0.0
+        },
+        {
+          "offset": 4,
+          "account": "salvage.count_total",
+          "value": 0.0
+        },
+        {
+          "offset": 4,
+          "account": "state.biomass_t",
+          "value": 464065247.7971592
+        },
+        {
+          "offset": 4,
+          "account": "state.fuel_t",
+          "value": 78609706.65593338
+        },
+        {
+          "offset": 4,
+          "account": "state.snag_t",
+          "value": 22699.12457402717
+        }
+      ]
+    },
+    {
+      "seed": 20261124,
+      "source_seconds": 1149.2,
+      "evaluate_seconds": 39.7,
+      "source_events": 635,
+      "burned_area_ha": 6596.342681691304,
+      "volume_m3": 821924366.7555087,
+      "volume_loss_m3": 628252.3386025429,
+      "accounts": [
+        {
+          "offset": 4,
+          "account": "bridge.volume_m3",
+          "value": 821924366.7555087
+        },
+        {
+          "offset": 4,
+          "account": "fire.burned_area_ha_total",
+          "value": 6596.342681691304
+        },
+        {
+          "offset": 4,
+          "account": "fire.count_total",
+          "value": 634.0
+        },
+        {
+          "offset": 4,
+          "account": "harvest.area_ha_total",
+          "value": 156358.80000000002
+        },
+        {
+          "offset": 4,
+          "account": "harvest.count_total",
+          "value": 5.0
+        },
+        {
+          "offset": 4,
+          "account": "regeneration.count_total",
+          "value": 0.0
+        },
+        {
+          "offset": 4,
+          "account": "salvage.count_total",
+          "value": 0.0
+        },
+        {
+          "offset": 4,
+          "account": "state.biomass_t",
+          "value": 463948496.4893836
+        },
+        {
+          "offset": 4,
+          "account": "state.fuel_t",
+          "value": 78592518.90484789
+        },
+        {
+          "offset": 4,
+          "account": "state.snag_t",
+          "value": 34524.727782210546
+        }
+      ]
+    },
+    {
+      "seed": 20261125,
+      "source_seconds": 1130.7,
+      "evaluate_seconds": 40.0,
+      "source_events": 1335,
+      "burned_area_ha": 8600.834366656725,
+      "volume_m3": 821634986.5014192,
+      "volume_loss_m3": 917632.5926920176,
+      "accounts": [
+        {
+          "offset": 4,
+          "account": "bridge.volume_m3",
+          "value": 821634986.5014192
+        },
+        {
+          "offset": 4,
+          "account": "fire.burned_area_ha_total",
+          "value": 8600.834366656725
+        },
+        {
+          "offset": 4,
+          "account": "fire.count_total",
+          "value": 1333.0
+        },
+        {
+          "offset": 4,
+          "account": "harvest.area_ha_total",
+          "value": 156358.80000000002
+        },
+        {
+          "offset": 4,
+          "account": "harvest.count_total",
+          "value": 5.0
+        },
+        {
+          "offset": 4,
+          "account": "regeneration.count_total",
+          "value": 0.0
+        },
+        {
+          "offset": 4,
+          "account": "salvage.count_total",
+          "value": 0.0
+        },
+        {
+          "offset": 4,
+          "account": "state.biomass_t",
+          "value": 463834492.77221274
+        },
+        {
+          "offset": 4,
+          "account": "state.fuel_t",
+          "value": 78570261.43247151
+        },
+        {
+          "offset": 4,
+          "account": "state.snag_t",
+          "value": 47616.894140428376
+        }
+      ]
+    },
+    {
+      "seed": 20261126,
+      "source_seconds": 1170.6,
+      "evaluate_seconds": 40.1,
+      "source_events": 850,
+      "burned_area_ha": 7889.585424726972,
+      "volume_m3": 821516133.1521531,
+      "volume_loss_m3": 1036485.9419580698,
+      "accounts": [
+        {
+          "offset": 4,
+          "account": "bridge.volume_m3",
+          "value": 821516133.1521531
+        },
+        {
+          "offset": 4,
+          "account": "fire.burned_area_ha_total",
+          "value": 7889.585424726972
+        },
+        {
+          "offset": 4,
+          "account": "fire.count_total",
+          "value": 849.0
+        },
+        {
+          "offset": 4,
+          "account": "harvest.area_ha_total",
+          "value": 156358.80000000002
+        },
+        {
+          "offset": 4,
+          "account": "harvest.count_total",
+          "value": 5.0
+        },
+        {
+          "offset": 4,
+          "account": "regeneration.count_total",
+          "value": 0.0
+        },
+        {
+          "offset": 4,
+          "account": "salvage.count_total",
+          "value": 0.0
+        },
+        {
+          "offset": 4,
+          "account": "state.biomass_t",
+          "value": 463946122.9712675
+        },
+        {
+          "offset": 4,
+          "account": "state.fuel_t",
+          "value": 78582472.90727776
+        },
+        {
+          "offset": 4,
+          "account": "state.snag_t",
+          "value": 55997.34201555279
+        }
+      ]
+    }
+  ],
+  "elapsed_seconds": 1575.5
+}

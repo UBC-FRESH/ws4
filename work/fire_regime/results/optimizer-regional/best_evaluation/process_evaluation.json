@@ -1,0 +1,31 @@
+{
+  "accounts": {
+    "bridge.volume_m3": 398092.5879999999,
+    "fire.burned_area_ha_total": 6.25,
+    "fire.count_total": 1.0,
+    "harvest.area_ha_total": 217.2,
+    "harvest.count_total": 1.0,
+    "regeneration.count_total": 0.0,
+    "salvage.count_total": 0.0,
+    "state.biomass_t": 106869.61599999997,
+    "state.fuel_t": 24320.918249999995,
+    "state.snag_t": 0.0
+  },
+  "event_counts": {
+    "fire": 1,
+    "harvest": 1,
+    "landis_succession": 5
+  },
+  "final_offset": 4,
+  "horizon_years": 5,
+  "objective": 0.0,
+  "scenario_id": "schedule-309690cd4db1def5",
+  "schema_version": "ws4.process-evaluation.v1",
+  "seed": 20261122,
+  "target_accounts": [
+    "harvest.area_ha_total"
+  ],
+  "target_terms": [
+    0.0
+  ]
+}

@@ -1,0 +1,72 @@
+{
+  "horizon_years": 5,
+  "layer_coverage": "full",
+  "layer_tiles": 133,
+  "support_cells": 1111565,
+  "forest_support_cells": 1012231,
+  "schedule_blocks": 12176,
+  "dropped_schedule_blocks": 1,
+  "schedule_events": 12176,
+  "source_seconds": 1070.221521615982,
+  "load_seconds": 138.9623589515686,
+  "evaluate_seconds": 42.165398359298706,
+  "source_events_by_year": {
+    "0": 81,
+    "1": 203,
+    "2": 7,
+    "3": 12,
+    "4": 582
+  },
+  "accounts": [
+    {
+      "offset": 4,
+      "account": "bridge.volume_m3",
+      "value": 821593697.9024024
+    },
+    {
+      "offset": 4,
+      "account": "fire.burned_area_ha_total",
+      "value": 8374.056366436738
+    },
+    {
+      "offset": 4,
+      "account": "fire.count_total",
+      "value": 885.0
+    },
+    {
+      "offset": 4,
+      "account": "harvest.area_ha_total",
+      "value": 156358.80000000002
+    },
+    {
+      "offset": 4,
+      "account": "harvest.count_total",
+      "value": 5.0
+    },
+    {
+      "offset": 4,
+      "account": "regeneration.count_total",
+      "value": 0.0
+    },
+    {
+      "offset": 4,
+      "account": "salvage.count_total",
+      "value": 0.0
+    },
+    {
+      "offset": 4,
+      "account": "state.biomass_t",
+      "value": 463816077.8595653
+    },
+    {
+      "offset": 4,
+      "account": "state.fuel_t",
+      "value": 78566801.00116512
+    },
+    {
+      "offset": 4,
+      "account": "state.snag_t",
+      "value": 45180.65904416928
+    }
+  ]
+}

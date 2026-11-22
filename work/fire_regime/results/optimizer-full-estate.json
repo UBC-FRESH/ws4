@@ -1,0 +1,3452 @@
+{
+  "workers": 36,
+  "horizon_years": 5,
+  "tiles": 112,
+  "max_blocks_per_tile": 20,
+  "max_iterations": 2,
+  "source_events": 16,
+  "optimized_tiles": 112,
+  "schedule_events": 179,
+  "schedule_blocks": 179,
+  "elapsed_seconds": 655.5,
+  "accounts": {
+    "bridge.volume_m3": 859981233.8646886,
+    "fire.burned_area_ha_total": 74.24751552795031,
+    "fire.count_total": 16.0,
+    "harvest.area_ha_total": 20775.6,
+    "harvest.count_total": 5.0,
+    "regeneration.count_total": 0.0,
+    "salvage.count_total": 0.0,
+    "state.biomass_t": 480589755.5893231,
+    "state.fuel_t": 81431429.83082452,
+    "state.snag_t": 275.37796206337634
+  },
+  "runs": [
+    {
+      "tile": "tile-008",
+      "iterations": 2,
+      "evaluated": 36,
+      "seconds": 10.8,
+      "best_objective": 0.0,
+      "schedule": {
+        "87942": [
+          [
+            "CC",
+            0
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 1680.8099999999997,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 3.4,
+        "harvest.count_total": 1.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 590.9274999999997,
+        "state.fuel_t": 144.365625,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-010",
+      "iterations": 2,
+      "evaluated": 196,
+      "seconds": 52.9,
+      "best_objective": 0.0,
+      "schedule": {
+        "217790": [
+          [
+            "CC",
+            0
+          ]
+        ],
+        "343183": [
+          [
+            "CC",
+            4
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 80892.956,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 61.099999999999994,
+        "harvest.count_total": 2.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 21893.359999999997,
+        "state.fuel_t": 5538.978749999999,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-015",
+      "iterations": 2,
+      "evaluated": 106,
+      "seconds": 35.5,
+      "best_objective": 0.0,
+      "schedule": {
+        "119216": [
+          [
+            "CC",
+            2
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 14695.784000000001,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 10.7,
+        "harvest.count_total": 1.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 1115.4642499999984,
+        "state.fuel_t": 550.6653375,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-016",
+      "iterations": 2,
+      "evaluated": 196,
+      "seconds": 63.7,
+      "best_objective": 0.0,
+      "schedule": {
+        "45067": [
+          [
+            "CC",
+            4
+          ]
+        ],
+        "167971": [
+          [
+            "CC",
+            1
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 359456.349,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 241.89999999999998,
+        "harvest.count_total": 2.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 107541.60449999999,
+        "state.fuel_t": 19199.447174999994,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-017",
+      "iterations": 2,
+      "evaluated": 196,
+      "seconds": 61.1,
+      "best_objective": 0.0,
+      "schedule": {
+        "49890": [
+          [
+            "CC",
+            3
+          ]
+        ],
+        "128074": [
+          [
+            "CC",
+            0
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 436460.1699999999,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 233.2,
+        "harvest.count_total": 2.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 118888.27299999996,
+        "state.fuel_t": 23383.936499999993,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-021",
+      "iterations": 2,
+      "evaluated": 26,
+      "seconds": 11.8,
+      "best_objective": 0.0,
+      "schedule": {
+        "352394": [
+          [
+            "CC",
+            2
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 652.059,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 70.5,
+        "harvest.count_total": 1.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 473.84499999999997,
+        "state.fuel_t": 74.2593,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-022",
+      "iterations": 2,
+      "evaluated": 196,
+      "seconds": 63.5,
+      "best_objective": 0.0,
+      "schedule": {
+        "243188": [
+          [
+            "CC",
+            0
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 65000.56599999999,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 60.0,
+        "harvest.count_total": 1.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 20617.74175,
+        "state.fuel_t": 4096.7356125,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-023",
+      "iterations": 2,
+      "evaluated": 196,
+      "seconds": 65.8,
+      "best_objective": 0.0,
+      "schedule": {
+        "275330": [
+          [
+            "CC",
+            4
+          ]
+        ],
+        "378987": [
+          [
+            "CC",
+            2
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 494518.968,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 266.2,
+        "harvest.count_total": 2.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 174024.33424999996,
+        "state.fuel_t": 33639.6273375,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-024",
+      "iterations": 2,
+      "evaluated": 196,
+      "seconds": 65.6,
+      "best_objective": 0.0,
+      "schedule": {
+        "64388": [
+          [
+            "CC",
+            3
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 590799.2686666667,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 325.1,
+        "harvest.count_total": 1.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 212310.80425,
+        "state.fuel_t": 39893.833387499995,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-025",
+      "iterations": 2,
+      "evaluated": 196,
+      "seconds": 59.7,
+      "best_objective": 0.0,
+      "schedule": {
+        "137168": [
+          [
+            "CC",
+            0
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 175153.13400000002,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 204.9,
+        "harvest.count_total": 1.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 69484.6335,
+        "state.fuel_t": 14220.470774999998,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-026",
+      "iterations": 2,
+      "evaluated": 16,
+      "seconds": 4.2,
+      "best_objective": 0.0,
+      "schedule": {
+        "135584": [
+          [
+            "CC",
+            3
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 7087.332,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 68.8,
+        "harvest.count_total": 1.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 1642.1230000000012,
+        "state.fuel_t": 484.34205000000014,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-027",
+      "iterations": 2,
+      "evaluated": 196,
+      "seconds": 65.0,
+      "best_objective": 0.0,
+      "schedule": {
+        "145457": [
+          [
+            "CC",
+            2
+          ]
+        ],
+        "269464": [
+          [
+            "CC",
+            1
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 265110.0413333333,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 127.1,
+        "harvest.count_total": 2.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 63204.23074999998,
+        "state.fuel_t": 11134.825012499998,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-028",
+      "iterations": 2,
+      "evaluated": 196,
+      "seconds": 54.3,
+      "best_objective": 0.0,
+      "schedule": {
+        "320003": [
+          [
+            "CC",
+            2
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 807682.9839999999,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 319.9,
+        "harvest.count_total": 1.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 263014.91124999995,
+        "state.fuel_t": 45983.57598749999,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-029",
+      "iterations": 2,
+      "evaluated": 196,
+      "seconds": 64.0,
+      "best_objective": 0.0,
+      "schedule": {
+        "118447": [
+          [
+            "CC",
+            1
+          ]
+        ],
+        "243411": [
+          [
+            "CC",
+            1
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 535816.922,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 287.4,
+        "harvest.count_total": 1.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 115062.84849999993,
+        "state.fuel_t": 22193.059724999992,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-030",
+      "iterations": 2,
+      "evaluated": 196,
+      "seconds": 63.6,
+      "best_objective": 0.0,
+      "schedule": {
+        "418641": [
+          [
+            "CC",
+            2
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 427052.69,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 228.3,
+        "harvest.count_total": 1.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 126600.58200000002,
+        "state.fuel_t": 22030.54005,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-031",
+      "iterations": 1,
+      "evaluated": 6,
+      "seconds": 1.7,
+      "best_objective": 0.0,
+      "schedule": {
+        "166453": [
+          [
+            "CC",
+            0
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 0.0,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 4.2,
+        "harvest.count_total": 1.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 77.74199999999999,
+        "state.fuel_t": 11.6613,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-032",
+      "iterations": 2,
+      "evaluated": 196,
+      "seconds": 64.9,
+      "best_objective": 0.0,
+      "schedule": {
+        "102357": [
+          [
+            "CC",
+            1
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 216607.964,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 200.6,
+        "harvest.count_total": 1.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 56455.87874999999,
+        "state.fuel_t": 13517.726812499997,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-033",
+      "iterations": 2,
+      "evaluated": 196,
+      "seconds": 54.6,
+      "best_objective": 0.0,
+      "schedule": {
+        "180859": [
+          [
+            "CC",
+            4
+          ]
+        ],
+        "216029": [
+          [
+            "CC",
+            0
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 466806.35400000005,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 280.8,
+        "harvest.count_total": 2.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 196465.64749999996,
+        "state.fuel_t": 34778.711475000004,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-034",
+      "iterations": 2,
+      "evaluated": 196,
+      "seconds": 62.6,
+      "best_objective": 0.0,
+      "schedule": {
+        "130617": [
+          [
+            "CC",
+            2
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 196963.47,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 113.7,
+        "harvest.count_total": 1.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 80639.02749999998,
+        "state.fuel_t": 15562.298025,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-035",
+      "iterations": 2,
+      "evaluated": 196,
+      "seconds": 68.7,
+      "best_objective": 0.0,
+      "schedule": {
+        "72310": [
+          [
+            "CC",
+            4
+          ]
+        ],
+        "373960": [
+          [
+            "CC",
+            4
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 113946.73799999998,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 95.3,
+        "harvest.count_total": 1.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 52769.956999999995,
+        "state.fuel_t": 9158.770199999999,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-036",
+      "iterations": 1,
+      "evaluated": 6,
+      "seconds": 1.6,
+      "best_objective": 0.0,
+      "schedule": {
+        "224138": [
+          [
+            "CC",
+            3
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 0.0,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 22.1,
+        "harvest.count_total": 1.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 40.222,
+        "state.fuel_t": 6.0333000000000006,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-038",
+      "iterations": 2,
+      "evaluated": 196,
+      "seconds": 64.7,
+      "best_objective": 0.0,
+      "schedule": {
+        "151619": [
+          [
+            "CC",
+            2
+          ]
+        ],
+        "368751": [
+          [
+            "CC",
+            1
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 364442.18299999996,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 260.3,
+        "harvest.count_total": 2.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 183294.32574999996,
+        "state.fuel_t": 33053.289862499994,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-039",
+      "iterations": 2,
+      "evaluated": 196,
+      "seconds": 56.9,
+      "best_objective": 0.0,
+      "schedule": {
+        "216327": [
+          [
+            "CC",
+            3
+          ]
+        ],
+        "326962": [
+          [
+            "CC",
+            1
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 329170.459,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 178.4,
+        "harvest.count_total": 2.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 127277.39475,
+        "state.fuel_t": 21632.0702625,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-040",
+      "iterations": 2,
+      "evaluated": 196,
+      "seconds": 63.9,
+      "best_objective": 0.0,
+      "schedule": {
+        "97578": [
+          [
+            "CC",
+            0
+          ]
+        ],
+        "122131": [
+          [
+            "CC",
+            0
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 433861.00100000005,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 212.89999999999998,
+        "harvest.count_total": 1.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 214194.09774999996,
+        "state.fuel_t": 37292.9012625,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-041",
+      "iterations": 2,
+      "evaluated": 196,
+      "seconds": 61.0,
+      "best_objective": 0.0,
+      "schedule": {
+        "309856": [
+          [
+            "CC",
+            1
+          ]
+        ],
+        "362041": [
+          [
+            "CC",
+            4
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 353366.99199999997,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 250.9,
+        "harvest.count_total": 2.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 167004.40024999998,
+        "state.fuel_t": 30726.870787499993,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-042",
+      "iterations": 2,
+      "evaluated": 196,
+      "seconds": 66.5,
+      "best_objective": 0.0,
+      "schedule": {
+        "338353": [
+          [
+            "CC",
+            0
+          ]
+        ],
+        "378699": [
+          [
+            "CC",
+            0
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 269033.99,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 219.60000000000002,
+        "harvest.count_total": 1.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 112288.99424999997,
+        "state.fuel_t": 19246.023337499995,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-043",
+      "iterations": 2,
+      "evaluated": 196,
+      "seconds": 62.5,
+      "best_objective": 0.0,
+      "schedule": {
+        "71399": [
+          [
+            "CC",
+            3
+          ]
+        ],
+        "164077": [
+          [
+            "CC",
+            2
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 97054.687,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 84.5,
+        "harvest.count_total": 2.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 45429.09174999999,
+        "state.fuel_t": 9052.395562499998,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-044",
+      "iterations": 2,
+      "evaluated": 176,
+      "seconds": 57.3,
+      "best_objective": 0.0,
+      "schedule": {
+        "455001": [
+          [
+            "CC",
+            2
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 49696.764,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 51.6,
+        "harvest.count_total": 1.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 22665.787499999995,
+        "state.fuel_t": 4517.828624999999,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-045",
+      "iterations": 2,
+      "evaluated": 196,
+      "seconds": 63.1,
+      "best_objective": 0.0,
+      "schedule": {
+        "239178": [
+          [
+            "CC",
+            0
+          ]
+        ],
+        "371983": [
+          [
+            "CC",
+            2
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 276784.069,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 153.5,
+        "harvest.count_total": 2.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 134547.17299999995,
+        "state.fuel_t": 23284.379849999994,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-046",
+      "iterations": 2,
+      "evaluated": 196,
+      "seconds": 54.8,
+      "best_objective": 0.0,
+      "schedule": {
+        "245674": [
+          [
+            "CC",
+            3
+          ]
+        ],
+        "430375": [
+          [
+            "CC",
+            3
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 341058.03299999994,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 168.0,
+        "harvest.count_total": 1.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 129902.7615,
+        "state.fuel_t": 22153.403175,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-047",
+      "iterations": 2,
+      "evaluated": 196,
+      "seconds": 51.4,
+      "best_objective": 0.0,
+      "schedule": {
+        "403135": [
+          [
+            "CC",
+            1
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 390320.31399999995,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 241.8,
+        "harvest.count_total": 1.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 187087.52849999996,
+        "state.fuel_t": 32939.986124999996,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-048",
+      "iterations": 2,
+      "evaluated": 196,
+      "seconds": 61.8,
+      "best_objective": 0.0,
+      "schedule": {
+        "254765": [
+          [
+            "CC",
+            1
+          ]
+        ],
+        "315434": [
+          [
+            "CC",
+            3
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 349342.596,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 230.10000000000002,
+        "harvest.count_total": 2.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 239057.87149999998,
+        "state.fuel_t": 38497.264875,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-049",
+      "iterations": 2,
+      "evaluated": 196,
+      "seconds": 58.4,
+      "best_objective": 0.0,
+      "schedule": {
+        "75063": [
+          [
+            "CC",
+            2
+          ]
+        ],
+        "304470": [
+          [
+            "CC",
+            1
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 478101.60199999996,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 327.5,
+        "harvest.count_total": 2.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 254900.26899999994,
+        "state.fuel_t": 45133.384649999985,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-050",
+      "iterations": 2,
+      "evaluated": 196,
+      "seconds": 68.5,
+      "best_objective": 0.0,
+      "schedule": {
+        "226119": [
+          [
+            "CC",
+            4
+          ]
+        ],
+        "322448": [
+          [
+            "CC",
+            2
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 371521.10799999995,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 209.29999999999998,
+        "harvest.count_total": 2.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 179630.26074999993,
+        "state.fuel_t": 32175.8002125,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-051",
+      "iterations": 2,
+      "evaluated": 196,
+      "seconds": 50.8,
+      "best_objective": 0.0,
+      "schedule": {
+        "278158": [
+          [
+            "CC",
+            3
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 271880.8728888889,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 127.4,
+        "harvest.count_total": 1.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 102181.36524999999,
+        "state.fuel_t": 16647.397387499997,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-052",
+      "iterations": 2,
+      "evaluated": 194,
+      "seconds": 51.8,
+      "best_objective": 0.0,
+      "schedule": {
+        "150065": [
+          [
+            "CC",
+            4
+          ]
+        ],
+        "420497": [
+          [
+            "CC",
+            1
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 288537.615,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 189.6,
+        "harvest.count_total": 2.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 183109.83325,
+        "state.fuel_t": 29588.8300875,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-053",
+      "iterations": 2,
+      "evaluated": 196,
+      "seconds": 52.8,
+      "best_objective": 0.0,
+      "schedule": {
+        "94299": [
+          [
+            "CC",
+            3
+          ]
+        ],
+        "202029": [
+          [
+            "CC",
+            1
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 185414.02000000002,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 222.10000000000002,
+        "harvest.count_total": 2.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 90287.44724999997,
+        "state.fuel_t": 16643.098387499995,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-054",
+      "iterations": 2,
+      "evaluated": 196,
+      "seconds": 67.8,
+      "best_objective": 0.0,
+      "schedule": {
+        "69375": [
+          [
+            "CC",
+            1
+          ]
+        ],
+        "337392": [
+          [
+            "CC",
+            0
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 141389.546,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 109.19999999999999,
+        "harvest.count_total": 2.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 56464.29874999998,
+        "state.fuel_t": 12179.762512499998,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-056",
+      "iterations": 2,
+      "evaluated": 196,
+      "seconds": 65.6,
+      "best_objective": 0.0,
+      "schedule": {
+        "274375": [
+          [
+            "CC",
+            0
+          ]
+        ],
+        "393619": [
+          [
+            "CC",
+            2
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 252900.21899999998,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 180.5,
+        "harvest.count_total": 2.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 120945.15949999998,
+        "state.fuel_t": 20440.784324999997,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-057",
+      "iterations": 2,
+      "evaluated": 196,
+      "seconds": 63.3,
+      "best_objective": 0.0,
+      "schedule": {
+        "125349": [
+          [
+            "CC",
+            2
+          ]
+        ],
+        "262082": [
+          [
+            "CC",
+            0
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 263728.3742222222,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 202.5,
+        "harvest.count_total": 2.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 142393.03074999995,
+        "state.fuel_t": 25219.974862499996,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-058",
+      "iterations": 2,
+      "evaluated": 196,
+      "seconds": 71.4,
+      "best_objective": 0.0,
+      "schedule": {
+        "378411": [
+          [
+            "CC",
+            4
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 573704.228,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 521.2,
+        "harvest.count_total": 1.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 200476.28375,
+        "state.fuel_t": 46788.8071125,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-059",
+      "iterations": 2,
+      "evaluated": 196,
+      "seconds": 68.1,
+      "best_objective": 0.0,
+      "schedule": {
+        "30756": [
+          [
+            "CC",
+            3
+          ]
+        ],
+        "144502": [
+          [
+            "CC",
+            0
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 474539.89199999993,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 256.6,
+        "harvest.count_total": 2.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 218905.26650000003,
+        "state.fuel_t": 35997.22747499999,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-060",
+      "iterations": 2,
+      "evaluated": 196,
+      "seconds": 53.9,
+      "best_objective": 0.0,
+      "schedule": {
+        "321684": [
+          [
+            "CC",
+            1
+          ]
+        ],
+        "425939": [
+          [
+            "CC",
+            4
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 498145.95199999993,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 318.3,
+        "harvest.count_total": 2.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 276428.072,
+        "state.fuel_t": 44462.564099999996,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-061",
+      "iterations": 2,
+      "evaluated": 196,
+      "seconds": 75.7,
+      "best_objective": 0.0,
+      "schedule": {
+        "165953": [
+          [
+            "CC",
+            2
+          ]
+        ],
+        "211063": [
+          [
+            "CC",
+            4
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 205519.26822222222,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 137.6,
+        "harvest.count_total": 2.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 127840.71174999996,
+        "state.fuel_t": 20197.702012499994,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-062",
+      "iterations": 2,
+      "evaluated": 196,
+      "seconds": 55.3,
+      "best_objective": 0.0,
+      "schedule": {
+        "220547": [
+          [
+            "CC",
+            2
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 305424.436,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 160.3,
+        "harvest.count_total": 1.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 198095.84099999996,
+        "state.fuel_t": 32544.564149999995,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-063",
+      "iterations": 2,
+      "evaluated": 196,
+      "seconds": 67.5,
+      "best_objective": 0.0,
+      "schedule": {
+        "291741": [
+          [
+            "CC",
+            0
+          ]
+        ],
+        "328328": [
+          [
+            "CC",
+            2
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 311970.196,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 218.7,
+        "harvest.count_total": 2.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 187992.17375000002,
+        "state.fuel_t": 31731.8288625,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-064",
+      "iterations": 2,
+      "evaluated": 196,
+      "seconds": 64.7,
+      "best_objective": 0.0,
+      "schedule": {
+        "115905": [
+          [
+            "CC",
+            0
+          ]
+        ],
+        "136154": [
+          [
+            "CC",
+            3
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 287016.81200000003,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 181.9,
+        "harvest.count_total": 2.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 116887.46524999998,
+        "state.fuel_t": 24425.041537499998,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-065",
+      "iterations": 2,
+      "evaluated": 196,
+      "seconds": 59.2,
+      "best_objective": 0.0,
+      "schedule": {
+        "169133": [
+          [
+            "CC",
+            1
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 55746.302,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 53.1,
+        "harvest.count_total": 1.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 25060.358749999996,
+        "state.fuel_t": 5013.028762499998,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-067",
+      "iterations": 2,
+      "evaluated": 196,
+      "seconds": 58.6,
+      "best_objective": 0.0,
+      "schedule": {
+        "291555": [
+          [
+            "CC",
+            4
+          ]
+        ],
+        "449687": [
+          [
+            "CC",
+            4
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 122114.997,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 61.4,
+        "harvest.count_total": 1.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 50257.78724999999,
+        "state.fuel_t": 7840.105237499999,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-068",
+      "iterations": 2,
+      "evaluated": 196,
+      "seconds": 57.7,
+      "best_objective": 0.0,
+      "schedule": {
+        "110355": [
+          [
+            "CC",
+            2
+          ]
+        ],
+        "191517": [
+          [
+            "CC",
+            3
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 228705.14400000003,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 122.3,
+        "harvest.count_total": 2.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 134518.78274999998,
+        "state.fuel_t": 22716.209962499994,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-069",
+      "iterations": 2,
+      "evaluated": 196,
+      "seconds": 68.9,
+      "best_objective": 0.0,
+      "schedule": {
+        "299155": [
+          [
+            "CC",
+            0
+          ]
+        ],
+        "376097": [
+          [
+            "CC",
+            2
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 385821.4505555555,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 272.0,
+        "harvest.count_total": 2.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 164580.34025,
+        "state.fuel_t": 29224.839037499998,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-070",
+      "iterations": 2,
+      "evaluated": 190,
+      "seconds": 73.2,
+      "best_objective": 0.0,
+      "schedule": {
+        "25287": [
+          [
+            "CC",
+            1
+          ]
+        ],
+        "99284": [
+          [
+            "CC",
+            1
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 535642.9553333333,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 238.5,
+        "harvest.count_total": 1.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 265540.77975,
+        "state.fuel_t": 42400.5130125,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-071",
+      "iterations": 2,
+      "evaluated": 188,
+      "seconds": 75.3,
+      "best_objective": 0.0,
+      "schedule": {
+        "106351": [
+          [
+            "CC",
+            2
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 743677.3300000001,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 369.3,
+        "harvest.count_total": 1.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 336706.26275,
+        "state.fuel_t": 57501.3448125,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-072",
+      "iterations": 2,
+      "evaluated": 196,
+      "seconds": 93.3,
+      "best_objective": 0.0,
+      "schedule": {
+        "364395": [
+          [
+            "CC",
+            0
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 356464.142,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 270.1,
+        "harvest.count_total": 1.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 242233.8235,
+        "state.fuel_t": 37419.04882499999,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-073",
+      "iterations": 2,
+      "evaluated": 196,
+      "seconds": 86.8,
+      "best_objective": 0.0,
+      "schedule": {
+        "330153": [
+          [
+            "CC",
+            0
+          ]
+        ],
+        "399277": [
+          [
+            "CC",
+            1
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 283560.713,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 193.2,
+        "harvest.count_total": 2.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 162576.05774999998,
+        "state.fuel_t": 28666.757662499997,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-074",
+      "iterations": 2,
+      "evaluated": 196,
+      "seconds": 71.1,
+      "best_objective": 0.0,
+      "schedule": {
+        "233271": [
+          [
+            "CC",
+            2
+          ]
+        ],
+        "251235": [
+          [
+            "CC",
+            3
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 330274.9622222222,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 204.0,
+        "harvest.count_total": 2.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 215513.09074999997,
+        "state.fuel_t": 34973.181412499995,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-075",
+      "iterations": 2,
+      "evaluated": 196,
+      "seconds": 73.9,
+      "best_objective": 0.0,
+      "schedule": {
+        "27106": [
+          [
+            "CC",
+            1
+          ]
+        ],
+        "276512": [
+          [
+            "CC",
+            3
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 305115.993,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 209.9,
+        "harvest.count_total": 2.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 65629.51774999998,
+        "state.fuel_t": 16426.2266625,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-076",
+      "iterations": 2,
+      "evaluated": 196,
+      "seconds": 77.3,
+      "best_objective": 0.0,
+      "schedule": {
+        "77432": [
+          [
+            "CC",
+            3
+          ]
+        ],
+        "189988": [
+          [
+            "CC",
+            3
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 181664.07899999997,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 149.8,
+        "harvest.count_total": 1.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 62259.38574999999,
+        "state.fuel_t": 13378.003462499999,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-077",
+      "iterations": 2,
+      "evaluated": 196,
+      "seconds": 76.0,
+      "best_objective": 0.0,
+      "schedule": {
+        "5432": [
+          [
+            "CC",
+            4
+          ]
+        ],
+        "220302": [
+          [
+            "CC",
+            1
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 164224.706,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 91.30000000000001,
+        "harvest.count_total": 2.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 101032.86599999998,
+        "state.fuel_t": 17411.990250000003,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-079",
+      "iterations": 2,
+      "evaluated": 158,
+      "seconds": 47.6,
+      "best_objective": 0.0,
+      "schedule": {
+        "163266": [
+          [
+            "CC",
+            1
+          ]
+        ],
+        "278245": [
+          [
+            "CC",
+            2
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 243952.34800000003,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 160.8,
+        "harvest.count_total": 2.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 143261.11424999993,
+        "state.fuel_t": 24064.181587499996,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-080",
+      "iterations": 2,
+      "evaluated": 184,
+      "seconds": 65.7,
+      "best_objective": 0.0,
+      "schedule": {
+        "88917": [
+          [
+            "CC",
+            4
+          ]
+        ],
+        "444128": [
+          [
+            "CC",
+            1
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 180061.075,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 129.5,
+        "harvest.count_total": 2.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 104172.92599999996,
+        "state.fuel_t": 17123.616149999998,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-081",
+      "iterations": 2,
+      "evaluated": 190,
+      "seconds": 84.5,
+      "best_objective": 0.0,
+      "schedule": {
+        "26506": [
+          [
+            "CC",
+            4
+          ]
+        ],
+        "265970": [
+          [
+            "CC",
+            1
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 376811.1200000001,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 316.0,
+        "harvest.count_total": 2.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 195095.22924999997,
+        "state.fuel_t": 31684.278337499996,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-082",
+      "iterations": 2,
+      "evaluated": 196,
+      "seconds": 78.5,
+      "best_objective": 0.0,
+      "schedule": {
+        "334527": [
+          [
+            "CC",
+            3
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 581894.245,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 1270.0,
+        "harvest.count_total": 1.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 236134.16124999995,
+        "state.fuel_t": 49974.06783749999,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-083",
+      "iterations": 2,
+      "evaluated": 184,
+      "seconds": 68.5,
+      "best_objective": 0.0,
+      "schedule": {
+        "387160": [
+          [
+            "CC",
+            0
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 193115.40600000002,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 111.4,
+        "harvest.count_total": 1.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 107625.33124999999,
+        "state.fuel_t": 16914.487837499997,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-084",
+      "iterations": 2,
+      "evaluated": 196,
+      "seconds": 81.4,
+      "best_objective": 0.0,
+      "schedule": {
+        "69032": [
+          [
+            "CC",
+            4
+          ]
+        ],
+        "289687": [
+          [
+            "CC",
+            0
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 236779.62399999998,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 107.19999999999999,
+        "harvest.count_total": 2.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 152830.09174999996,
+        "state.fuel_t": 23665.913212499996,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-085",
+      "iterations": 2,
+      "evaluated": 196,
+      "seconds": 79.1,
+      "best_objective": 0.0,
+      "schedule": {
+        "12139": [
+          [
+            "CC",
+            0
+          ]
+        ],
+        "341739": [
+          [
+            "CC",
+            2
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 356486.8389999999,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 153.6,
+        "harvest.count_total": 2.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 241178.19924999995,
+        "state.fuel_t": 38346.4081875,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-086",
+      "iterations": 2,
+      "evaluated": 196,
+      "seconds": 91.6,
+      "best_objective": 0.0,
+      "schedule": {
+        "177118": [
+          [
+            "CC",
+            0
+          ]
+        ],
+        "310299": [
+          [
+            "CC",
+            4
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 487498.67299999995,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 226.89999999999998,
+        "harvest.count_total": 2.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 300728.8082499999,
+        "state.fuel_t": 50419.98393749999,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-087",
+      "iterations": 2,
+      "evaluated": 189,
+      "seconds": 58.7,
+      "best_objective": 0.0,
+      "schedule": {
+        "2262": [
+          [
+            "CC",
+            2
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 322035.99900000007,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 231.2,
+        "harvest.count_total": 1.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 187968.03899999993,
+        "state.fuel_t": 32195.503199999992,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-088",
+      "iterations": 2,
+      "evaluated": 196,
+      "seconds": 88.2,
+      "best_objective": 0.0,
+      "schedule": {
+        "97823": [
+          [
+            "CC",
+            2
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 195937.306,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 96.2,
+        "harvest.count_total": 1.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 79808.935,
+        "state.fuel_t": 17281.084349999997,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-089",
+      "iterations": 2,
+      "evaluated": 196,
+      "seconds": 78.6,
+      "best_objective": 0.0,
+      "schedule": {
+        "34863": [
+          [
+            "CC",
+            0
+          ]
+        ],
+        "392405": [
+          [
+            "CC",
+            2
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 110303.736,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 53.5,
+        "harvest.count_total": 2.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 63649.16749999998,
+        "state.fuel_t": 11344.152825,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-091",
+      "iterations": 2,
+      "evaluated": 190,
+      "seconds": 83.3,
+      "best_objective": 0.0,
+      "schedule": {
+        "354012": [
+          [
+            "CC",
+            1
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 48051.445999999996,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 39.7,
+        "harvest.count_total": 1.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 25819.30575,
+        "state.fuel_t": 4309.941712499999,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-092",
+      "iterations": 2,
+      "evaluated": 190,
+      "seconds": 81.1,
+      "best_objective": 0.0,
+      "schedule": {
+        "181386": [
+          [
+            "CC",
+            3
+          ]
+        ],
+        "275704": [
+          [
+            "CC",
+            4
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 184414.22499999998,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 142.9,
+        "harvest.count_total": 2.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 102636.81675,
+        "state.fuel_t": 18317.8046625,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-093",
+      "iterations": 2,
+      "evaluated": 169,
+      "seconds": 61.9,
+      "best_objective": 0.0,
+      "schedule": {
+        "83996": [
+          [
+            "CC",
+            2
+          ]
+        ],
+        "286347": [
+          [
+            "CC",
+            3
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 274366.52499999997,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 237.29999999999998,
+        "harvest.count_total": 2.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 124009.15224999998,
+        "state.fuel_t": 19718.425837499995,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-094",
+      "iterations": 2,
+      "evaluated": 196,
+      "seconds": 78.5,
+      "best_objective": 0.0,
+      "schedule": {
+        "415796": [
+          [
+            "CC",
+            1
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 211721.913,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 184.3,
+        "harvest.count_total": 1.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 121149.00624999999,
+        "state.fuel_t": 18761.8926375,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-095",
+      "iterations": 2,
+      "evaluated": 166,
+      "seconds": 79.5,
+      "best_objective": 0.0,
+      "schedule": {
+        "243436": [
+          [
+            "CC",
+            1
+          ]
+        ],
+        "347979": [
+          [
+            "CC",
+            3
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 222129.04599999997,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 188.7,
+        "harvest.count_total": 2.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 133180.52924999996,
+        "state.fuel_t": 21124.8411375,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-096",
+      "iterations": 2,
+      "evaluated": 187,
+      "seconds": 73.4,
+      "best_objective": 0.0,
+      "schedule": {
+        "268572": [
+          [
+            "CC",
+            4
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 317356.64999999997,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 217.2,
+        "harvest.count_total": 1.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 141288.38724999997,
+        "state.fuel_t": 22508.481187499998,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-097",
+      "iterations": 2,
+      "evaluated": 194,
+      "seconds": 102.4,
+      "best_objective": 0.0,
+      "schedule": {
+        "43133": [
+          [
+            "CC",
+            2
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 145079.3548888889,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 87.8,
+        "harvest.count_total": 1.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 84930.33025,
+        "state.fuel_t": 12924.2640375,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-098",
+      "iterations": 2,
+      "evaluated": 186,
+      "seconds": 65.6,
+      "best_objective": 0.0,
+      "schedule": {
+        "209036": [
+          [
+            "CC",
+            4
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 547449.174,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 245.2,
+        "harvest.count_total": 1.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 357390.70475,
+        "state.fuel_t": 57575.095312499994,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-099",
+      "iterations": 2,
+      "evaluated": 188,
+      "seconds": 62.8,
+      "best_objective": 0.0,
+      "schedule": {
+        "1942": [
+          [
+            "CC",
+            0
+          ]
+        ],
+        "219685": [
+          [
+            "CC",
+            3
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 395485.02499999997,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 189.7,
+        "harvest.count_total": 2.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 219461.20899999997,
+        "state.fuel_t": 37117.33874999999,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-100",
+      "iterations": 2,
+      "evaluated": 196,
+      "seconds": 67.4,
+      "best_objective": 0.0,
+      "schedule": {
+        "20017": [
+          [
+            "CC",
+            1
+          ]
+        ],
+        "233575": [
+          [
+            "CC",
+            3
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 248921.57799999998,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 173.6,
+        "harvest.count_total": 2.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 104171.74299999996,
+        "state.fuel_t": 21056.170949999996,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-101",
+      "iterations": 2,
+      "evaluated": 196,
+      "seconds": 99.8,
+      "best_objective": 0.0,
+      "schedule": {
+        "375785": [
+          [
+            "CC",
+            0
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 342520.83999999997,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 215.3,
+        "harvest.count_total": 1.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 177486.53249999994,
+        "state.fuel_t": 31321.997474999993,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-102",
+      "iterations": 2,
+      "evaluated": 196,
+      "seconds": 77.0,
+      "best_objective": 0.0,
+      "schedule": {
+        "112558": [
+          [
+            "CC",
+            4
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 184148.18300000002,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 82.5,
+        "harvest.count_total": 1.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 97935.71499999997,
+        "state.fuel_t": 18266.743649999997,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-103",
+      "iterations": 2,
+      "evaluated": 196,
+      "seconds": 76.4,
+      "best_objective": 0.0,
+      "schedule": {
+        "56329": [
+          [
+            "CC",
+            4
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 23965.256,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 21.0,
+        "harvest.count_total": 1.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 16141.853500000001,
+        "state.fuel_t": 2525.036775,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-104",
+      "iterations": 2,
+      "evaluated": 172,
+      "seconds": 56.0,
+      "best_objective": 0.0,
+      "schedule": {
+        "136664": [
+          [
+            "CC",
+            1
+          ]
+        ],
+        "358423": [
+          [
+            "CC",
+            4
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 54576.476,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 56.8,
+        "harvest.count_total": 2.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 39862.668249999995,
+        "state.fuel_t": 6248.615137499999,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-105",
+      "iterations": 2,
+      "evaluated": 178,
+      "seconds": 62.4,
+      "best_objective": 0.0,
+      "schedule": {
+        "327544": [
+          [
+            "CC",
+            4
+          ]
+        ],
+        "429021": [
+          [
+            "CC",
+            2
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 195430.294,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 136.4,
+        "harvest.count_total": 2.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 107329.78725,
+        "state.fuel_t": 16911.843487499995,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-106",
+      "iterations": 2,
+      "evaluated": 172,
+      "seconds": 66.3,
+      "best_objective": 0.0,
+      "schedule": {
+        "112312": [
+          [
+            "CC",
+            1
+          ]
+        ],
+        "134611": [
+          [
+            "CC",
+            3
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 311671.998,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 215.39999999999998,
+        "harvest.count_total": 2.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 176903.33074999994,
+        "state.fuel_t": 29404.955662499993,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-107",
+      "iterations": 2,
+      "evaluated": 196,
+      "seconds": 72.5,
+      "best_objective": 0.0,
+      "schedule": {
+        "26614": [
+          [
+            "CC",
+            2
+          ]
+        ],
+        "141008": [
+          [
+            "CC",
+            0
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 315008.58199999994,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 312.6,
+        "harvest.count_total": 2.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 145742.62849999996,
+        "state.fuel_t": 23818.722674999994,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-108",
+      "iterations": 2,
+      "evaluated": 170,
+      "seconds": 75.6,
+      "best_objective": 0.0,
+      "schedule": {
+        "366524": [
+          [
+            "CC",
+            1
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 336832.50199999986,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 206.2,
+        "harvest.count_total": 1.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 117957.93574999998,
+        "state.fuel_t": 22963.013362499998,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-109",
+      "iterations": 2,
+      "evaluated": 190,
+      "seconds": 90.4,
+      "best_objective": 0.0,
+      "schedule": {
+        "44705": [
+          [
+            "CC",
+            0
+          ]
+        ],
+        "168070": [
+          [
+            "CC",
+            2
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 518663.3464444444,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 271.9,
+        "harvest.count_total": 2.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 136044.77925,
+        "state.fuel_t": 30483.369337499997,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-110",
+      "iterations": 2,
+      "evaluated": 190,
+      "seconds": 75.4,
+      "best_objective": 0.0,
+      "schedule": {
+        "131976": [
+          [
+            "CC",
+            2
+          ]
+        ],
+        "220694": [
+          [
+            "CC",
+            0
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 453356.386,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 192.5,
+        "harvest.count_total": 2.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 186992.14325,
+        "state.fuel_t": 32390.962837499996,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-111",
+      "iterations": 2,
+      "evaluated": 191,
+      "seconds": 84.1,
+      "best_objective": 0.0,
+      "schedule": {
+        "153336": [
+          [
+            "CC",
+            3
+          ]
+        ],
+        "257102": [
+          [
+            "CC",
+            3
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 315881.2579999999,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 145.8,
+        "harvest.count_total": 1.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 118801.60474999997,
+        "state.fuel_t": 26109.362362499996,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-112",
+      "iterations": 2,
+      "evaluated": 186,
+      "seconds": 80.7,
+      "best_objective": 0.0,
+      "schedule": {
+        "233510": [
+          [
+            "CC",
+            0
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 336944.68066666665,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 135.8,
+        "harvest.count_total": 1.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 147875.50174999997,
+        "state.fuel_t": 29899.101562499996,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-113",
+      "iterations": 2,
+      "evaluated": 196,
+      "seconds": 76.5,
+      "best_objective": 0.0,
+      "schedule": {
+        "238198": [
+          [
+            "CC",
+            3
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 417626.45599999995,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 148.5,
+        "harvest.count_total": 1.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 171870.1899999999,
+        "state.fuel_t": 33803.07059999999,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-114",
+      "iterations": 2,
+      "evaluated": 196,
+      "seconds": 80.1,
+      "best_objective": 0.0,
+      "schedule": {
+        "103117": [
+          [
+            "CC",
+            4
+          ]
+        ],
+        "292860": [
+          [
+            "CC",
+            2
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 317417.886,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 173.2,
+        "harvest.count_total": 2.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 117277.19149999997,
+        "state.fuel_t": 25489.697324999997,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-115",
+      "iterations": 2,
+      "evaluated": 196,
+      "seconds": 76.9,
+      "best_objective": 0.0,
+      "schedule": {
+        "140549": [
+          [
+            "CC",
+            1
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 264594.249,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 144.6,
+        "harvest.count_total": 1.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 84973.02849999999,
+        "state.fuel_t": 17346.963975,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-117",
+      "iterations": 2,
+      "evaluated": 169,
+      "seconds": 73.1,
+      "best_objective": 0.0,
+      "schedule": {
+        "25849": [
+          [
+            "CC",
+            3
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 196186.517,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 179.5,
+        "harvest.count_total": 1.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 95381.92924999999,
+        "state.fuel_t": 14942.646937499996,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-118",
+      "iterations": 2,
+      "evaluated": 158,
+      "seconds": 60.9,
+      "best_objective": 0.0,
+      "schedule": {
+        "350726": [
+          [
+            "CC",
+            2
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 378212.2699999999,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 498.3,
+        "harvest.count_total": 1.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 166772.27424999996,
+        "state.fuel_t": 28148.687737499993,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-119",
+      "iterations": 2,
+      "evaluated": 166,
+      "seconds": 56.3,
+      "best_objective": 0.0,
+      "schedule": {
+        "45733": [
+          [
+            "CC",
+            4
+          ]
+        ],
+        "448022": [
+          [
+            "CC",
+            3
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 182385.934,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 188.8,
+        "harvest.count_total": 2.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 80341.09599999996,
+        "state.fuel_t": 12279.336749999997,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-120",
+      "iterations": 2,
+      "evaluated": 182,
+      "seconds": 77.5,
+      "best_objective": 0.0,
+      "schedule": {
+        "137285": [
+          [
+            "CC",
+            0
+          ]
+        ],
+        "419233": [
+          [
+            "CC",
+            4
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 191010.034,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 114.5,
+        "harvest.count_total": 2.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 109871.26249999997,
+        "state.fuel_t": 17545.872225,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-121",
+      "iterations": 2,
+      "evaluated": 188,
+      "seconds": 68.4,
+      "best_objective": 0.0,
+      "schedule": {
+        "110957": [
+          [
+            "CC",
+            0
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 388403.76900000003,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 210.9,
+        "harvest.count_total": 1.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 142716.98599999998,
+        "state.fuel_t": 21808.4502,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-122",
+      "iterations": 2,
+      "evaluated": 196,
+      "seconds": 67.4,
+      "best_objective": 0.0,
+      "schedule": {
+        "167267": [
+          [
+            "CC",
+            2
+          ]
+        ],
+        "256970": [
+          [
+            "CC",
+            2
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 317225.696,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 152.7,
+        "harvest.count_total": 1.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 130246.23925,
+        "state.fuel_t": 26455.151137499997,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-123",
+      "iterations": 2,
+      "evaluated": 196,
+      "seconds": 70.2,
+      "best_objective": 0.0,
+      "schedule": {
+        "20849": [
+          [
+            "CC",
+            4
+          ]
+        ],
+        "93905": [
+          [
+            "CC",
+            4
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 180345.865,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 82.0,
+        "harvest.count_total": 1.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 86521.84150000001,
+        "state.fuel_t": 15015.217575000002,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-124",
+      "iterations": 2,
+      "evaluated": 196,
+      "seconds": 65.6,
+      "best_objective": 0.0,
+      "schedule": {
+        "238898": [
+          [
+            "CC",
+            0
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 283980.88100000005,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 115.1,
+        "harvest.count_total": 1.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 118574.54499999998,
+        "state.fuel_t": 23724.431249999998,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-125",
+      "iterations": 2,
+      "evaluated": 196,
+      "seconds": 67.3,
+      "best_objective": 0.0,
+      "schedule": {
+        "414205": [
+          [
+            "CC",
+            1
+          ]
+        ],
+        "440332": [
+          [
+            "CC",
+            0
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 335642.42600000004,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 139.3,
+        "harvest.count_total": 2.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 167113.81724999996,
+        "state.fuel_t": 31351.266187499994,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-126",
+      "iterations": 2,
+      "evaluated": 196,
+      "seconds": 71.5,
+      "best_objective": 0.0,
+      "schedule": {
+        "202298": [
+          [
+            "CC",
+            3
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 119100.725,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 57.0,
+        "harvest.count_total": 1.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 32977.14875,
+        "state.fuel_t": 8078.9516625,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-127",
+      "iterations": 2,
+      "evaluated": 172,
+      "seconds": 62.8,
+      "best_objective": 0.0,
+      "schedule": {
+        "239398": [
+          [
+            "CC",
+            4
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 221891.68899999998,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 295.3,
+        "harvest.count_total": 1.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 90415.33124999996,
+        "state.fuel_t": 13821.621787499993,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-128",
+      "iterations": 2,
+      "evaluated": 166,
+      "seconds": 62.4,
+      "best_objective": 0.0,
+      "schedule": {
+        "234075": [
+          [
+            "CC",
+            2
+          ]
+        ],
+        "339018": [
+          [
+            "CC",
+            0
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 286094.269,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 246.5,
+        "harvest.count_total": 2.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 117089.94924999999,
+        "state.fuel_t": 18941.362837499997,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-129",
+      "iterations": 2,
+      "evaluated": 190,
+      "seconds": 55.4,
+      "best_objective": 0.0,
+      "schedule": {
+        "369446": [
+          [
+            "CC",
+            1
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 365576.03,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 320.7,
+        "harvest.count_total": 1.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 129424.22274999999,
+        "state.fuel_t": 20164.2395625,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-130",
+      "iterations": 2,
+      "evaluated": 190,
+      "seconds": 75.1,
+      "best_objective": 0.0,
+      "schedule": {
+        "140769": [
+          [
+            "CC",
+            4
+          ]
+        ],
+        "409192": [
+          [
+            "CC",
+            3
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 136605.913,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 117.0,
+        "harvest.count_total": 2.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 73242.02924999999,
+        "state.fuel_t": 11361.495637499998,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-131",
+      "iterations": 2,
+      "evaluated": 16,
+      "seconds": 3.8,
+      "best_objective": 0.0,
+      "schedule": {
+        "67480": [
+          [
+            "CC",
+            2
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 1491.882,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 9.8,
+        "harvest.count_total": 1.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 1142.82,
+        "state.fuel_t": 172.7901,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-132",
+      "iterations": 2,
+      "evaluated": 168,
+      "seconds": 59.7,
+      "best_objective": 0.0,
+      "schedule": {
+        "206306": [
+          [
+            "CC",
+            4
+          ]
+        ],
+        "272401": [
+          [
+            "CC",
+            3
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 125523.27855555555,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 72.3,
+        "harvest.count_total": 2.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 65942.9725,
+        "state.fuel_t": 10743.924674999998,
+        "state.snag_t": 0.0
+      }
+    },
+    {
+      "tile": "tile-133",
+      "iterations": 2,
+      "evaluated": 190,
+      "seconds": 65.0,
+      "best_objective": 0.0,
+      "schedule": {
+        "181979": [
+          [
+            "CC",
+            2
+          ]
+        ],
+        "378812": [
+          [
+            "CC",
+            0
+          ]
+        ]
+      },
+      "accounts": {
+        "bridge.volume_m3": 89801.554,
+        "fire.burned_area_ha_total": 0.0,
+        "fire.count_total": 0.0,
+        "harvest.area_ha_total": 80.30000000000001,
+        "harvest.count_total": 2.0,
+        "regeneration.count_total": 0.0,
+        "salvage.count_total": 0.0,
+        "state.biomass_t": 42198.963249999986,
+        "state.fuel_t": 6704.971987499999,
+        "state.snag_t": 0.0
+      }
+    }
+  ]
+}
