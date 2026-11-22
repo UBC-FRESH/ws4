@@ -19,6 +19,12 @@ from .ensemble import (
     run_process_ensemble,
     run_process_scenario,
 )
+from .estate_fire import (
+    EstateFireError,
+    build_estate_fire_source,
+    load_calibrated_regions,
+    load_estate_grid,
+)
 from .evaluation import (
     PROCESS_EVALUATION_VERSION,
     ProcessEvaluationError,
@@ -155,6 +161,7 @@ __all__ = [
     "EcosystemPackageError",
     "EcosystemProducer",
     "EcosystemSource",
+    "EstateFireError",
     "Event",
     "EventError",
     "EventLog",
@@ -214,6 +221,7 @@ __all__ = [
     "SurvivalIgnition",
     "TapeError",
     "VolumeBridgeConfig",
+    "build_estate_fire_source",
     "build_growth_fire_source",
     "build_relative_fire_source",
     "build_survival_fire_source",
@@ -228,8 +236,10 @@ __all__ = [
     "fire_evaluator",
     "landis_reference_config",
     "load_block_fragments",
+    "load_calibrated_regions",
     "load_dataset_ecosystem",
     "load_ecosystem_package",
+    "load_estate_grid",
     "load_scenarios",
     "load_schedule",
     "package_fingerprint",
