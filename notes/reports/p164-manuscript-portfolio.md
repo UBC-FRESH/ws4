@@ -12,6 +12,10 @@ format, archive DOIs, and final data sign-off are still pending.
 | 3. Optimization/scale | `UBC-FRESH/fresh_ws4_fire_optimization_manuscript` | 7 pages | Sharded process-based fire-risk workflow; fire-evaluated, not fire-aware; not a global optimum |
 | 4. Data/benchmark | `UBC-FRESH/fresh_ws4_fire_benchmark_manuscript` | 8 pages | Reproducible TSA24 benchmark and data descriptor; not a validated fire forecast |
 
+## Archive
+
+Reproducibility archive: `https://github.com/UBC-FRESH/fresh_ws4_fire_regime_repro` (private). It contains compact results, a source catalogue, stage scripts, and a verified hash manifest. The README explicitly states that the full raw-data rerun is not complete.
+
 ## Common structure
 
 The repositories follow the `fresh_daugherty_manuscript` pattern:
