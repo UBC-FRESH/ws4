@@ -33,6 +33,7 @@ The calibrated estate API is tracked in `ws4/ecosystem/estate_fire.py` and expor
 | Full-layer five-year case | `work/fire_regime/results/estate-case-5yr-full-layers.json` |
 | Bounded regional optimizer | `work/fire_regime/results/optimizer-regional.json` |
 | Full-estate sharded optimizer | `work/fire_regime/results/optimizer-full-estate.json` |
+| Fire-blind sharded baseline | `notes/reports/p164-8-sharded-fireblind-baseline.md` |
 | Full-estate schedule | `work/fire_regime/results/optimizer-full-estate-schedule.csv` |
 | Transfer validation | `notes/reports/p164-8-transfer-validation.md` |
 | Hierarchical validation | `notes/reports/p164-8-hierarchical-validation.md` |

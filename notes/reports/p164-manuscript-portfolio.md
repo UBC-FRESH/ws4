@@ -9,7 +9,7 @@ format, archive DOIs, and final data sign-off are still pending.
 | --- | --- | --- | --- |
 | 1. Open integration | `UBC-FRESH/fresh_ws4_fire_regime_manuscript` | 15 pages | Open, suppression-aware integration and calibration/transfer diagnosis; not a validated forecast |
 | 2. Calibration/transfer | `UBC-FRESH/fresh_ws4_fire_calibration_manuscript` | 9 pages | Regional suppression calibration is a fit, not a forecast; transfer is negative |
-| 3. Optimization/scale | `UBC-FRESH/fresh_ws4_fire_optimization_manuscript` | 7 pages | Sharded process-based fire-risk workflow; not a global optimum |
+| 3. Optimization/scale | `UBC-FRESH/fresh_ws4_fire_optimization_manuscript` | 7 pages | Sharded process-based fire-risk workflow; fire-evaluated, not fire-aware; not a global optimum |
 | 4. Data/benchmark | `UBC-FRESH/fresh_ws4_fire_benchmark_manuscript` | 8 pages | Reproducible TSA24 benchmark and data descriptor; not a validated fire forecast |
 
 ## Common structure
@@ -56,7 +56,8 @@ FBP-based fire regime.*
 - 20,775.6 ha harvested;
 - 74.25 ha burned;
 - 655.5 s on 36 workers;
-- explicit non-global-optimum boundary.
+- explicit non-global-optimum boundary;
+- fire-blind repeat produced the same schedule, showing the local objective is harvest-only.
 
 ## Paper 4
 
