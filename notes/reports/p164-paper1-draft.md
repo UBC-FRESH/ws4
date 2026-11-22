@@ -2,6 +2,8 @@
 
 **Draft manuscript for internal review — not submitted**
 
+LaTeX source: `https://github.com/UBC-FRESH/fresh_ws4_fire_regime_manuscript`
+
 Authors: [to be completed]
 
 Affiliations: [to be completed]

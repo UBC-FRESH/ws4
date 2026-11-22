@@ -39,7 +39,7 @@ The calibrated estate API is tracked in `ws4/ecosystem/estate_fire.py` and expor
 | Benchmark and reproducibility package | `notes/reports/p164-8-benchmark-reproducibility.md` |
 | Artifact manifest | `work/fire_regime/results/reproducibility-manifest.json` |
 | Data licences | `notes/reports/p164-8-data-licenses.md` |
-| Paper 1 draft | `notes/reports/p164-paper1-draft.md` |
+| Paper 1 draft | `notes/reports/p164-paper1-draft.md`; LaTeX: `https://github.com/UBC-FRESH/fresh_ws4_fire_regime_manuscript` |
 | Paper figures | `notes/reports/figures/` |
 | External Dogrib benchmark | `notes/reports/p157-firestarr-comparison.md` |
 
@@ -93,7 +93,7 @@ local and are not part of the repository contract.
 | Calibrated estate handoff API | `notes/reports/p164-8-estate-handoff.md` | `9918fb17` |
 | Transfer validation diagnostic | `notes/reports/p164-8-transfer-validation.md` | `7a255e55` |
 | Hierarchical validation diagnostic | `notes/reports/p164-8-hierarchical-validation.md` | `4e63ac46` |
-| Paper 1 draft | `notes/reports/p164-paper1-draft.md` | draft PR #1435 |
+| Paper 1 draft | `notes/reports/p164-paper1-draft.md`; LaTeX: `https://github.com/UBC-FRESH/fresh_ws4_fire_regime_manuscript` | draft PR #1435 |
 | Data licence audit | `notes/reports/p164-8-data-licenses.md` | paper branch |
 
 ## Key parameters and seeds
