@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import math
 import random
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, replace
 from typing import Final
 
@@ -69,6 +69,10 @@ class GrowthFireSource:
         Executor phases; growth fire events are emitted in ``propagation``.
     state_reads, state_writes : frozenset of str, optional
         Cohort-state variables read and written by the adapter.
+    severity : callable or None, optional
+        Optional ``severity(state, fragment_id)`` multiplier applied to the burned area
+        fraction. The callable returns a non-negative finite factor; 1.0 keeps the
+        burned area as the mortality fraction. None keeps the calibrated default.
     """
 
     ignitions: Mapping[int, Sequence[FragmentIgnition]]
@@ -82,6 +86,7 @@ class GrowthFireSource:
         {"area_ha", "fragment_areas", "biomass_t_ha", "fuel_t_ha", "snag_t_ha"}
     )
     state_writes: frozenset[str] = frozenset({"biomass_t_ha", "fuel_t_ha", "snag_t_ha"})
+    severity: Callable[[CohortState, int], float] | None = None
 
     def __post_init__(self) -> None:
         """Validate the source fields."""
@@ -107,6 +112,8 @@ class GrowthFireSource:
             "minutes_per_year",
             _number(self.minutes_per_year, "minutes_per_year", positive=True),
         )
+        if self.severity is not None and not callable(self.severity):
+            raise ValueError("severity must be callable or None")
 
     def events(self, state: CohortState, context: ProcessContext) -> tuple[Event, ...]:
         """Return the growth fire events for the current year.
@@ -134,6 +141,13 @@ class GrowthFireSource:
             fraction = min(1.0, max(0.0, entry.area_ha / area))
             if fraction <= 0.0:
                 continue
+            if self.severity is not None:
+                factor = _number(
+                    self.severity(state, entry.fragment_id), "severity", positive=False
+                )
+                fraction = min(1.0, fraction * factor)
+                if fraction <= 0.0:
+                    continue
             event_id = f"fire-growth-{context.year}-{entry.fragment_id}"
             if event_id in existing:
                 continue

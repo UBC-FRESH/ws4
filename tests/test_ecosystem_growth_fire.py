@@ -52,6 +52,31 @@ def test_growth_source_emits_area_fraction_and_applies_mortality() -> None:
     assert float(dead["area_fraction"].sum()) == pytest.approx(0.5)
 
 
+def test_growth_source_applies_a_severity_multiplier() -> None:
+    """A severity callable scales the burned area used as the mortality fraction."""
+    source = GrowthFireSource(
+        {
+            0: (
+                FragmentIgnition(
+                    fragment_id=1, ignition_time_min=30.0, area_ha=50.0, burned_cells=2
+                ),
+            )
+        },
+        severity=lambda _state, _fragment: 0.25,
+    )
+    events = source.events(_state(), ProcessContext(0, "propagation", "growth"))
+    assert events[0].magnitude == pytest.approx(0.125)
+    updated = source.apply_many(_state(), events)
+    dead = updated.cohorts[updated.cohorts["biomass_t_ha"] == 0.0]
+    assert float(dead["area_fraction"].sum()) == pytest.approx(0.125)
+
+
+def test_growth_source_rejects_a_non_callable_severity() -> None:
+    """The severity option must be callable or None."""
+    with pytest.raises(ValueError, match="severity"):
+        GrowthFireSource({}, severity=0.5)  # type: ignore[arg-type]
+
+
 def test_growth_source_builds_from_a_site_grid() -> None:
     grid = SiteGrid(
         fuel_type="C2",
