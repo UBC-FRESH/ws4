@@ -826,3 +826,12 @@ line-number appendix above:
   regeneration, clean-host run, four-paper overlap) remain open.
 
 These corrections improve honesty. They do not make the four drafts publishable.
+
+## 12. Portfolio decision executed
+
+The four-draft portfolio has been retired. The canonical paper is now
+`fresh_ws4_fire_regime_manuscript`; the calibration, optimization, and benchmark repositories carry
+`STATUS.md` files and README banners stating that they are merged, not for submission. The
+canonical paper reports the integration, in-sample calibration, negative training-only transfer,
+in-sample event reconstruction, estate-scale risk/feasibility cases, Dogrib check, FireSTARR TSA24
+failure, and archive/reproducibility boundary together. No new four-paper split will be opened.
