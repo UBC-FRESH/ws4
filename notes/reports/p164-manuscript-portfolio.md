@@ -1,6 +1,6 @@
 # P164 manuscript portfolio
 
-Status: four private `UBC-FRESH` LaTeX manuscript repositories, drafts only.
+Status: four private `UBC-FRESH` LaTeX manuscript repositories, drafts only. The serious research plan is `notes/design/ws4-fire-research-program.md`; the drafts are not publication-grade until its validation, benchmark, and optimizer gates are met.
 
 All four build a PDF in GitHub Actions. None is submitted or public. Author metadata, target-journal
 format, archive DOIs, and final data sign-off are still pending.
