@@ -1,6 +1,6 @@
-# TSA24 independent event validation
+# TSA24 in-sample event reconstruction
 
-Status: completed negative result
+Status: completed negative result; not independent
 
 Date: 2026-11-23
 
@@ -10,6 +10,9 @@ Can the calibrated TSA24 fire regime reproduce independent observed fires from t
 points and event weather?
 
 ## Data and protocol
+
+- Not independent: the 23-tile regional map was fitted on all tile histories; at least eight of the ten
+event areas occur in those histories, and one event (G12186) is in a training tile.
 
 - 247 independent fire perimeters ≥100 ha in the 24 fixed tiles.
 - 18 events had matched incident records.
@@ -49,6 +52,8 @@ Summary:
 - range: **-67.4% to +3163.0%**
 
 ## Interpretation
+
+The result is a reconstruction, not a validation. It cannot establish transferable event-level skill.
 
 The model fails independent event-level validation. The errors are large and bidirectional. The result is not a small calibration offset that can be
 tuned away; it indicates that the current point-ignition growth/suppression configuration does not
