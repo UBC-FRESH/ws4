@@ -806,3 +806,23 @@ The shortest defensible path is:
 5. If the authors want a second paper, make it a genuinely independent temporal/spatial validation with spatial metrics, multiple draws, CIs, and an external TSA24 benchmark. Do not call the current in-sample event test "independent."
 
 A hostile referee will not reject the negative result. A hostile referee will reject the claim that it is independent, reproducible, fire-aware, or a benchmark when the archive shows otherwise.
+
+## 11. Post-review corrections already applied
+
+After this review was written, the following corrections were made and are not reflected in the
+line-number appendix above:
+
+- Papers 1 and 2 now call the event exercise an **in-sample reconstruction**, not independent
+  validation, and state the calibration-history overlap and the training-tile event.
+- Papers 1 and 2 now report bootstrap intervals for the event bias and the transfer comparisons, and
+  the sensitivity of the event result to the 420-day records and G40324.
+- Papers 1, 3, and 4 now use the current optimizer runtime (727.1 s), not the old 655.5 s.
+- Papers 1 and 2 now say the regional maximum is 17% low instead of claiming it was reproduced, and
+  describe 3,450 realizations as five draws from 690 potential fires.
+- The archive README, protocol, and program plan now state that the event reconstruction is not
+  independent.
+- The false "independent" claim remains corrected only for the event/transfer exercise. The other
+  blockers in this review (fire-aware objective, global baseline, public data/DOI, support-map
+  regeneration, clean-host run, four-paper overlap) remain open.
+
+These corrections improve honesty. They do not make the four drafts publishable.
