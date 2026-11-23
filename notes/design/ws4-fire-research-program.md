@@ -1,5 +1,14 @@
 # WS4 fire-regime research program
 
+> **2026-11-23 adversarial review disposition.** The event inventory is **not independent** of the
+> regional calibration: at least eight of the ten event areas occur in the tile histories used to fit
+> the 23-tile map, and one event is in a training tile. The event result is therefore an in-sample
+> reconstruction. The manuscripts now say so; they no longer claim independent event validation.
+> Until the regional map is refit with every event excluded, Paper 1 cannot be a validation paper.
+> The standalone calibration, optimization, and benchmark papers remain blocked; the review recommends
+> one integration/diagnostic paper plus a public archive. See
+> `notes/reviews/antagonistic-review-2026-11-23.md`.
+
 Status: serious-science plan; supersedes the four manuscript drafts as a submission plan
 
 Date: 2026-11-23
