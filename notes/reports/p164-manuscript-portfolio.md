@@ -1,85 +1,71 @@
 # P164 manuscript portfolio
 
-Status: four private `UBC-FRESH` LaTeX manuscript repositories, drafts only. The serious research plan is `notes/design/ws4-fire-research-program.md`; the drafts are not publication-grade until its validation, benchmark, and optimizer gates are met.
+Status: **one canonical paper plus one reproducibility archive.**
 
-All four build a PDF in GitHub Actions. None is submitted or public. Author metadata, target-journal
-format, archive DOIs, and final data sign-off are still pending.
+The four-draft portfolio was retired after the 2026-11-23 adversarial review. The review found that
+the drafts overlapped almost completely, that the event test was in-sample, that the optimizer was
+harvest-only, and that the benchmark was neither public nor a TSA24 benchmark. Writing four papers
+from one model and one evidence set would be salami slicing.
 
-| Paper | Repository | Draft | Claim boundary |
-| --- | --- | --- | --- |
-| 1. Open integration | `UBC-FRESH/fresh_ws4_fire_regime_manuscript` | 15 pages | Open, suppression-aware integration and calibration/transfer diagnosis; not a validated forecast |
-| 2. Calibration/transfer | `UBC-FRESH/fresh_ws4_fire_calibration_manuscript` | 9 pages | Regional suppression calibration is a fit, not a forecast; transfer is negative |
-| 3. Optimization/scale | `UBC-FRESH/fresh_ws4_fire_optimization_manuscript` | 7 pages | Sharded process-based fire-risk workflow; fire-evaluated, not fire-aware; not a global optimum |
-| 4. Data/benchmark | `UBC-FRESH/fresh_ws4_fire_benchmark_manuscript` | 8 pages | Reproducible TSA24 benchmark and data descriptor; not a validated fire forecast |
+## Canonical paper
+
+Repository: `UBC-FRESH/fresh_ws4_fire_regime_manuscript` (private draft).
+
+Working title: *An open, auditable fire-regime layer for forest estate risk: integration and
+negative calibration, transfer, and event diagnostics on TSA24.*
+
+Target: *Environmental Modelling & Software*; backup *Geoscientific Model Development*.
+
+The single paper contains:
+
+- the open WS4 fire/ecosystem integration;
+- the compiled TSA24 data path and support-map boundary;
+- the pre-registered global calibration no-go, including validation failures;
+- the 23-region in-sample calibration and its tail residuals;
+- the training-only transfer test, bootstrap uncertainty, and ridge diagnostic;
+- the in-sample point-ignition reconstruction and its limitations;
+- the five-seed risk ensemble and five-year fixed-schedule case;
+- the 112-tile harvest-feasibility search, fire-blind null, and decision-space boundary;
+- the Dogrib growth check and the failed TSA24 FireSTARR attempt;
+- the archive/reproducibility boundary and the unresolved licences/DOI.
+
+It does **not** claim independent validation, fire-aware optimization, a global optimum, a TSA24
+external benchmark, operational forecasting, or open data end-to-end.
+
+## Retired drafts
+
+These repositories are retained only for audit and history. Each has a `STATUS.md` and a README
+banner saying **not for submission**.
+
+| Repository | Disposition |
+| --- | --- |
+| `fresh_ws4_fire_calibration_manuscript` | Merged into the canonical paper; calibration/transfer is a section, not a separate paper. |
+| `fresh_ws4_fire_optimization_manuscript` | Merged as a feasibility/null result; no fire-aware optimization exists. |
+| `fresh_ws4_fire_benchmark_manuscript` | Merged as data/software evidence; not a public benchmark or data descriptor. |
+
+Do not submit, DOI, or cite the retired repositories as separate contributions.
 
 ## Archive
 
-Reproducibility archive: `https://github.com/UBC-FRESH/fresh_ws4_fire_regime_repro` (private). It contains compact results, a source catalogue, stage scripts, and a verified hash manifest. The README explicitly states that the full raw-data rerun is not complete.
+`https://github.com/UBC-FRESH/fresh_ws4_fire_regime_repro` (private).
 
-## Common structure
+The archive is partial: the 133 full-estate layers are regenerated, while the support map and 24
+named calibration tiles remain frozen derived inputs. It has a 58-file hash manifest and staged
+scripts, but no clean-host raw-to-result run or DOI. The canonical paper reports this status
+directly.
 
-The repositories follow the `fresh_daugherty_manuscript` pattern:
+## Remaining submission blockers
 
-- small `main.tex`;
-- section files under `sections/`;
-- separate `title-page.tex`;
-- figures and `references.bib`;
-- `Makefile` with `make pdf`, `make title`, `make clean`;
-- GitHub Actions build and PDF artifact;
-- `planning/` and `review/` notes.
+- Public archive with DOI, clean-host run, environment lock, and licence sign-off.
+- Derived support map and regenerated 24 named calibration tiles.
+- A genuinely independent temporal/spatial validation, if the paper is to make a validation claim.
+- A fire-risk objective and near-global baseline, if a separate optimization paper is revived.
+- A TSA24 external benchmark; the Dogrib fire is not one.
+- Final author list, funding, data-provider credit, and competing-interest statement.
+- Target-journal length, reference, and figure compliance.
 
-## Paper 1
+## Rule for future work
 
-*An open, suppression-aware fire regime for forest estate optimization: integration, calibration,
-and transfer diagnostics.*
-
-- six figures;
-- full-layer TSA24 case;
-- five-seed risk ensemble;
-- sharded optimizer case;
-- Dogrib FireSTARR external benchmark;
-- negative transfer and hierarchical results in the main text.
-
-## Paper 2
-
-*Regional suppression calibration is a fit, not a forecast: transfer and tail diagnostics in an open
-FBP-based fire regime.*
-
-- global no-go;
-- regional in-sample residuals;
-- fixed 11-tile transfer test;
-- hierarchical ridge;
-- conclusion: potential/weather covariates do not identify a transferable suppression regime.
-
-## Paper 3
-
-*A sharded, process-based fire-risk workflow for large forest estates: a TSA24 case study.*
-
-- 112 of 133 tiles optimized;
-- 179 scheduled events;
-- 20,775.6 ha harvested;
-- 74.25 ha burned;
-- 655.5 s on 36 workers;
-- explicit non-global-optimum boundary;
-- fire-blind repeat produced the same schedule, showing the local objective is harvest-only.
-
-## Paper 4
-
-*A reproducible TSA24 open fire-regime benchmark: layers, calibration, and estate-scale cases.*
-
-- 133-tile layer cache;
-- full support coverage;
-- calibration and transfer summaries;
-- risk and estate-scale cases;
-- reproducibility manifest and licence audit;
-- data descriptor format.
-
-## Submission blockers
-
-- Author list, affiliations, ORCIDs, CRediT contributions, funding, competing interests.
-- Target-journal format for each paper.
-- Data-owner/licence sign-off and archive DOI.
-- TSA24-specific external benchmark.
-- Global or near-global optimization baseline for Paper 3.
-- Clean-machine reproduction audit.
-- Final proof of figures, tables, and references.
+No new manuscript is opened from this project unless it answers a question the canonical paper does
+not, uses independent evidence, and has a distinct claim boundary. The default is to extend the
+canonical paper and archive, not to split it.
