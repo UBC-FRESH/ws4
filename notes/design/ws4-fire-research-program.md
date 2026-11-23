@@ -55,17 +55,20 @@ Target: *Environmental Modelling & Software*; backup *Geoscientific Model Develo
 1. **Independent validation.** Refit the regional map with every event and validation year excluded,
    freeze it, and evaluate on genuinely unseen tiles/years. Until this exists, the event result stays
    in-sample.
-2. **Support map.** Derive it from block geometry and regenerate the 24 named calibration layers from
+2. **Multi-year weather.** Replace the 2023-only potential sample with multi-year weather drawn
+   from 1980--2024 (or the full perimeter period) and rerun calibration/transfer. Treat the current
+   regional fit as a 2023-weather-year fit until this is done.
+3. **Support map.** Derive it from block geometry and regenerate the 24 named calibration layers from
    raw; document the 198,564 representative-cell assignments.
-3. **Archive.** Publish with DOI, licence sign-off, environment lock, clean-host run, data dictionary,
+4. **Archive.** Publish with DOI, licence sign-off, environment lock, clean-host run, data dictionary,
    and known-failure table. The current archive is private and partial.
-4. **Statistics.** Bootstrap and paired intervals for all comparisons; report sensitivity to the
+5. **Statistics.** Bootstrap and paired intervals for all comparisons; report sensitivity to the
    420-day event records, G40324, 30-day versus 90-day caps, and score weights.
-5. **External benchmark.** Get a working TSA24 FireSTARR, FSim, BurnP3+, or Cell2Fire comparison, or
+6. **External benchmark.** Get a working TSA24 FireSTARR, FSim, BurnP3+, or Cell2Fire comparison, or
    keep the explicit no-benchmark boundary.
-6. **Optimization.** If a separate optimization paper is ever revived, add a fire-risk objective and
+7. **Optimization.** If a separate optimization paper is ever revived, add a fire-risk objective and
    a near-global baseline and show the schedule changes.
-7. **Submission package.** Final author list, funding, data-provider credit, target-journal format,
+8. **Submission package.** Final author list, funding, data-provider credit, target-journal format,
    and figure/table audit.
 
 ## Gates
