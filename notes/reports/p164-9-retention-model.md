@@ -1,4 +1,4 @@
-# P164.9 global retention model and corrected applied cases
+# P164.9 global retention model, temporal holdout, and applied cases
 
 Phase identifier: P164
 Task: P164.9
@@ -9,104 +9,99 @@ Date: 2026-11-24
 
 ## Problem
 
-The earlier P164.9 retention fit used one seven-parameter set per tile. Several tiles had only five
-to seven representable historical records, so those fits were underdetermined and the pooled tail
-was weak. The applied risk/estate/optimizer cases also used a private sigma mapping and a
+The earlier P164.9 fit used tile-clipped fire records as if they were independent fires. A fire
+spanning tiles appeared multiple times with a smaller area, and per-tile seven-parameter fits were
+underdetermined. The applied risk/estate/optimizer cases also used a private sigma mapping and a
 seven-cell ignition design.
 
 ## Change
 
-Added `ws4.fire.regime_retention` as a size-dependent two-component retention/escape distribution.
-The retained component is a log-normal size distribution with a weak potential-size exponent; the
-escaped component is a log-normal fraction of potential, capped by a fitted escape area. The
-retained draw is capped at the potential fire. This is a fitted size distribution, not a
-resource-allocation suppression model.
+The canonical history now aggregates tile clips by fire number and year. That yields 361 unique
+fires; 267 are at or above the 6.25 ha raster floor and form the global target. The 24 potential
+tiles contribute 720 potential fires; five draws per potential fire give 3,600 correlated
+realizations. One global seven-parameter retention distribution is fitted with 5,000 candidates and
+common random numbers. A spanning fire is assigned to its largest clipped tile only for per-tile
+residual diagnostics.
 
-The canonical calibration is now one global seven-parameter fit on the pooled representable sample:
-
-- Open-Meteo daily weather, 1950--2024, 24 tiles, 27,394 days each;
-- 720 potential fires, fire-danger-weighted across 68 fire years;
-- 30-day potential spread window;
-- 23 tiles with representable historical records;
-- 311 tile-clipped historical records at or above the 6.25 ha floor;
-- 690 potential fires in those tiles;
-- five draws per potential fire = 3,450 correlated realizations;
-- 1,000 candidates, seed 20261121.
-
-The per-tile map remains a diagnostic, not the primary model. A seven-parameter fit to five to seven
-records is not an identified process estimate.
+The model is a fitted two-component retention/escape distribution, not a resource-allocation
+suppression mechanism. A retained draw is capped at the potential fire; the maximum is not
+interpreted.
 
 ## Calibration result
 
-Pooled result (3,450 draws vs 311 historical records):
+Pooled unique-fire result:
 
 | Metric | Historical | Global retention model |
 | --- | ---: | ---: |
-| Median | 54.4 ha | 49.7 ha |
-| p90 | 1,345.2 ha | 1,238.7 ha |
-| p95 | 2,683.3 ha | 2,655.5 ha |
-| Over 100 ha | 36.3% | 39.6% |
-| Over 500 ha | 13.8% | 18.6% |
-| Over 1,000 ha | 10.9% | 11.8% |
-| Over 5,000 ha | 4.2% | 2.8% |
+| Median | 64.2 ha | 65.6 ha |
+| p90 | 1,497.2 ha | 1,575.6 ha |
+| p95 | 4,625.2 ha | 5,661.0 ha |
+| Over 100 ha | 40.8% | 43.2% |
+| Over 500 ha | 15.7% | 20.1% |
+| Over 1,000 ha | 12.4% | 13.3% |
+| Over 5,000 ha | 4.9% | 5.4% |
 
-The maximum is not interpreted: a retained draw can reach the full potential fire. The global model
-is strong in the centre and upper quantiles; it overproduces the over-500 fraction and
-underproduces the over-5,000 fraction.
+This is a strong in-sample fit. The over-500 fraction is high; the maximum is not interpreted.
+
+## Historical trend and temporal holdout
+
+The empirical record shows a clear post-2017 shift in annual area and the upper tail. Unique-fire
+annual area is about 1,736 ha/year in 1950--2016, 25,959 ha in 2017, and 11,327 ha/year in
+2018--2024. The share of unique fires above 5,000 ha rises from 2.3% to 6.2%, and the p90 of fires
+at or above 6.25 ha rises from 698 ha to 4,768 ha.
+
+The pre-2018 model is fit on 218 unique fires and 608 potential records, then tested once on 49
+unique fires and 74 potential records from 2018--2024:
+
+| Period | Metric | Historical | Model |
+| --- | --- | ---: | ---: |
+| Pre-2018 fit | Median | 56.6 ha | 57.0 ha |
+| Pre-2018 fit | p90 | 886.9 ha | 946.1 ha |
+| 2018--2024 | Median | 142.7 ha | 36.6 ha |
+| 2018--2024 | p90 | 5,729.0 ha | 1,119.4 ha |
+| 2018--2024 | Over 5,000 | 10.2% | 1.6% |
+
+The temporal holdout fails. The 2018+ distribution is shifted upward and the pre-2018 parameters do
+not carry forward. A cutoff at 2017 gives the same conclusion.
 
 ## Transfer result
 
-Training split: all 12 tiles `t01`--`t12`; validation: 11 tiles `t13`--`t23`; `t24` is excluded.
-The global model can use the sparse training tiles because it has one parameter set.
+Training: 12 tiles; validation: 11 tiles; `t24` has no historical record.
 
 | Method | Mean score (95% CI) | Median |
 | --- | ---: | ---: |
-| In-sample global map | 5.158 (3.865--6.480) | 4.933 |
-| Historical-feature oracle | 4.701 (3.396--5.997) | 4.296 |
-| Potential/weather analogue | 4.712 (3.541--6.028) | 4.061 |
-| Global fit, training tiles only | 5.261 (4.002--6.491) | 5.685 |
+| In-sample global map | 5.404 (3.810--7.116) | 5.670 |
+| Historical-feature oracle | 4.805 (3.283--6.335) | 4.957 |
+| Potential/weather analogue | 4.579 (3.197--6.075) | 4.737 |
+| Global fit, 12 training tiles | 5.595 (4.190--7.059) | 5.908 |
 
-Global-minus-potential: +0.549 with 95% interval [-0.569, 1.696]. The global model is stable
-between in-sample (5.158) and training-only (5.261) evaluation, but it does not beat the potential
-analogue. This is a null transfer result, not a collapse or evidence of per-tile overfitting.
+Global-minus-potential: +1.016 with 95% interval [-0.727, 2.724]. The global model is stable between
+in-sample and training-only evaluation, but it does not beat the potential analogue. This is a null
+transfer result, not per-tile overfitting.
 
 ## Applied cases
 
-The correction maps `contained_sigma` into the applied `contained_fraction_sigma`; the public
-`load_calibrated_regions` accepts the retention schema; `load_estate_grid` resolves the archive
-layer directory. Tests cover the schema, applied-draw equivalence, retained-area cap, escape cap,
-and layer-path fallback.
+`contained_sigma` now maps to the applied `contained_fraction_sigma`; the public loaders accept the
+retention schema and the full-layer manifest. Risk, estate, and optimizer cases were rerun on the
+unique-fire global map with 15 fixed ignitions sampled without replacement from all burnable cells:
 
-The risk, estate, and optimizer cases were rerun on the global map with 15 fixed ignitions sampled
-uniformly without replacement from all burnable support cells (three per year):
-
-- five-seed suppression-draw risk: median burned 4,647.1 ha; volume loss 0.643--1.271 million m3;
-  worst-of-five 1.271 million m3;
-- five-year estate: 462 fragment-level events, 4,067.3 ha burned, 156,358.8 ha harvested,
-  821.9 million m3 final volume;
-- feasibility search: 112 tiles, 179 entries, 925.3 ha burned in 97 events, 501.2 s; the fire-blind
+- five-seed suppression-draw risk: median burned 7,478.8 ha; volume loss 0.569--1.384 million m3;
+  worst-of-five 1.384 million m3;
+- five-year estate: 565 fragment-level events, 5,842.3 ha burned, 156,358.8 ha harvested,
+  821.7 million m3 final volume;
+- feasibility search: 112 tiles, 179 entries, 661.0 ha burned in 72 events, 655.2 s; the fire-blind
   schedule is invariant because fire does not enter the harvest-area objective.
-
-The 15 ignitions are a fixed sample, not an estate-wide fire regime; they are now spread across the
-estate rather than confined to seven candidate tiles.
-
-## Events
-
-The event reconstruction is not in the paper. The original event runs shared the same first random
-draw, so no event escaped; the applied sigma was also wrong. The archive retains the event JSON as a
-failure-mode diagnostic only. It is not a temporal holdout and not a model-skill result.
 
 ## Not done
 
-- independent temporal validation with validation years excluded from the fit;
-- an estate-wide stochastic ignition/weather ensemble;
+- estate-wide ignition/weather ensemble (running);
+- independent spatial validation and a TSA24 external benchmark;
 - suppression-capacity covariates;
-- deployable historical-analogue method;
 - clean-host raw-to-result rerun;
 - public archive, DOI, and licence sign-off.
 
 ## Next bounded move
 
-Run a fresh adversarial review of the global calibration and null transfer result. Do not submit
-until the review passes. The next scientific step is an independent temporal/spatial validation with
-the validation years excluded from the fit, not another in-sample refit.
+Finish the estate-wide ensemble and external benchmark, then rerun a fresh adversarial review. Do
+not submit until the temporal failure and null transfer are either accepted as the paper's boundary
+or addressed by a model with climate/time covariates.

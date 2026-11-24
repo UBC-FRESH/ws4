@@ -9,8 +9,8 @@ Date: 2026-11-24
 
 ## Goal
 
-Fit a multi-year retention model on historical fires that the 250 m grid can represent, without
-pretending that seven parameters are identified separately in tiles with five historical records.
+Fit a multi-year retention model on unique historical fires that the 250 m grid can represent,
+without pretending that seven parameters are identified separately in tiles with five records.
 
 ## Why
 
@@ -28,7 +28,8 @@ representable sample; per-tile residuals remain descriptive diagnostics.
 - 30 potential fires per tile, fire-danger-weighted starts with replacement.
 - 30-day maximum potential spread window, stopped by 2 mm precipitation.
 - Five draws per potential fire.
-- Historical target restricted to fires at or above 6.25 ha.
+- Historical target: unique fires at or above 6.25 ha, aggregated across tile clips.
+- Temporal holdout: 2018--2024, with 2017 sensitivity.
 
 ## Sequence
 
@@ -50,8 +51,9 @@ documented failure-mode diagnostic, not a holdout.
 
 - Twenty-four weather files, with SHA-256 in `INPUT_MANIFEST.sha256`.
 - 720 potential fires across 68 fire years.
-- One global seven-parameter model fitted on 311 representable records in 23 tiles.
-- 3,450 draws reported, not presented as independent fires.
+- One global seven-parameter model fitted on 267 unique fires.
+- 3,600 draws reported, not presented as independent fires.
+- Temporal holdout with pre-2018 fit and 2018+ test, including a 2017 cutoff sensitivity.
 - Transfer comparison with global fit, potential analogue, historical-feature oracle, and
   tile-bootstrap intervals.
 - Risk/estate/optimizer cases rerun on the same global map with 15 estate-wide fixed ignitions.
