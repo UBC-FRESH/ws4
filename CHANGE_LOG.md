@@ -5907,3 +5907,15 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P235.2: verified and closed P235. Full dashboard **OVERALL: GREEN**. Four transitions match
   750; five are one step ahead. Report: `notes/reports/p235-succession-offset.md`; close-out:
   `notes/reports/p235-closeout.md`. Design: `notes/design/ws4-succession-offset.md`. PR: #1350.
+
+- P164.9: corrected the applied retention map wiring. `contained_sigma` is now mapped to
+  `contained_fraction_sigma` in the public loader and archive loaders, `load_estate_grid` resolves
+  archive layer paths, and tests cover the retention schema, applied-draw equivalence, retained-area
+  cap, escape cap, and layer-path fallback. Recalibrated on the 20 tiles with at least five
+  historical records at or above the 6.25 ha floor (299 records, 600 potential fires, 3,000 draws);
+  reran risk, estate, and optimizer cases; added a global-fit transfer baseline and tile-bootstrap
+  intervals; removed the invalid event experiment from the manuscript. Added input SHA-256 hashes
+  and a 20-tile summary target. Excluded scratch `work/` and review markdown from ruff and fixed the
+  docstring audit's repository path; no quality threshold was changed. Dashboard: **RED** on tests
+  coverage 89.34% (pre-existing shortfall; lint, format, types, validator, docs, and docstrings
+  pass locally).

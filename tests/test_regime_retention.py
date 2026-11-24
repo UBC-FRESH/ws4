@@ -53,6 +53,52 @@ def test_draw_is_deterministic_and_bounded() -> None:
     assert 6.25 <= first.target_area_ha <= 20_000.0
 
 
+def test_retained_draw_is_capped_at_potential() -> None:
+    parameters = RetentionParameters(
+        contained_median_ha=1_000.0,
+        contained_sigma=0.15,
+        contained_exponent=0.0,
+        escaped_fraction_median=0.2,
+        escaped_fraction_sigma=0.2,
+        escape_cap_ha=20_000.0,
+        intercept=-7.0,
+    )
+    record = PotentialFire(
+        potential_ha=10.0,
+        active_days=1.0,
+        fwi=20.0,
+        bui=60.0,
+        wind_kmh=5.0,
+    )
+    outcome = draw_retention(parameters, random.Random(2), record)
+
+    assert outcome.escaped is False
+    assert 6.25 <= outcome.target_area_ha <= 10.0
+
+
+def test_escaped_draw_is_capped_by_the_escape_cap() -> None:
+    parameters = RetentionParameters(
+        contained_median_ha=20.0,
+        contained_sigma=0.2,
+        contained_exponent=0.0,
+        escaped_fraction_median=1.0,
+        escaped_fraction_sigma=0.05,
+        escape_cap_ha=5_000.0,
+        intercept=-3.0,
+    )
+    record = PotentialFire(
+        potential_ha=20_000.0,
+        active_days=30.0,
+        fwi=40.0,
+        bui=120.0,
+        wind_kmh=30.0,
+    )
+    outcome = draw_retention(parameters, random.Random(3), record)
+
+    assert outcome.escaped is True
+    assert outcome.target_area_ha <= 5_000.0
+
+
 def test_candidates_are_deterministic_and_bounded() -> None:
     first = retention_candidates(9, count=6)
     second = retention_candidates(9, count=6)

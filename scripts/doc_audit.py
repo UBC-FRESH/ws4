@@ -44,7 +44,10 @@ from pathlib import Path
 from typing import Any, Final, cast
 
 PACKAGE: Final[str] = "ws4"
+ROOT: Final[Path] = Path(__file__).resolve().parents[1]
 SCRIPTS_DIR: Final[Path] = Path(__file__).resolve().parent
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 SKIPPED_MODULES: Final[frozenset[str]] = frozenset({"ws4.cli"})
 PARAMETER_SECTIONS: Final[tuple[str, ...]] = ("Parameters", "Other Parameters", "Attributes")
 CALL_SECTIONS: Final[tuple[str, ...]] = ("Parameters", "Other Parameters")

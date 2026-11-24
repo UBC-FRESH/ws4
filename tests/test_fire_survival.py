@@ -6,6 +6,8 @@ import random
 
 import pytest
 from ws4.fire.fuel import FireFuelError
+from ws4.fire.regime_calibration import PotentialFire
+from ws4.fire.regime_retention import RetentionParameters, draw_retention
 from ws4.fire.survival import (
     RelativeSuppressionConfig,
     SurvivalConfig,
@@ -154,3 +156,45 @@ def test_relative_suppression_can_use_a_contained_size_distribution() -> None:
     assert outcome.escaped is False
     assert outcome.target_area_ha == pytest.approx(20.0, rel=0.1)
     assert outcome.target_area_ha < 100.0
+
+
+def test_relative_suppression_matches_the_retention_draw() -> None:
+    """The applied config must reproduce the calibration draw exactly."""
+    config = RelativeSuppressionConfig(
+        contained_median_ha=42.0,
+        contained_fraction_sigma=0.37,
+        contained_exponent=0.4,
+        escaped_fraction_median=0.5,
+        escaped_fraction_sigma=0.2,
+        escape_cap_ha=12_000.0,
+        intercept=-4.0,
+    )
+    parameters = RetentionParameters(
+        contained_median_ha=42.0,
+        contained_sigma=0.37,
+        contained_exponent=0.4,
+        escaped_fraction_median=0.5,
+        escaped_fraction_sigma=0.2,
+        escape_cap_ha=12_000.0,
+        intercept=-4.0,
+    )
+    record = PotentialFire(
+        potential_ha=1_000.0,
+        active_days=2.0,
+        fwi=30.0,
+        bui=80.0,
+        wind_kmh=10.0,
+    )
+    applied = draw_relative_suppression(
+        config,
+        random.Random(5),
+        potential_area_ha=record.potential_ha,
+        active_days=record.active_days,
+        fwi=record.fwi,
+        bui=record.bui,
+        wind_kmh=record.wind_kmh,
+    )
+    calibrated = draw_retention(parameters, random.Random(5), record)
+
+    assert applied.escaped == calibrated.escaped
+    assert applied.target_area_ha == pytest.approx(calibrated.target_area_ha)

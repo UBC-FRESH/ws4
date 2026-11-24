@@ -29,6 +29,19 @@ def _parameters(median: float) -> dict[str, float]:
     }
 
 
+def _retention_parameters(median: float) -> dict[str, float]:
+    """Return a valid retention parameter set."""
+    return {
+        "contained_median_ha": median,
+        "contained_sigma": 0.37,
+        "contained_exponent": 0.4,
+        "escaped_fraction_median": 0.5,
+        "escaped_fraction_sigma": 0.2,
+        "escape_cap_ha": 12_000.0,
+        "intercept": -4.0,
+    }
+
+
 def _layer_arrays() -> dict[str, np.ndarray]:
     """Return a small layer stack."""
     fuel = np.empty((2, 2), dtype=object)
@@ -156,6 +169,50 @@ def test_load_calibrated_regions_uses_median_fallback(tmp_path: Path) -> None:
     assert configs[1].contained_fraction_median == pytest.approx(0.5)
     assert configs[2] == configs[0]
     assert regions[0, 0] == 1
+
+
+def test_load_calibrated_regions_accepts_retention_schema(tmp_path: Path) -> None:
+    """The public loader reads the calibrated retention map."""
+    _manifest, calibration = _write_inputs(tmp_path)
+    calibration.write_text(json.dumps({"t01": {"parameters": _retention_parameters(42.0)}}))
+    tiles = tmp_path / "tiles.json"
+    configs, _regions = load_calibrated_regions(
+        calibration,
+        tiles,
+        rows=2,
+        cols=2,
+        origin_x=0.0,
+        origin_y=1_000.0,
+        cell_size_m=250.0,
+    )
+
+    assert configs[1].contained_median_ha == pytest.approx(42.0)
+    assert configs[1].contained_fraction_sigma == pytest.approx(0.37)
+    assert configs[1].contained_exponent == pytest.approx(0.4)
+
+
+def test_load_estate_grid_resolves_archive_layer_directory(tmp_path: Path) -> None:
+    """A full-layer manifest path can resolve through the archive ``layers`` directory."""
+    manifest, _calibration = _write_inputs(tmp_path)
+    layer = tmp_path / "tile.npz"
+    archive_layers = tmp_path / "layers"
+    archive_layers.mkdir()
+    (archive_layers / "tile.npz").write_bytes(layer.read_bytes())
+    payload = json.loads(manifest.read_text())
+    payload["tiles"][0]["path"] = "data/tsa24-full-layers/tile.npz"
+    manifest.write_text(json.dumps(payload))
+    grid = load_estate_grid(
+        manifest,
+        rows=2,
+        cols=2,
+        origin_x=0.0,
+        origin_y=1_000.0,
+        cell_size_m=250.0,
+        support_mask=np.ones((2, 2), dtype=bool),
+    )
+
+    assert grid.rows == 2
+    assert grid.cols == 2
 
 
 def test_build_estate_fire_source_returns_source_and_grid(tmp_path: Path) -> None:

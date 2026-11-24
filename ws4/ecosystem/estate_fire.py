@@ -118,9 +118,15 @@ def load_estate_grid(
             tile_id = str(entry["tile_id"])
         except (KeyError, TypeError, ValueError) as error:
             raise EstateFireError(f"layer tile is missing a required field: {error}") from error
-        path = Path(path_value)
-        if not path.is_absolute():
-            path = manifest_dir / path.name
+        raw_path = Path(path_value)
+        name = raw_path.name
+        candidates = (
+            raw_path if raw_path.is_absolute() else manifest_dir / raw_path,
+            manifest_dir / name,
+            manifest_dir.parent / raw_path,
+            manifest_dir.parent / "layers" / name,
+        )
+        path = next((candidate for candidate in candidates if candidate.is_file()), candidates[0])
         if not path.is_file():
             raise EstateFireError(f"layer tile {tile_id!r} does not exist: {path}")
         c0 = round((minx - x0) / cell)
@@ -232,19 +238,20 @@ def load_calibrated_regions(
         if not isinstance(parameters, dict):
             raise EstateFireError("calibration parameters must be an object")
         try:
+            contained_median = parameters.get("contained_median_ha")
+            sigma = parameters.get("contained_sigma")
+            if sigma is None:
+                sigma = parameters.get("contained_fraction_sigma", 0.8)
+            parsed_median = None if contained_median is None else float(contained_median)
             return RelativeSuppressionConfig(
-                contained_fraction_median=float(parameters["contained_fraction_median"]),
-                contained_fraction_sigma=float(parameters["contained_fraction_sigma"]),
+                contained_fraction_median=float(parameters.get("contained_fraction_median", 0.15)),
+                contained_fraction_sigma=float(sigma),
                 escaped_fraction_median=float(parameters["escaped_fraction_median"]),
                 escaped_fraction_sigma=float(parameters["escaped_fraction_sigma"]),
                 escape_cap_ha=float(parameters["escape_cap_ha"]),
                 min_area_ha=minimum,
                 intercept=float(parameters["intercept"]),
-                contained_median_ha=(
-                    float(parameters["contained_median_ha"])
-                    if parameters.get("contained_median_ha") is not None
-                    else None
-                ),
+                contained_median_ha=parsed_median,
                 contained_exponent=float(parameters.get("contained_exponent", 0.0)),
             )
         except (KeyError, TypeError, ValueError) as error:

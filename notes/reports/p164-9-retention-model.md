@@ -5,7 +5,7 @@ Task: P164.9
 Status: active bounded move
 Parent issue: #977
 Task issue: #1436
-Date: 2026-11-23
+Date: 2026-11-24
 
 ## Problem
 
@@ -18,74 +18,105 @@ this structural limitation.
 
 Added `ws4.fire.regime_retention` with:
 
-- a log-normal contained-size distribution with a median at 1,000 ha potential;
-- a contained-size exponent that allows weak or strong scaling with potential size;
+- a log-normal retained-size distribution with a median at 1,000 ha potential;
+- a retained-size exponent that allows weak or strong scaling with potential size;
 - the existing escape hazard and escaped-fraction component;
 - the existing absolute escape cap and minimum support area.
 
-The contained component can now produce intermediate fire sizes without forcing every contained
-fire to a fixed fraction of a large potential fire.
+The retained component can produce intermediate fire sizes without forcing every retained fire to a
+fixed fraction of a large potential fire. A retained draw above the potential area is capped at the
+potential area. The model is a two-component size distribution, not a resource-allocation
+suppression model. The simulated maximum is not interpreted: a retained draw can reach the full
+potential fire. The escape cap bounds only the escaped component.
+
+## Applied-model correction
+
+The calibration JSON uses `contained_sigma`; the applied `RelativeSuppressionConfig` uses
+`contained_fraction_sigma`. The applied loaders now map `contained_sigma` into that field, and
+`ws4.ecosystem.estate_fire.load_calibrated_regions` accepts the retention schema. Previously every
+applied case silently used the 0.8 default. The risk, estate, and optimizer cases were rerun after
+the correction. Tests cover the public loader, the applied draw against `draw_retention`, the
+retained-area cap, and the escape cap.
 
 ## Multi-year result
 
 Inputs:
 
 - Open-Meteo daily weather, 1950--2024, 24 tiles, 27,394 days each;
-- 720 potential fires, year-stratified across 68 fire years;
+- 720 potential fires, fire-danger-weighted across 68 fire years;
 - 30-day potential spread window;
-- 23 tile maps, 1,000 candidates per tile, five draws per potential fire.
+- 20 tile maps with at least five historical records at or above the 6.25 ha floor;
+- 600 potential fires, 1,000 candidates per tile, five draws per potential fire.
 
-Pooled result (3,450 draws vs 432 historical fires):
+Calibration target: 299 tile-clipped historical records at or above 6.25 ha. The 432-record product
+contains 121 sub-resolution records; those cannot be represented on the 250 m grid and were excluded
+from the like-for-like comparison. Records are tile-fire records, not independent fires.
+
+Pooled result (3,000 draws vs 299 historical records):
 
 | Metric | Historical | Retention model |
 | --- | ---: | ---: |
-| Median | 23.0 ha | 29.9 ha |
-| p90 | 490.2 ha | 370.1 ha |
-| p95 | 1,918.9 ha | 833.4 ha |
-| Over 100 ha | 26.2% | 26.9% |
-| Over 500 ha | 10.0% | 7.9% |
-| Over 1,000 ha | 7.9% | 4.3% |
-| Over 5,000 ha | 3.0% | 1.0% |
-| Maximum | 25,114.8 ha | 24,147.1 ha |
+| Median | 55.9 ha | 59.5 ha |
+| p90 | 1,013.2 ha | 483.0 ha |
+| p95 | 2,607.0 ha | 997.7 ha |
+| Over 100 ha | 36.1% | 37.5% |
+| Over 500 ha | 13.0% | 9.9% |
+| Over 1,000 ha | 10.0% | 5.0% |
+| Over 5,000 ha | 4.0% | 1.3% |
 
-Per-tile medians now reproduce the observed range in most tiles. The remaining failures are
-informative: t07, t11, t13, t21, and t22 have modelled medians well above their historical medians,
-while the upper tail remains low overall.
+Per-tile fits range from five to seven records in several tiles; those fits are descriptive, not
+identified process estimates. The pooled central fit is good; the upper tail remains low. The
+pooled maximum is not reported because a retained draw can reach the full potential fire.
 
-## What this establishes
+## Transfer result
 
-The fixed-fraction model was structurally inadequate for the multi-year sample. The retention model
-is a materially better process representation and should replace it for the calibration and fire
-source.
+Training split: nine tiles with a fitted map (`t07`, `t08`, and `t11` have fewer than five
+representable records). Validation: 11 tiles (`t13`--`t23`). The transfer score uses historical
+records at or above 6.25 ha and a 10,000-resample tile bootstrap.
+
+| Method | Mean score (95% CI) | Median |
+| --- | ---: | ---: |
+| In-sample regional fit | 1.102 (0.856--1.360) | 1.093 |
+| Historical-feature oracle | 3.079 (2.288--3.900) | 2.952 |
+| Global fit | 6.041 (4.423--7.721) | 6.171 |
+| Potential/weather analogue | 6.240 (4.778--7.961) | 5.417 |
+| Training median | 7.107 (5.059--9.226) | 7.990 |
+
+The global fit is the best non-oracle method by point estimate, but global-minus-potential is
+-0.199 with a 95% interval of [-1.666, 1.460], so the ranking is unresolved. The historical-feature
+oracle is not deployable; its lower score shows that fire-size history carries information that
+potential growth and weather do not.
 
 ## Integration result
 
-The retention parameters are now wired into `RelativeSuppressionConfig` and the fire source. The
-2026-11-24 reruns used the retention map:
+The corrected retention map was used for:
 
-- five-seed risk: median burned 4,463.6 ha; CVaR95 volume loss 1.167 million m3;
-- five-year estate: 3,646.0 ha burned; 156,358.8 ha harvested; 822.1 million m3 final volume;
-- feasibility search: 112 tiles, 179 entries, 652.7 ha burned in 91 events, 663.7 s; fire-blind
-  schedule identical;
-- pre-2018 retention map + 2018+ event holdout: median absolute bias 89.3%; the event test still
-  fails;
-- retention transfer: in-sample 1.337; potential analogue 4.456; training median 5.873; historical
-  oracle 4.947.
+- five-seed suppression-draw risk case: median burned 10,215.2 ha; volume loss 0.847--1.716 million
+  m3; worst-of-five 1.716 million m3. Ignitions and weather are fixed; only the suppression draw
+  varies;
+- five-year estate case: 939 fragment-level events, 8,062.2 ha burned, 156,358.8 ha harvested,
+  821.6 million m3 final volume;
+- feasibility search: 112 tiles, 179 entries, 1,452.5 ha burned in 191 events, 735.5 s; the
+  fire-blind schedule is invariant because fire does not enter the harvest-area objective.
+
+## Events
+
+The event reconstruction is not in the paper. The original event runs shared the same first random
+draw, so no event escaped; the applied sigma was also wrong. Those defects are documented in the
+review and in the archive. The archive retains the event JSON as a failure-mode diagnostic only. It
+is not a temporal holdout and not a model-skill result.
 
 ## Not done
 
-- transfer/event uncertainty intervals for the retention model;
 - independent spatial validation;
 - suppression-capacity covariates;
-- paper claims have been updated to the multi-year retention calibration, but the event failure
-  remains a boundary.
+- hierarchical or regularised estimation for tiles with five to seven records;
+- a deployable historical-analogue method that does not use the target tile's history;
+- clean-host raw-to-result rerun;
+- public archive, DOI, and licence sign-off.
 
 ## Next bounded move
 
-Bootstrap the retention transfer and event comparisons, then decide whether the event test belongs in
-the paper or in a separate diagnostic note.
-
-## Next bounded move
-
-Wire the retention model into the fire-source interface, then refit the pre-2018 map and rerun the
-temporal event holdout. Do not update the paper until those cases use the same retention model.
+Run a fresh adversarial review of the corrected paper and archive. Do not submit until the review
+passes. The next scientific step is an independent temporal/spatial validation with the validation
+years excluded from the fit, not another in-sample refit.
