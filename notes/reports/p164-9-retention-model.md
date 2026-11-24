@@ -58,13 +58,32 @@ The fixed-fraction model was structurally inadequate for the multi-year sample. 
 is a materially better process representation and should replace it for the calibration and fire
 source.
 
+## Integration result
+
+The retention parameters are now wired into `RelativeSuppressionConfig` and the fire source. The
+2026-11-24 reruns used the retention map:
+
+- five-seed risk: median burned 4,463.6 ha; CVaR95 volume loss 1.167 million m3;
+- five-year estate: 3,646.0 ha burned; 156,358.8 ha harvested; 822.1 million m3 final volume;
+- feasibility search: 112 tiles, 179 entries, 652.7 ha burned in 91 events, 663.7 s; fire-blind
+  schedule identical;
+- pre-2018 retention map + 2018+ event holdout: median absolute bias 89.3%; the event test still
+  fails;
+- retention transfer: in-sample 1.337; potential analogue 4.456; training median 5.873; historical
+  oracle 4.947.
+
 ## Not done
 
-- retention parameters are not yet wired into `build_relative_fire_source`;
-- transfer and event reconstruction still use the old relative-suppression configuration;
-- risk, estate, and feasibility cases have not been rerun with the retention map;
-- pre-2018 retention map and temporal event holdout are not done;
-- no paper claims have been updated.
+- transfer/event uncertainty intervals for the retention model;
+- independent spatial validation;
+- suppression-capacity covariates;
+- paper claims have been updated to the multi-year retention calibration, but the event failure
+  remains a boundary.
+
+## Next bounded move
+
+Bootstrap the retention transfer and event comparisons, then decide whether the event test belongs in
+the paper or in a separate diagnostic note.
 
 ## Next bounded move
 
