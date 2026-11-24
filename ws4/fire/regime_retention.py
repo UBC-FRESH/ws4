@@ -78,7 +78,13 @@ class RetentionParameters:
                 raise RegimeCalibrationError(f"{field} is outside its bounds")
 
     def to_dict(self) -> dict[str, float]:
-        """Return the parameters as a JSON-serializable mapping."""
+        """Return the parameters as a JSON-serializable mapping.
+
+        Returns
+        -------
+        dict of str to float
+            Parameter names and values.
+        """
         return {
             "contained_median_ha": self.contained_median_ha,
             "contained_sigma": self.contained_sigma,
@@ -90,7 +96,18 @@ class RetentionParameters:
         }
 
     def escape_probability(self, record: PotentialFire) -> float:
-        """Return the escape probability for one potential fire."""
+        """Return the escape probability for one potential fire.
+
+        Parameters
+        ----------
+        record : PotentialFire
+            Potential-fire record.
+
+        Returns
+        -------
+        float
+            Escape probability in ``(0, 1)``.
+        """
         logit = (
             self.intercept
             + 0.5 * math.log1p(record.active_days)
@@ -229,7 +246,22 @@ def metrics_for(
     records: list[PotentialFire],
     seed: int,
 ) -> RegimeMetrics:
-    """Return metrics for five deterministic draws per record."""
+    """Return metrics for five deterministic draws per record.
+
+    Parameters
+    ----------
+    parameters : RetentionParameters
+        Model parameters.
+    records : list of PotentialFire
+        Potential-fire records.
+    seed : int
+        Deterministic seed.
+
+    Returns
+    -------
+    RegimeMetrics
+        Pooled metrics for five draws per record.
+    """
     values: list[float] = []
     for rep in range(5):
         values.extend(simulate_retention(parameters, records, seed + rep))

@@ -172,6 +172,12 @@ class RelativeSuppressionConfig:
         BUI weight in the escape logit (default 0.1).
     wind_weight : float, optional
         Wind weight in the escape logit (default 0.1).
+    contained_median_ha : float or None, optional
+        If set, use a log-normal contained-size distribution with this median at a
+        1,000 ha potential fire instead of a fixed contained fraction.
+    contained_exponent : float, optional
+        Scaling of the contained median with potential size. Zero is independent;
+        one is proportional (default 0).
     """
 
     contained_fraction_median: float = 0.15
@@ -185,6 +191,8 @@ class RelativeSuppressionConfig:
     fwi_weight: float = 0.2
     bui_weight: float = 0.1
     wind_weight: float = 0.1
+    contained_median_ha: float | None = None
+    contained_exponent: float = 0.0
 
     def __post_init__(self) -> None:
         """Validate the relative suppression parameters."""
@@ -204,6 +212,17 @@ class RelativeSuppressionConfig:
         )
         object.__setattr__(self, "escape_cap_ha", _positive(self.escape_cap_ha, "escape_cap_ha"))
         object.__setattr__(self, "min_area_ha", _positive(self.min_area_ha, "min_area_ha"))
+        if self.contained_median_ha is not None:
+            object.__setattr__(
+                self,
+                "contained_median_ha",
+                _positive(self.contained_median_ha, "contained_median_ha"),
+            )
+        object.__setattr__(
+            self,
+            "contained_exponent",
+            max(0.0, min(1.0, _finite(self.contained_exponent, "contained_exponent"))),
+        )
         object.__setattr__(self, "intercept", _finite(self.intercept, "intercept"))
         object.__setattr__(
             self, "duration_weight", _finite(self.duration_weight, "duration_weight")
@@ -332,14 +351,23 @@ def draw_relative_suppression(
             math.log(config.escaped_fraction_median)
             + config.escaped_fraction_sigma * rng.gauss(0.0, 1.0)
         )
+        retained = min(1.0, max(1e-6, fraction))
+        area = min(config.escape_cap_ha, potential * retained)
+    elif config.contained_median_ha is not None:
+        contained = math.exp(
+            math.log(config.contained_median_ha)
+            + config.contained_exponent * math.log(max(potential, 1.0) / 1_000.0)
+            + config.contained_fraction_sigma * rng.gauss(0.0, 1.0)
+        )
+        area = min(potential, max(config.min_area_ha, contained))
+        retained = min(1.0, max(1e-6, area / potential))
     else:
         fraction = math.exp(
             math.log(config.contained_fraction_median)
             + config.contained_fraction_sigma * rng.gauss(0.0, 1.0)
         )
-    retained = min(1.0, max(1e-6, fraction))
-    area = max(config.min_area_ha, potential * retained)
-    area = min(area, config.escape_cap_ha) if escaped else min(area, potential)
+        retained = min(1.0, max(1e-6, fraction))
+        area = min(potential, max(config.min_area_ha, potential * retained))
     return RelativeSuppressionOutcome(
         escaped=escaped,
         retained_fraction=retained,

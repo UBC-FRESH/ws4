@@ -240,6 +240,12 @@ def load_calibrated_regions(
                 escape_cap_ha=float(parameters["escape_cap_ha"]),
                 min_area_ha=minimum,
                 intercept=float(parameters["intercept"]),
+                contained_median_ha=(
+                    float(parameters["contained_median_ha"])
+                    if parameters.get("contained_median_ha") is not None
+                    else None
+                ),
+                contained_exponent=float(parameters.get("contained_exponent", 0.0)),
             )
         except (KeyError, TypeError, ValueError) as error:
             raise EstateFireError(f"invalid calibration parameters: {error}") from error

@@ -132,3 +132,25 @@ def test_relative_suppression_rejects_invalid_fractions() -> None:
             bui=60.0,
             wind_kmh=5.0,
         )
+
+
+def test_relative_suppression_can_use_a_contained_size_distribution() -> None:
+    config = RelativeSuppressionConfig(
+        intercept=-100.0,
+        contained_median_ha=20.0,
+        contained_fraction_sigma=0.01,
+        contained_exponent=0.0,
+    )
+    outcome = draw_relative_suppression(
+        config,
+        random.Random(5),
+        potential_area_ha=1_000.0,
+        active_days=2.0,
+        fwi=30.0,
+        bui=80.0,
+        wind_kmh=10.0,
+    )
+
+    assert outcome.escaped is False
+    assert outcome.target_area_ha == pytest.approx(20.0, rel=0.1)
+    assert outcome.target_area_ha < 100.0
