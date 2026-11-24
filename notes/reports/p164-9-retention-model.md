@@ -91,9 +91,9 @@ potential growth and weather do not.
 
 The corrected retention map was used for:
 
-- five-seed suppression-draw risk case: median burned 10,215.2 ha; volume loss 0.847--1.716 million
-  m3; worst-of-five 1.716 million m3. Ignitions and weather are fixed; only the suppression draw
-  varies;
+- five-seed suppression-draw risk case: 15 ignition entries at seven fixed cells; median burned
+  10,215.2 ha; volume loss 0.847--1.716 million m3; worst-of-five 1.716 million m3. Ignitions and
+  weather are fixed; only the suppression draw varies;
 - five-year estate case: 939 fragment-level events, 8,062.2 ha burned, 156,358.8 ha harvested,
   821.6 million m3 final volume;
 - feasibility search: 112 tiles, 179 entries, 1,452.5 ha burned in 191 events, 735.5 s; the
