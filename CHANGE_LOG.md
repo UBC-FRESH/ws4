@@ -5911,11 +5911,12 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P164.9: corrected the applied retention map wiring. `contained_sigma` is now mapped to
   `contained_fraction_sigma` in the public loader and archive loaders, `load_estate_grid` resolves
   archive layer paths, and tests cover the retention schema, applied-draw equivalence, retained-area
-  cap, escape cap, and layer-path fallback. Recalibrated on the 20 tiles with at least five
-  historical records at or above the 6.25 ha floor (299 records, 600 potential fires, 3,000 draws);
-  reran risk, estate, and optimizer cases; added a global-fit transfer baseline and tile-bootstrap
-  intervals; removed the invalid event experiment from the manuscript. Added input SHA-256 hashes
-  and a 20-tile summary target. Excluded scratch `work/` and review markdown from ruff and fixed the
-  docstring audit's repository path; no quality threshold was changed. Dashboard: **RED** on tests
-  coverage 89.34% (pre-existing shortfall; lint, format, types, validator, docs, and docstrings
-  pass locally).
+  cap, escape cap, and layer-path fallback. Recalibrated one global model on 311 historical records
+  at or above the 6.25 ha floor (23 tiles, 690 potential fires, 3,450 draws). The global fit has
+  median 49.7 ha versus 54.4 ha, p90 1,238.7 versus 1,345.2, and p95 2,655.5 versus 2,683.3.
+  Transfer is a null: in-sample 5.158, training-only global 5.261, potential analogue 4.712,
+  historical oracle 4.701. Reran risk, estate, and optimizer cases on the global map with 15 fixed
+  ignitions sampled across the estate. Added input SHA-256 hashes and global pipeline targets.
+  Excluded scratch `work/` and review markdown from ruff and fixed the docstring audit's repository
+  path; no quality threshold was changed. Dashboard: **RED** on tests coverage 89.34% (pre-existing
+  shortfall; lint, format, types, validator, docs, and docstrings pass locally).
