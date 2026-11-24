@@ -5912,10 +5912,11 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   `contained_fraction_sigma` in the public loader and archive loaders, `load_estate_grid` resolves
   archive layer paths, and tests cover the retention schema, applied-draw equivalence, retained-area
   cap, escape cap, and layer-path fallback. Recalibrated one global model on 311 historical records
-  at or above the 6.25 ha floor (23 tiles, 690 potential fires, 3,450 draws). The global fit has
-  median 49.7 ha versus 54.4 ha, p90 1,238.7 versus 1,345.2, and p95 2,655.5 versus 2,683.3.
-  Transfer is a null: in-sample 5.158, training-only global 5.261, potential analogue 4.712,
-  historical oracle 4.701. Reran risk, estate, and optimizer cases on the global map with 15 fixed
+  at or above the 6.25 ha floor (267 unique fires, 720 potential fires, 3,600 draws). The global
+  fit has median 65.6 ha versus 64.2 ha, p90 1,575.6 versus 1,497.2, and p95 5,661.0 versus 4,625.2.
+  A pre-2018 temporal fit fails on 2018--2024 (median 36.6 versus 142.7; p90 1,119.4 versus 5,729.0).
+  Transfer is a null: in-sample 5.404, training-only global 5.595, potential analogue 4.579,
+  historical oracle 4.805. Reran risk, estate, and optimizer cases on the global map with 15 fixed
   ignitions sampled across the estate. Added input SHA-256 hashes and global pipeline targets.
   Excluded scratch `work/` and review markdown from ruff and fixed the docstring audit's repository
   path; no quality threshold was changed. Dashboard: **RED** on tests coverage 89.34% (pre-existing
