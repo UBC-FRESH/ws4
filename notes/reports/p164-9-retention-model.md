@@ -92,10 +92,20 @@ unique-fire global map with 15 fixed ignitions sampled without replacement from 
 - feasibility search: 112 tiles, 179 entries, 661.0 ha burned in 72 events, 655.2 s; the fire-blind
   schedule is invariant because fire does not enter the harvest-area objective.
 
+## Estate-wide ensemble and external checks
+
+The FWI-quantile ensemble (p50, p90, p99 dates; four ignition sets each) spans 98.1--7,006.6 ha
+burned and 0.011--1.089 million m3 volume loss. The fixed-weather risk case remains a high-fire-
+danger stress case, not a central estimate.
+
+FireSTARR now runs on a synthetic TSA24 tile (75 ha after one day; WS4 same tile 2,743.8 ha). On
+the observed G13085 event it reached 20,525 ha without suppression; WS4 produced 237.5 ha (all-year
+map) and 1,443.8 ha (post-2018 map). This is an unresolved external comparison, not a matched
+benchmark.
+
 ## Not done
 
-- estate-wide ignition/weather ensemble (running);
-- independent spatial validation and a TSA24 external benchmark;
+- matched observed TSA24 external benchmark with suppression and start perimeter;
 - suppression-capacity covariates;
 - clean-host raw-to-result rerun;
 - public archive, DOI, and licence sign-off.

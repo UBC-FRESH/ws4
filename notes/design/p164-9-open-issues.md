@@ -52,7 +52,7 @@ fitted a post-2018-only model or compared post-2018 events against it.
   in-sample.
 - No claim that post-2018 calibration is validated merely because it fits the post-2018 data.
 
-### P164.9-B: Estate-wide ignition/weather ensemble — **rerun in progress with FWI-quantile rule**
+### P164.9-B: Estate-wide ignition/weather ensemble — **done with FWI-quantile rule**
 
 **Problem.** The current 12-scenario ensemble uses three fixed mid-August dates. The 2021-08-15
 scenario has FWI 3.2 and produces only 96--117 ha, while other dates produce up to 3,148 ha. This is
@@ -77,7 +77,7 @@ fire-danger date.
 - Paper table/figure and text.
 - No post-hoc date selection.
 
-### P164.9-C: FireSTARR TSA24 external benchmark — **tile and one observed event run; matched benchmark still open**
+### P164.9-C: FireSTARR TSA24 external benchmark — **tile and one observed event run; no matched benchmark**
 
 **Problem.** FireSTARR v0.9.29 now passes the original SIGFPE and grid loading on a TSA24 tile, but
 fails with `map::at` while loading scenario 0. No external benchmark exists.
@@ -99,7 +99,7 @@ fails with `map::at` while loading scenario 0. No external benchmark exists.
   the bug isolated.
 - Paper text that says exactly what was compared.
 
-### P164.9-D: Paper integration
+### P164.9-D: Paper integration — **done pending final review**
 
 **Plan.**
 
@@ -113,7 +113,7 @@ fails with `map::at` while loading scenario 0. No external benchmark exists.
 3. Add tables/figures only where they carry evidence; update figure scripts from JSON.
 4. Rebuild PDF and check warnings/references.
 
-### P164.9-E: Reproducibility and archive
+### P164.9-E: Reproducibility and archive — **main artifacts and hashes updated**
 
 **Plan.**
 
