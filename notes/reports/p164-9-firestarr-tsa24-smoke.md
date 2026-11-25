@@ -15,8 +15,9 @@ not accepted as final. A one-tile run now completes deterministically after:
 - providing a one-cell start raster and a complete daily weather record.
 
 The synthetic 30 km tile used a one-cell ignition (6.25 ha) and a one-day deterministic run. FireSTARR
-ended day 1 at 75 ha. This is a software compatibility result: it does not compare against an observed
-TSA24 fire and is not an external validation.
+ended day 1 at 75 ha. A same-tile, same-weather WS4 one-cell run produced 2,743.8 ha for the first
+day. The inputs are not matched closely enough to call this a parity test, but the divergence is
+large and is recorded rather than hidden.
 
 ## Reproducible shape
 
