@@ -40,5 +40,14 @@ firestarr OUT YYYY-MM-DD LAT LON 13:00 \
   --log firestarr.log
 ```
 
-The next external-benchmark step is an observed TSA24 event with a documented start perimeter and
-weather, not another synthetic tile.
+## Observed event attempt
+
+A one-cell point-ignition run was also attempted on the observed post-2018 event G13085 (112.3 ha,
+34 days) using the same tile/weather workflow. FireSTARR reached 20,525 ha, versus 237.5 ha for the
+WS4 all-year event reconstruction and 1,443.8 ha for the post-2018 map. This is not a like-for-like
+benchmark: FireSTARR has no suppression resources, the ignition is a point rather than the observed
+start perimeter, and the startup moisture state is approximate. It does show that the external
+comparison is unresolved rather than successful.
+
+The next external-benchmark step is a matched observed TSA24 event with suppression and a documented
+start perimeter, not another synthetic tile.
