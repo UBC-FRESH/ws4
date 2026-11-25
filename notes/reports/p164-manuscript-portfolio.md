@@ -1,3 +1,7 @@
+> **SUPERSEDED 2026-11-25.** This portfolio note predates the unique-fire calibration, the
+> post-2018 comparison, and the FireSTARR TSA24 checks. Use `p164-9-retention-model.md` and the
+> current archive manifest. The 58-file hash count and failed-FireSTARR statements are historical.
+
 # P164 manuscript portfolio
 
 Status: **one canonical paper plus one reproducibility archive.**
