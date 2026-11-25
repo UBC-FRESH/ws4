@@ -19,7 +19,7 @@ Produce one defensible TSA24 paper with:
 
 ## Open issues
 
-### P164.9-A: Post-2018 calibration and event comparison
+### P164.9-A: Post-2018 calibration and event comparison — **done, negative result**
 
 **Problem.** The canonical global model is fitted to all years. The 2018+ period has a larger
 fire-size tail, and the user wants future predictions based on the post-2018 regime. We have not yet
@@ -52,7 +52,7 @@ fitted a post-2018-only model or compared post-2018 events against it.
   in-sample.
 - No claim that post-2018 calibration is validated merely because it fits the post-2018 data.
 
-### P164.9-B: Estate-wide ignition/weather ensemble
+### P164.9-B: Estate-wide ignition/weather ensemble — **rerun in progress with FWI-quantile rule**
 
 **Problem.** The current 12-scenario ensemble uses three fixed mid-August dates. The 2021-08-15
 scenario has FWI 3.2 and produces only 96--117 ha, while other dates produce up to 3,148 ha. This is
@@ -77,7 +77,7 @@ fire-danger date.
 - Paper table/figure and text.
 - No post-hoc date selection.
 
-### P164.9-C: FireSTARR TSA24 external benchmark
+### P164.9-C: FireSTARR TSA24 external benchmark — **tile and one observed event run; matched benchmark still open**
 
 **Problem.** FireSTARR v0.9.29 now passes the original SIGFPE and grid loading on a TSA24 tile, but
 fails with `map::at` while loading scenario 0. No external benchmark exists.
