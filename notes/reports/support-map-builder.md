@@ -53,6 +53,8 @@ The legacy map assigns some blocks to cells with no overlap and has a median blo
   memberships, all blocks represented, no cell above one. The TSA27 map is not archived; its
   summary and validation are.
 - TSA27 input SHA-256: `e49364cb97b72e1559452142bd6d6a6fd0f04b47b4c5ebb95d498f9847740178`.
+- TSA27 has no area field, so its area agreement is algebraic by construction; coverage, cell caps,
+  and representation are the meaningful checks.
 - Canonical builder commit: `7f86f9e`; canonical map SHA-256:
   `f47b36eb75a80709a0c2a289671487ef9348bfd0720b162dc52d5e1ddb5c41f4`.
 
