@@ -12,18 +12,18 @@ Produce one defensible TSA24 paper with:
 
 - fire-level calibration and validation;
 - a pre-2018 versus post-2018 calibration comparison;
-- post-2018 event reconstruction under both calibrations;
+- post-2018 recalibration and a support-map-independent temporal comparison;
 - an estate-wide ignition/weather ensemble with a defensible scenario-selection rule;
 - a TSA24 external benchmark, or a documented, reproducible failure that is not presented as a benchmark;
 - a paper whose claims match the artifacts.
 
 ## Open issues
 
-### P164.9-A: Post-2018 calibration and event comparison — **done, negative result**
+### P164.9-A: Post-2018 calibration — **done, negative result; event reconstruction retired from canonical evidence**
 
 **Problem.** The canonical global model is fitted to all years. The 2018+ period has a larger
 fire-size tail, and the user wants future predictions based on the post-2018 regime. We have not yet
-fitted a post-2018-only model or compared post-2018 events against it.
+fitted a post-2018-only model or compared the post-2018 size distribution against it.
 
 **Plan.**
 
@@ -33,23 +33,18 @@ fitted a post-2018-only model or compared post-2018 events against it.
 2. Fit a global seven-parameter retention model on the post-2018 sample with the same 5,000-candidate,
    common-random-number workflow as the canonical all-year fit.
 3. Summarize the post-2018 in-sample calibration and compare it with the all-year model.
-4. Run the frozen 10 post-2018 event reconstructions with:
-   - the all-year map (current canonical);
-   - the post-2018 map.
-5. Compare simulated-versus-observed event areas, median absolute bias, median bias, range, and
-   number of events within a factor of two.
-6. State clearly that the post-2018 event comparison is in-sample if the event fires are in the
-   calibration target. If feasible, run a leave-events-out variant as a sensitivity check.
-7. Add the comparison to the paper as a regime-shift diagnostic, not as independent validation unless
-   the event fires were excluded from the fit.
+4. Compare the all-year and post-2018 maps on the post-2018 size distribution.
+5. Do not use the legacy support-map event reconstruction as canonical evidence. The earlier event
+   run depended on the frozen support map; a fresh event reconstruction would be required before it
+   could support a claim.
 
 **Acceptance.**
 
 - `results/potential-post2018.json`, `raw/history-unique-post2018/`,
   `results/region-retention-post2018.json`, `results/temporal-post2018-summary.json`.
-- Event results for both maps, with per-event biases and summary statistics.
-- A table/figure and paper text that states the calibration period and whether the comparison is
-  in-sample.
+- A post-2018 size summary and paper text that states the calibration period and that the
+  comparison is in-sample.
+- The legacy event outputs are retained only as a support-conditioned diagnostic.
 - No claim that post-2018 calibration is validated merely because it fits the post-2018 data.
 
 ### P164.9-B: Estate-wide ignition/weather ensemble — **done with FWI-quantile rule**
@@ -106,7 +101,7 @@ fails with `map::at` while loading scenario 0. No external benchmark exists.
 1. Update the paper with:
    - unique-fire calibration;
    - temporal holdout failure;
-   - post-2018 calibration and event comparison;
+   - post-2018 recalibration;
    - estate-wide ensemble;
    - external benchmark result or documented failure.
 2. Keep the pre/post contrast central: do not claim future skill from the all-year model.
@@ -117,11 +112,22 @@ fails with `map::at` while loading scenario 0. No external benchmark exists.
 
 **Plan.**
 
-1. Add period filters, post-2018 map, event outputs, ensemble manifest, and external test inputs to
+1. Add period filters, post-2018 map, legacy event outputs, ensemble manifest, and external test inputs to
    the archive.
 2. Regenerate `INPUT_MANIFEST` and `MANIFEST`; verify.
 3. Update archive README and superseded-status notes.
 4. Keep large/raw caches out of Git; hash them locally.
+
+### P164.9-G: Canonical support map — **done**
+
+**Result.** The positive-overlap, cell-share builder is canonical. It assigns every block to every
+cell with positive overlap, caps each cell at total weight one, and conserves block area within 20%
+for 99.7% of blocks (median error 0.4%). The legacy frozen map has median block-area error 64.1%
+and is retained only as a sensitivity artifact. Canonical support-map SHA-256:
+`f47b36eb75a80709a0c2a289671487ef9348bfd0720b162dc52d5e1ddb5c41f4`.
+
+**Applied reruns.** Estate 728 events / 6,360.7 ha; risk median 10,822.6 ha / worst-of-five loss
+2.069 million m3; optimizer 113 tiles / 2,075.9 ha, fire-blind schedule invariant.
 
 ### P164.9-F: Review
 
@@ -139,7 +145,7 @@ fails with `map::at` while loading scenario 0. No external benchmark exists.
 
 ## Execution order
 
-1. P164.9-A post-2018 calibration and event comparison.
+1. P164.9-A post-2018 calibration.
 2. P164.9-B ensemble redesign and rerun.
 3. P164.9-C FireSTARR debug.
 4. P164.9-D paper integration.

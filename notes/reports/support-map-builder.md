@@ -1,85 +1,51 @@
-# General support-map builder
+# Support-map builder
 
-This is the reproducible method for compiling a 250 m support map from public block polygons.
-It is intended for other TSAs. It does **not** reproduce the legacy TSA24 frozen map exactly; that
-map remains a frozen input until its original builder is recovered.
+Date: 2026-11-26
+Status: canonical method in the archive
 
-## Inputs
+## Decision
 
-- A block polygon layer with:
-  - a unique integer block ID;
-  - a positive area in hectares;
-  - polygon geometry in a projected CRS.
-- Grid parameters:
-  - cell size (default 250 m);
-  - optional north-west origin `(origin_x, origin_y)`;
-  - optional `rows` and `cols`.
-
-If the grid parameters are omitted, the builder uses the block bounds and snaps the origin to the
-cell size.
+The canonical TSA24 support map is the positive-overlap, cell-share map produced by
+`scripts/build_support_map.py`. The legacy frozen map is retained only for sensitivity. This
+replaces the earlier centre-based candidate, which dropped sliver overlaps and changed the estate
+case without a geometric justification.
 
 ## Method
 
 1. Build the 250 m grid.
-2. Assign every block to every cell whose centre lies inside the block.
-3. If a block has no cell centre, assign its representative point to the containing cell.
-4. For each cell, compute each member's share as
-   `block_area / sum(block_area of all members in that cell)`.
-5. Write `rows`, `cols`, `cell_index`, `fragment_id`, and `weight`.
+2. Intersect every block with every cell.
+3. Keep every positive intersection.
+4. Set `weight = intersection_area / cell_area`.
+5. If overlapping block polygons make a cell's shares sum above one, scale that cell down to one.
+6. Represent degenerate zero-area blocks at their representative point, with a negligible weight.
 
-The weights sum to one per cell. Every input block is represented.
+Per-cell weights therefore sum to at most one. A block's represented area is
+`sum(weight * cell_area)`.
 
-## Command
+## TSA24 result
 
-```bash
-python scripts/build_support_map.py \
-  --blocks /path/to/tsaXX-blocks.geojson \
-  --output results/support-map-tsaXX.npz \
-  --summary results/support-map-tsaXX-summary.json \
-  --cell-size 250
-```
-
-Optional grid controls:
-
-```bash
-  --origin-x 834450 --origin-y 1367370 --rows 1957 --cols 2237
-```
-
-Field overrides:
-
-```bash
-  --block-id BLOCK_ID --area AREA_HA
-```
-
-## Validation
-
-The builder checks:
-
-- unique block IDs;
-- every block is represented;
-- every cell has positive total block area, or equal shares if all members have zero area;
-- every cell's weights sum to one.
-
-## TSA24 comparison
-
-Run on the public TSA24 block GeoJSON with the canonical grid:
-
-| Quantity | General builder | Frozen TSA24 map |
+| Quantity | Canonical area-overlap | Legacy frozen |
 | --- | ---: | ---: |
 | Blocks | 458,708 | 458,708 |
-| Cells | 960,506 | 1,111,565 |
-| Memberships | 1,053,254 | 1,310,129 |
-| Multi-fragment cells | 85,152 | 180,074 |
-| Max fragments per cell | 7 | 7 |
+| Cells | 1,116,185 | 1,111,565 |
+| Memberships | 3,546,374 | 1,310,129 |
+| Multi-fragment cells | 979,160 | 180,074 |
+| Max fragments per cell | 16 | 7 |
+| Blocks within 20% area | 99.7% | 9.6% |
+| Median block-area error | 0.4% | 64.1% |
 
-The builder is a defensible general method, but it is **not** a replacement for the frozen TSA24
-support map. The difference is recorded rather than hidden; the legacy map remains canonical for
-the current paper.
+The legacy map assigns some blocks to cells with no overlap and has a median block-area error of
+64%. It is not defensible as an area representation.
 
-## For another TSA
+## Does it change the paper?
 
-1. Obtain the public block geometry for the TSA.
-2. Choose the grid origin and extent.
-3. Run the command above.
-4. Validate all blocks are represented and all cell weights sum to one.
-5. Store the builder commit, input hash, output hash, and summary alongside the map.
+- Calibration, temporal, and transfer results: no, they use the potential fires and layer tiles.
+- Estate: 5,842.3 to 6,360.7 ha burned; 565 to 728 events.
+- Risk median: 7,478.8 to 10,822.6 ha; worst-of-five loss 1.384 to 2.069 million m3.
+- Optimizer: 112 to 113 tiles, 661.0 to 2,075.9 ha burned; schedule remains fire-blind invariant.
+
+## Remaining check
+
+The earlier 10-event reconstruction used the legacy map and is not canonical evidence. A fresh
+event reconstruction under the canonical map is optional; the paper now rests its temporal claim on
+the distributional holdout, which does not use the support map.

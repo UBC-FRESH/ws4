@@ -1,3 +1,5 @@
+> **HISTORICAL / LEGACY-MAP NOTE (2026-11-26).** This report describes the superseded frozen support map. The canonical map is the positive-overlap, cell-share map documented in `support-map-builder.md`; counts and applied results here are legacy sensitivity only.
+
 > **PROVENANCE NOTE (2026-11-26).** The canonical support map is a frozen, hashed input. The
 > builder script and exact assignment rule are not in the repository; see
 > `tsa24-support-map-provenance.md`. Do not claim raw-block-to-support reproduction.

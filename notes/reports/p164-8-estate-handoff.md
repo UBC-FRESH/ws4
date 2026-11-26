@@ -1,3 +1,5 @@
+> **HISTORICAL / LEGACY-MAP NOTE (2026-11-26).** This report describes the superseded frozen support map. The canonical map is the positive-overlap, cell-share map documented in `support-map-builder.md`; counts and applied results here are legacy sensitivity only.
+
 # P164.8 calibrated estate handoff
 
 Status: handoff

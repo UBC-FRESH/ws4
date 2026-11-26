@@ -1,3 +1,5 @@
+> **HISTORICAL DRAFT.** The canonical manuscript is in `fresh_ws4_fire_regime_manuscript`. This draft predates the canonical support-map replacement.
+
 # An open, suppression-aware fire regime for forest estate optimization: integration, calibration, and transfer diagnostics
 
 **Draft manuscript for internal review — not submitted**

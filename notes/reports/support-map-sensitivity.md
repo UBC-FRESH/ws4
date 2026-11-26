@@ -1,35 +1,38 @@
 # Support-map sensitivity
 
 Date: 2026-11-26
-Status: material applied-case sensitivity
+Status: resolved by replacing the legacy map
 
 ## Comparison
 
-The frozen TSA24 support map and the general builder described in `support-map-builder.md` do not
-produce the same memberships:
+The canonical positive-overlap builder and the legacy frozen TSA24 map do not produce the same
+memberships:
 
-- frozen: 1,310,129 memberships, 1,111,565 cells
-- general builder: 1,053,254 memberships, 960,506 cells
-- membership Jaccard: about 0.30
+- legacy frozen: 1,310,129 memberships, 1,111,565 cells, median block-area error 64.1%
+- canonical overlap: 3,546,374 memberships, 1,116,185 cells, median block-area error 0.4%
+
+The canonical map assigns every block to every cell with positive overlap and uses cell-share
+weights. The legacy map normalizes away partial cell coverage and assigns some blocks to cells with
+no geometric overlap. The two maps are not equivalent.
+
+## Applied case
 
 The same deterministic five-year estate case gives:
 
-| Metric | Frozen | General builder |
+| Metric | Legacy frozen | Canonical overlap |
 | --- | ---: | ---: |
-| Burned area | 5,842.3 ha | 4,265.0 ha |
-| Fire events | 565 | 460 |
-| Volume loss | 0.835 million m3 | 0.637 million m3 |
+| Burned area | 5,842.3 ha | 6,360.7 ha |
+| Fire events | 565 | 728 |
+| Volume loss | 0.835 million m3 | 0.911 million m3 |
+
+The five-seed risk case gives a median burned area of 7,478.8 ha under the legacy map and
+10,822.6 ha under the canonical map; the worst-of-five volume loss is 1.384 and 2.069 million m3.
 
 ## Implication
 
-Calibration, temporal, and transfer tables use potential-fire/layer-tile data, not the support map;
-they are unaffected by this choice. The estate, risk, event, and optimizer results depend on the
-support map and must be either rerun with the general builder or labelled as conditional on the
-frozen map.
+Calibration, temporal, and transfer tables use potential-fire and layer-tile data, not the support
+map, so they are unaffected. Estate, risk, and optimizer results depend on the support map and are
+reported under the canonical map. The legacy numbers remain as a sensitivity comparison.
 
-Do not describe the two maps as equivalent.
-
-## Decision required
-
-1. Keep the frozen TSA24 map as canonical and report the sensitivity.
-2. Switch to the general builder and rerun all applied cases.
+The earlier 10-event reconstruction used the legacy map and is no longer used as canonical
+evidence. The temporal claim rests on the distributional holdout.
