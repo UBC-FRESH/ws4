@@ -129,6 +129,11 @@ and is retained only as a sensitivity artifact. Canonical support-map SHA-256:
 **Applied reruns.** Estate 728 events / 6,360.7 ha; risk median 10,822.6 ha / worst-of-five loss
 2.069 million m3; optimizer 113 tiles / 2,075.9 ha, fire-blind schedule invariant.
 
+**Verification and portability.** The committed independent verifier checks coverage, cell-weight
+caps, duplicates, and block-area error; it rejects a deliberately corrupted map. The same builder
+compiled the public TSA27 block layer (37,461 blocks; 89,139 cells; 259,758 memberships; all blocks
+represented). TSA27 is a portability check, not a TSA24 result.
+
 ### P164.9-F: Review
 
 **Plan.**

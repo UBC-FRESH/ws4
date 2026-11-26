@@ -44,6 +44,18 @@ The legacy map assigns some blocks to cells with no overlap and has a median blo
 - Risk median: 7,478.8 to 10,822.6 ha; worst-of-five loss 1.384 to 2.069 million m3.
 - Optimizer: 112 to 113 tiles, 661.0 to 2,075.9 ha burned; schedule remains fire-blind invariant.
 
+## Verification and portability
+
+- An independent verifier re-reads the archived map and block polygons; it checks memberships, cell
+  range, duplicate pairs, cell-weight caps, block coverage, and block-area error. A deliberately
+  corrupted copy is rejected with `cell weights exceed one`.
+- The same builder compiled the public TSA27 block layer: 37,461 blocks, 89,139 cells, 259,758
+  memberships, all blocks represented, no cell above one. The TSA27 map is not archived; its
+  summary and validation are.
+- TSA27 input SHA-256: `e49364cb97b72e1559452142bd6d6a6fd0f04b47b4c5ebb95d498f9847740178`.
+- Canonical builder commit: `7f86f9e`; canonical map SHA-256:
+  `f47b36eb75a80709a0c2a289671487ef9348bfd0720b162dc52d5e1ddb5c41f4`.
+
 ## Remaining check
 
 The earlier 10-event reconstruction used the legacy map and is not canonical evidence. A fresh
