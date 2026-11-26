@@ -50,12 +50,15 @@ The legacy map assigns some blocks to cells with no overlap and has a median blo
   overlap for every membership, cell range, duplicate pairs, cell-weight caps, block coverage, and
   block-area error. A deliberately corrupted copy is rejected with `cell weights exceed one`; a
   fake non-overlapping membership is rejected with `no positive geometric overlap`.
-- The same builder compiled the public TSA27 block layer: 37,461 blocks, 89,139 cells, 259,758
-  memberships, all blocks represented, no cell above one. The TSA27 map is not archived; its
-  summary and validation are.
+- The same builder compiled the public TSA27 block layer using the compiled model area table
+  (`build/compiled/blocks.parquet`, `area_ha`, summed across track rows by `block_id`): 37,461
+  blocks, 89,139 cells, 259,758 memberships, all blocks represented, no cell above one. The TSA27
+  map is not archived; its summary and validation are.
 - TSA27 input SHA-256: `e49364cb97b72e1559452142bd6d6a6fd0f04b47b4c5ebb95d498f9847740178`.
-- TSA27 has no area field, so its area agreement is algebraic by construction; coverage, cell caps,
-  and representation are the meaningful checks.
+- TSA27 area-table SHA-256: `0fc5ee8c1ad13d7e7fc5b1a21d21570d26d9fbe693d073110c0aab363ac926dc`.
+- The compiled area table is derived from the same block layer, so its near-zero area error is a
+  consistency check, not an independent survey; coverage, overlap, cell caps, and representation
+  are the portability checks.
 - Canonical builder commit: `7f86f9e`; canonical map SHA-256:
   `f47b36eb75a80709a0c2a289671487ef9348bfd0720b162dc52d5e1ddb5c41f4`.
 
