@@ -1,3 +1,7 @@
+> **PROVENANCE NOTE (2026-11-26).** The canonical support map is a frozen, hashed input. The
+> builder script and exact assignment rule are not in the repository; see
+> `tsa24-support-map-provenance.md`. Do not claim raw-block-to-support reproduction.
+
 # TSA24 full support map
 
 The full TSA24 single-valued 250 m raster does not work: 458,708 blocks project onto only
