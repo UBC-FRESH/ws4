@@ -46,9 +46,10 @@ The legacy map assigns some blocks to cells with no overlap and has a median blo
 
 ## Verification and portability
 
-- An independent verifier re-reads the archived map and block polygons; it checks memberships, cell
-  range, duplicate pairs, cell-weight caps, block coverage, and block-area error. A deliberately
-  corrupted copy is rejected with `cell weights exceed one`.
+- An independent verifier re-reads the archived map and block polygons; it checks positive geometric
+  overlap for every membership, cell range, duplicate pairs, cell-weight caps, block coverage, and
+  block-area error. A deliberately corrupted copy is rejected with `cell weights exceed one`; a
+  fake non-overlapping membership is rejected with `no positive geometric overlap`.
 - The same builder compiled the public TSA27 block layer: 37,461 blocks, 89,139 cells, 259,758
   memberships, all blocks represented, no cell above one. The TSA27 map is not archived; its
   summary and validation are.
