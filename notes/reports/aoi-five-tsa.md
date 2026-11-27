@@ -44,16 +44,25 @@ Using perimeters clipped to each TSA and the 6.25 ha support floor:
 
 TSA24 has the lowest median but not the heaviest tail. It is not representative of the AOI.
 
-## Modelling boundary
+## Modelling boundary and five-tile pilot
 
-The process model remains calibrated in TSA24, which is the only unit with matched multi-year
-weather, a 24-tile potential sample, and a 133-tile layer cache. The AOI supports block/support
-compilation, empirical fire-regime targets, and five no-fire estate baselines. It is not a
-five-TSA process-model calibration.
+TSA24 remains the full process-model calibration core, with matched multi-year weather, a 24-tile
+potential sample, and a 133-tile layer cache. The AOI supports block/support compilation, empirical
+fire-regime targets, and five no-fire estate baselines.
+
+A five-tile pilot now tests process-model expansion: one 30 km tile per TSA, 30 potential fires per
+tile, and 1950-2024 weather. The model was fitted on TSA08, TSA16, and TSA24 and applied unchanged
+to TSA40 and TSA41. The training fit overpredicted the median (430.9 vs 93.3 ha); the held-out pooled
+median was 532.1 vs 313.9 ha and p90 was 7,037.5 vs 4,352.9 ha. TSA-level median ratios were 0.25
+and 8.7. This is a failed spatial-transfer pilot, not a validated five-TSA model.
 
 ## Next block
 
-1. Build matched AOI weather and layer caches.
-2. Regenerate potential fires for the five TSAs.
-3. Fit a hierarchical or spatially explicit retention model and test TSA24-to-AOI transfer.
-4. Report which components transfer and which require regional recalibration.
+The five-tile pilot pipeline is complete. The remaining work is the full AOI tile cache, not just one
+tile per TSA:
+
+1. Tile the AOI at 30 km and materialise VRI/SRTM layers for every tile.
+2. Generate potential fires for the full tile set.
+3. Fit a hierarchical or spatially explicit retention model.
+4. Validate against the five-TSA fire history and report which components transfer and which require
+   regional recalibration.
