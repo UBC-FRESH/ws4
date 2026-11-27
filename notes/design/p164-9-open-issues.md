@@ -144,9 +144,10 @@ represented, and 99.4% of blocks within 20% area. Public BC Wildfire perimeters 
 fire-number/year records and 3,015 fires >=6.25 ha. Five compiled estates load in the WS4 process
 engine; the no-fire baseline is 2.652 billion m3 and 1.181 billion t.
 
-**Boundary.** The five-tile pilot fits a retention model on TSA08/16/24 and holds out TSA40/41. It
-fails to transfer cleanly (pooled median 532.1 vs 313.9 ha; TSA ratios 0.25 and 8.7). This is pilot
-evidence, not the full AOI model; the complete AOI layer cache remains open.
+**Boundary.** The full 484-tile AOI cache fits a retention model on TSA08/16/24 and holds out
+TSA40/41. The holdout is partial transfer (pooled median 106.3 vs 92.2 ha; TSA ratios 0.98 and 1.38),
+with high upper tail and TSA-level weather. Tile-level weather and a hierarchical calibration remain
+open.
 
 **Evidence.** `aoi/README.md` in the reproducibility archive; AOI support SHA-256
 `22d9fd23b0b25f5117913625cc02779c3082d7c8d5c4f6766ea74389ba99685f`.

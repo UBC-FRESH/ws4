@@ -44,25 +44,20 @@ Using perimeters clipped to each TSA and the 6.25 ha support floor:
 
 TSA24 has the lowest median but not the heaviest tail. It is not representative of the AOI.
 
-## Modelling boundary and five-tile pilot
+## Full AOI process-model cache
 
-TSA24 remains the full process-model calibration core, with matched multi-year weather, a 24-tile
-potential sample, and a 133-tile layer cache. The AOI supports block/support compilation, empirical
-fire-regime targets, and five no-fire estate baselines.
+The full 30 km cache contains **484 usable tiles**: 351 non-TSA24 tiles built from public VRI plus
+133 canonical TSA24 tiles. It has **14,520 potential fires** (30 per tile). Non-TSA24 weather is
+TSA-level, not tile-level.
 
-A five-tile pilot now tests process-model expansion: one 30 km tile per TSA, 30 potential fires per
-tile, and 1950-2024 weather. The model was fitted on TSA08, TSA16, and TSA24 and applied unchanged
-to TSA40 and TSA41. The training fit overpredicted the median (430.9 vs 93.3 ha); the held-out pooled
-median was 532.1 vs 313.9 ha and p90 was 7,037.5 vs 4,352.9 ha. TSA-level median ratios were 0.25
-and 8.7. This is a failed spatial-transfer pilot, not a validated five-TSA model.
+Fit on TSA08, TSA16, TSA24; hold out TSA40, TSA41. Training: median **100.6 vs 99.9 ha**, p90
+**3,820.1 vs 4,489.1 ha**, p95 **8,714.6 vs 11,633.1 ha**. Held-out: median **106.3 vs 92.2 ha**,
+p90 **2,437.5 vs 1,687.7 ha**, p95 **4,971.1 vs 4,516.4 ha**. Held-out TSA median ratios: **0.98**
+and **1.38** (pooled 1.15). The upper tail remains high, and weather is TSA-level; this is partial
+spatial transfer, not a universal model.
 
 ## Next block
 
-The five-tile pilot pipeline is complete. The remaining work is the full AOI tile cache, not just one
-tile per TSA:
-
-1. Tile the AOI at 30 km and materialise VRI/SRTM layers for every tile.
-2. Generate potential fires for the full tile set.
-3. Fit a hierarchical or spatially explicit retention model.
-4. Validate against the five-TSA fire history and report which components transfer and which require
-   regional recalibration.
+The full tile-cache pipeline is complete. The next improvement is tile-level weather and a
+hierarchical retention model; the current holdout uses TSA-level weather and an aggregate TSA
+target.
