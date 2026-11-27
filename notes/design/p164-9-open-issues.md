@@ -13,6 +13,7 @@ Produce one defensible TSA24 paper with:
 - fire-level calibration and validation;
 - a pre-2018 versus post-2018 calibration comparison;
 - post-2018 recalibration and a support-map-independent temporal comparison;
+- a five-TSA northeast BC AOI expansion (TSA 08, 16, 24, 40, 41);
 - an estate-wide ignition/weather ensemble with a defensible scenario-selection rule;
 - a TSA24 external benchmark, or a documented, reproducible failure that is not presented as a benchmark;
 - a paper whose claims match the artifacts.
@@ -133,6 +134,22 @@ and is retained only as a sensitivity artifact. Canonical support-map SHA-256:
 caps, duplicates, and block-area error; it rejects a deliberately corrupted map. The same builder
 compiled the public TSA27 block layer (37,461 blocks; 89,139 cells; 259,758 memberships; all blocks
 represented). TSA27 is a portability check, not a TSA24 result.
+
+### P164.9-H: Five-TSA northeast BC AOI — **AOI compilation done; process calibration open**
+
+**Result.** The five TSA boundaries dissolve to one **31.9-million-ha** AOI. Public VRI/TSA24
+geometry gives 1,550,199 blocks and 17.5 million ha of productive forest. The 250 m support map has
+3,763,756 cells, 10,777,196 memberships, 2,948,489 multi-fragment cells, maximum 18, all blocks
+represented, and 99.4% of blocks within 20% area. Public BC Wildfire perimeters give 3,834
+fire-number/year records and 3,015 fires >=6.25 ha. Five compiled estates load in the WS4 process
+engine; the no-fire baseline is 2.652 billion m3 and 1.181 billion t.
+
+**Boundary.** The TSA24 process model remains the calibration core. The other four TSAs contribute
+empirical fire-regime targets and estate baselines, not a validated process-model application.
+Matched AOI weather and layer caches are not yet built.
+
+**Evidence.** `aoi/README.md` in the reproducibility archive; AOI support SHA-256
+`22d9fd23b0b25f5117913625cc02779c3082d7c8d5c4f6766ea74389ba99685f`.
 
 ### P164.9-F: Review
 
