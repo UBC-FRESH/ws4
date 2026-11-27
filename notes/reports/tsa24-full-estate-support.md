@@ -1,3 +1,5 @@
+> **HISTORICAL / LEGACY-MAP NOTE (2026-11-26).** This report describes the superseded frozen support map. The canonical map is the positive-overlap, cell-share map documented in `support-map-builder.md`; counts and applied results here are legacy sensitivity only.
+
 # TSA24 full-estate support and fire path
 
 This run validates the area-weighted support map against the full TSA24 compiled artifact and

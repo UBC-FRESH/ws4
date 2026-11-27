@@ -33,11 +33,18 @@ The calibrated estate API is tracked in `ws4/ecosystem/estate_fire.py` and expor
 | Full-layer five-year case | `work/fire_regime/results/estate-case-5yr-full-layers.json` |
 | Bounded regional optimizer | `work/fire_regime/results/optimizer-regional.json` |
 | Full-estate sharded optimizer | `work/fire_regime/results/optimizer-full-estate.json` |
+| Fire-blind sharded baseline | `notes/reports/p164-8-sharded-fireblind-baseline.md` |
 | Full-estate schedule | `work/fire_regime/results/optimizer-full-estate-schedule.csv` |
 | Transfer validation | `notes/reports/p164-8-transfer-validation.md` |
 | Hierarchical validation | `notes/reports/p164-8-hierarchical-validation.md` |
 | Benchmark and reproducibility package | `notes/reports/p164-8-benchmark-reproducibility.md` |
 | Artifact manifest | `work/fire_regime/results/reproducibility-manifest.json` |
+| Data licences | `notes/reports/p164-8-data-licenses.md` |
+| Manuscript portfolio | `notes/reports/p164-manuscript-portfolio.md` |
+| Reproducibility archive | `https://github.com/UBC-FRESH/fresh_ws4_fire_regime_repro` |
+| Paper 1 draft | `notes/reports/p164-paper1-draft.md`; LaTeX: `https://github.com/UBC-FRESH/fresh_ws4_fire_regime_manuscript` |
+| Paper figures | `notes/reports/figures/` |
+| External Dogrib benchmark | `notes/reports/p157-firestarr-comparison.md` |
 
 ## Scripts
 
@@ -89,6 +96,10 @@ local and are not part of the repository contract.
 | Calibrated estate handoff API | `notes/reports/p164-8-estate-handoff.md` | `9918fb17` |
 | Transfer validation diagnostic | `notes/reports/p164-8-transfer-validation.md` | `7a255e55` |
 | Hierarchical validation diagnostic | `notes/reports/p164-8-hierarchical-validation.md` | `4e63ac46` |
+| Manuscript portfolio | `notes/reports/p164-manuscript-portfolio.md` |
+| Reproducibility archive | `https://github.com/UBC-FRESH/fresh_ws4_fire_regime_repro` |
+| Paper 1 draft | `notes/reports/p164-paper1-draft.md`; LaTeX: `https://github.com/UBC-FRESH/fresh_ws4_fire_regime_manuscript` | draft PR #1435 |
+| Data licence audit | `notes/reports/p164-8-data-licenses.md` | paper branch |
 
 ## Key parameters and seeds
 
