@@ -816,9 +816,9 @@ class Simulator:
                 if step > current_year:
                     offsets += step - current_year
                     current_year = step
-                treatment = by_offset.get(step)
-                if treatment is not None:
-                    for treatment_label in treatment:
+                step_treatments = by_offset.get(step)
+                if step_treatments:
+                    for treatment_label in step_treatments:
                         for index in range(len(positions)):
                             current = int(tracks[index])
                             transition = self._treatment_by_key.get((current, treatment_label))
