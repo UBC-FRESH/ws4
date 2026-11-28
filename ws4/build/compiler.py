@@ -480,7 +480,8 @@ def build_canonical_dataset(xml_path: Path, fragments_path: Path, out_dir: Path)
                         "new_track": track_of.get(
                             transition_key(stratum.key, variables, treatment, recipe.constants), 0
                         ),
-                        "offset": 0,
+                        "offset": treatment.offset,
+                        "relative": 1 if treatment.adjust.upper().startswith("R") else 0,
                         "retain": 0,
                     }
                 )
@@ -503,7 +504,16 @@ def build_canonical_dataset(xml_path: Path, fragments_path: Path, out_dir: Path)
         "strata": strata_table,
         "treatments": pd.DataFrame(
             treatment_rows,
-            columns=["track_id", "begin", "end", "treatment", "new_track", "offset", "retain"],
+            columns=[
+                "track_id",
+                "begin",
+                "end",
+                "treatment",
+                "new_track",
+                "offset",
+                "relative",
+                "retain",
+            ],
         ),
         "curves": pd.DataFrame(curve_rows, columns=["curve_id", "x", "y"]),
         "features": pd.DataFrame(feature_rows, columns=["track_id", "label", "curve_id"]),
