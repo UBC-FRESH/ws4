@@ -774,7 +774,13 @@ class Simulator:
             return {}
         if feature_offsets is not None and len(events) <= 1:
             return self._block_chain_short(positions, events, years, feature_offsets, accounts)
-        by_offset = {int(offset): str(treatment) for treatment, offset in events}
+        # A year can carry more than one treatment (a thinning and its surface-fuel follow-up
+        # are commonly scheduled in the same year). Keying by offset alone silently dropped all
+        # but the last, so the chain priced neither the first treatment's products nor its
+        # transition.
+        by_offset: dict[int, list[str]] = {}
+        for treatment, offset in events:
+            by_offset.setdefault(int(offset), []).append(str(treatment))
         arrays_track, arrays_offset, arrays_area = self._fragment_arrays()
         tracks = arrays_track[positions]
         offsets = arrays_offset[positions]
@@ -810,8 +816,42 @@ class Simulator:
                 if step > current_year:
                     offsets += step - current_year
                     current_year = step
-                treatment = by_offset.get(step)
-                if treatment is not None:
+                step_treatments = by_offset.get(step)
+                if step_treatments:
+                    for treatment_label in step_treatments:
+                        for index in range(len(positions)):
+                            current = int(tracks[index])
+                            transition = self._treatment_by_key.get((current, treatment_label))
+                            if transition is not None:
+                                area = float(areas[index])
+                                offset = int(offsets[index])
+                                for curve_id, product_label in products.get(
+                                    (current, treatment_label), ()
+                                ):
+                                    value = area * self._curve_value(curve_id, offset)
+                                    key = (step, product_label)
+                                    totals[key] = totals.get(key, 0.0) + value
+                                tracks[index] = transition[0]
+                                offsets[index] = (
+                                    offsets[index] + transition[1]
+                                    if self._treatment_relative.get(
+                                        (current, treatment_label), False
+                                    )
+                                    else transition[1]
+                                )
+                if step in wanted:
+                    for index in range(len(positions)):
+                        area = float(areas[index])
+                        offset = int(offsets[index])
+                        for curve_id, label in features.get(int(tracks[index]), ()):
+                            value = area * self._curve_value(curve_id, offset)
+                            key = (step, label)
+                            totals[key] = totals.get(key, 0.0) + value
+            return totals
+        for step in range(years):
+            treatments = by_offset.get(step)
+            if treatments:
+                for treatment in treatments:
                     for index in range(len(positions)):
                         current = int(tracks[index])
                         transition = self._treatment_by_key.get((current, treatment))
@@ -823,31 +863,11 @@ class Simulator:
                                 key = (step, product_label)
                                 totals[key] = totals.get(key, 0.0) + value
                             tracks[index] = transition[0]
-                            offsets[index] = transition[1]
-                if step in wanted:
-                    for index in range(len(positions)):
-                        area = float(areas[index])
-                        offset = int(offsets[index])
-                        for curve_id, label in features.get(int(tracks[index]), ()):
-                            value = area * self._curve_value(curve_id, offset)
-                            key = (step, label)
-                            totals[key] = totals.get(key, 0.0) + value
-            return totals
-        for step in range(years):
-            treatment = by_offset.get(step)
-            if treatment is not None:
-                for index in range(len(positions)):
-                    current = int(tracks[index])
-                    transition = self._treatment_by_key.get((current, treatment))
-                    if transition is not None:
-                        area = float(areas[index])
-                        offset = int(offsets[index])
-                        for curve_id, product_label in products.get((current, treatment), ()):
-                            value = area * self._curve_value(curve_id, offset)
-                            key = (step, product_label)
-                            totals[key] = totals.get(key, 0.0) + value
-                        tracks[index] = transition[0]
-                        offsets[index] = transition[1]
+                            offsets[index] = (
+                                offsets[index] + transition[1]
+                                if self._treatment_relative.get((current, treatment), False)
+                                else transition[1]
+                            )
             for index in range(len(positions)):
                 area = float(areas[index])
                 offset = int(offsets[index])
@@ -975,7 +995,12 @@ class Simulator:
             if applied and treatment is not None:
                 transition = self._treatment_by_key.get((track, treatment))
                 if transition is not None:
-                    after_track, after_offset = transition
+                    after_track = transition[0]
+                    after_offset = (
+                        offset + transition[1]
+                        if self._treatment_relative.get((track, treatment), False)
+                        else transition[1]
+                    )
                     produced_at = offset + event_year
                     for row, label in products.get(track, ()):
                         key = (event_year, label)
@@ -1027,7 +1052,9 @@ class Simulator:
                 kernel = ProductKernel(self)
                 self._product_kernel = kernel
             return kernel.products(block_id, events)
-        by_offset = {int(offset): str(treatment) for treatment, offset in events}
+        by_offset: dict[int, list[str]] = {}
+        for treatment, offset in events:
+            by_offset.setdefault(int(offset), []).append(str(treatment))
         arrays_track, arrays_offset, arrays_area = self._fragment_arrays()
         tracks = arrays_track[positions]
         offsets = arrays_offset[positions]
@@ -1039,20 +1066,24 @@ class Simulator:
             if gap:
                 offsets = offsets + gap
                 current = offset
-            treatment = by_offset[offset]
-            for index in range(len(positions)):
-                key = (int(tracks[index]), treatment)
-                transition = self._treatment_by_key.get(key)
-                if transition is None:
-                    continue
-                area = float(areas[index])
-                fragment_offset = int(offsets[index])
-                for curve_id, product_label in self._products_by_key.get(key, []):
-                    value = area * self._curve_value(curve_id, fragment_offset)
-                    cell = (offset, product_label)
-                    totals[cell] = totals.get(cell, 0.0) + value
-                tracks[index] = transition[0]
-                offsets[index] = transition[1]
+            for treatment in by_offset[offset]:
+                for index in range(len(positions)):
+                    key = (int(tracks[index]), treatment)
+                    transition = self._treatment_by_key.get(key)
+                    if transition is None:
+                        continue
+                    area = float(areas[index])
+                    fragment_offset = int(offsets[index])
+                    for curve_id, product_label in self._products_by_key.get(key, []):
+                        value = area * self._curve_value(curve_id, fragment_offset)
+                        cell = (offset, product_label)
+                        totals[cell] = totals.get(cell, 0.0) + value
+                    tracks[index] = transition[0]
+                    offsets[index] = (
+                        offsets[index] + transition[1]
+                        if self._treatment_relative.get(key, False)
+                        else transition[1]
+                    )
         return totals
 
     def block_trajectory(
@@ -1156,37 +1187,46 @@ class Simulator:
         positions = self._block_index().get(int(block_id), [])
         if not positions:
             return ()
-        by_offset = {int(offset): str(treatment) for treatment, offset in events}
+        by_offset: dict[int, list[str]] = {}
+        for treatment, offset in events:
+            by_offset.setdefault(int(offset), []).append(str(treatment))
         tracks = self.fragments["track_id"].to_numpy()[positions].astype(np.int64)
         offsets = self.fragments["offset"].to_numpy()[positions].astype(np.int64)
         areas = self.fragments["area_ha"].to_numpy()[positions].astype(float)
         routed: list[RouteEvent] = []
         for step in range(years):
-            treatment = by_offset.get(step)
-            if treatment is not None:
-                for index in range(len(positions)):
-                    key = (int(tracks[index]), treatment)
-                    transition = self._treatment_by_key.get(key)
-                    if transition is None:
-                        continue
-                    offset = int(offsets[index])
-                    area = float(areas[index])
-                    for curve_id, product_label in self._products_by_key.get(key, []):
-                        value = area * self._curve_value(curve_id, offset)
-                        if route_model.delivers(product_label):
-                            destination, route = route_model.assign(int(block_id), product_label)
-                            routed.append(
-                                (
-                                    step,
-                                    int(block_id),
-                                    product_label,
-                                    value,
-                                    destination,
-                                    route,
+            treatments = by_offset.get(step)
+            if treatments:
+                for treatment in treatments:
+                    for index in range(len(positions)):
+                        key = (int(tracks[index]), treatment)
+                        transition = self._treatment_by_key.get(key)
+                        if transition is None:
+                            continue
+                        offset = int(offsets[index])
+                        area = float(areas[index])
+                        for curve_id, product_label in self._products_by_key.get(key, []):
+                            value = area * self._curve_value(curve_id, offset)
+                            if route_model.delivers(product_label):
+                                destination, route = route_model.assign(
+                                    int(block_id), product_label
                                 )
-                            )
-                    tracks[index] = transition[0]
-                    offsets[index] = transition[1]
+                                routed.append(
+                                    (
+                                        step,
+                                        int(block_id),
+                                        product_label,
+                                        value,
+                                        destination,
+                                        route,
+                                    )
+                                )
+                        tracks[index] = transition[0]
+                        offsets[index] = (
+                            offsets[index] + transition[1]
+                            if self._treatment_relative.get(key, False)
+                            else transition[1]
+                        )
             offsets += 1
         return tuple(routed)
 
