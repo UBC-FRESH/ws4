@@ -85,6 +85,15 @@ class Simulator:
         self.fragments = pd.read_parquet(self.dataset_dir / "fragments.parquet")
         self.tracks = pd.read_parquet(self.dataset_dir / "tracks.parquet")
         self.treatments = pd.read_parquet(self.dataset_dir / "treatments.parquet")
+        if "relative" not in self.treatments.columns:
+            # Datasets compiled before relative age adjustment existed are absolute.
+            self.treatments = self.treatments.assign(relative=0)
+        else:
+            self.treatments["relative"] = (
+                pd.to_numeric(self.treatments["relative"], errors="coerce")
+                .fillna(0)
+                .astype("int64")
+            )
         self.curves = pd.read_parquet(self.dataset_dir / "curves.parquet")
         self.features = pd.read_parquet(self.dataset_dir / "features.parquet")
         self.products = pd.read_parquet(self.dataset_dir / "products.parquet")
@@ -123,6 +132,13 @@ class Simulator:
                 _as_int(row.new_track),
                 _as_int(row.offset),
             )
+            for row in self.treatments.itertuples(index=False)
+        }
+        # Age adjustment mode per treatment: relative adds the offset to the fragment's
+        # current age, absolute sets it. Kept separate so the transition tuple stays a
+        # pair for every existing consumer.
+        self._treatment_relative: dict[tuple[int, str], bool] = {
+            (_as_int(row.track_id), str(row.treatment)): bool(_as_int(row.relative))
             for row in self.treatments.itertuples(index=False)
         }
         self._products_by_key: dict[tuple[int, str], list[tuple[int, str]]] = {}
@@ -490,7 +506,10 @@ class Simulator:
                             }
                         )
                 tracks[index] = treatment[0]
-                offsets[index] = treatment[1]
+                if self._treatment_relative.get(key, False):
+                    offsets[index] = offsets[index] + treatment[1]
+                else:
+                    offsets[index] = treatment[1]
                 changed = True
                 disturbed.add(block_id)
         if changed:
@@ -692,10 +711,15 @@ class Simulator:
             fill(cursor, event_year, offsets)
             offsets = offsets + (event_year - cursor)
             for index in range(count):
-                transition = self._treatment_by_key.get((int(tracks[index]), treatment))
+                key = (int(tracks[index]), treatment)
+                transition = self._treatment_by_key.get(key)
                 if transition is not None:
                     tracks[index] = transition[0]
-                    offsets[index] = transition[1]
+                    offsets[index] = (
+                        offsets[index] + transition[1]
+                        if self._treatment_relative.get(key, False)
+                        else transition[1]
+                    )
                     row = label_row.get((transition[0], label))
                     current[index] = 0 if row is None else row
                     has[index] = row is not None

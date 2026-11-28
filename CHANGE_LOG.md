@@ -5907,3 +5907,21 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P235.2: verified and closed P235. Full dashboard **OVERALL: GREEN**. Four transitions match
   750; five are one step ahead. Report: `notes/reports/p235-succession-offset.md`; close-out:
   `notes/reports/p235-closeout.md`. Design: `notes/design/ws4-succession-offset.md`. PR: #1350.
+## 2026-11-28
+
+- Fixed #1437: treatments now carry their age adjustment mode. The XML parser reads
+  `adjust` and `offset` into `Treatment`; the compiler writes `offset` and a `relative`
+  column instead of a hard-coded 0; the simulator and the native product kernel apply a
+  relative offset as `age + offset` and an absolute one as `age = offset`. Datasets
+  compiled before the column existed default to absolute, in both the schema check and
+  the simulator, so old datasets stay valid and unchanged.
+- Added `tests/test_treatment_age.py` (6 tests): absolute is the default, relative is
+  parsed, relative 0 preserves age, absolute 0 resets it, relative -10 makes the treated
+  fragment ten years younger, and the compiler always writes the column.
+- Updated the matrix regression fixture to the new `treatments` header and made the
+  legacy ingest default `relative` to 0.
+- Dashboard **GREEN** (lint, format, types, 103.54 s tests, validator, docs, docstrings).
+  Local tooling had to be installed in the venv first (pytest, ruff, mypy, coverage,
+  hypothesis, numpydoc, pandas-stubs, rasterio, nbclient, sphinx, pandoc); `httpx2` was
+  replaced with the pinned `httpx>=0.27` because its stricter `Client.get` typing broke
+  the types gate in `tests/test_web.py` and `scripts/prewarm_tiles.py`.

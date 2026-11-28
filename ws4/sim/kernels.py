@@ -119,7 +119,10 @@ def gather_chain_products(
                 out_value[count] = area * table[product_rows[j], age]
                 count += 1
             tracks[i] = new_track
-            ages[i] = transitions[track, slot, 1]
+            if transitions[track, slot, 2]:
+                ages[i] += transitions[track, slot, 1]
+            else:
+                ages[i] = transitions[track, slot, 1]
     return count
 
 
@@ -170,7 +173,7 @@ class ProductKernel:
                 slots.append(self.label_slot[label])
         self.product_rows = np.asarray(rows, dtype=np.int64)
         self.product_slots = np.asarray(slots, dtype=np.int64)
-        self.transitions = np.full((n_track, n_treat, 2), -1, dtype=np.int64)
+        self.transitions = np.full((n_track, n_treat, 3), -1, dtype=np.int64)
         for (track, treatment), (new_track, new_offset) in simulator._treatment_by_key.items():
             track_index = self.track_slot.get(int(track))
             treat_index = self.treatment_slot.get(str(treatment))
@@ -178,6 +181,9 @@ class ProductKernel:
                 continue
             self.transitions[track_index, treat_index, 0] = self.track_slot.get(int(new_track), -1)
             self.transitions[track_index, treat_index, 1] = int(new_offset)
+            self.transitions[track_index, treat_index, 2] = int(
+                simulator._treatment_relative.get((int(track), str(treatment)), False)
+            )
         self.table = simulator._curve_table.table
         self.age_max = int(simulator._curve_table.age_max)
         self._blocks: dict[int, tuple[np.ndarray, np.ndarray, np.ndarray]] = {}

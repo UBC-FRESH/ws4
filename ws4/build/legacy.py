@@ -133,6 +133,11 @@ def ingest_legacy_matrix(matrix_dir: Path, fragments_path: Path, out_dir: Path) 
     )
     tables["fragments"] = fragments
 
+    # Legacy matrices predate relative age adjustment; their treatments are absolute, which is
+    # also the XML default. Fill the column explicitly so the schema check does not see NaN.
+    if "treatments" in tables and "relative" not in tables["treatments"].columns:
+        tables["treatments"] = tables["treatments"].assign(relative=0)
+
     out_dir.mkdir(parents=True, exist_ok=True)
     for table in TABLES:
         frame = tables.get(table.name, pd.DataFrame(columns=table.required_columns))

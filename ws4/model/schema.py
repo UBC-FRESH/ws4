@@ -120,6 +120,7 @@ TABLES: tuple[Table, ...] = (
             Column("treatment", "string"),
             Column("new_track", "integer"),
             Column("offset", "integer"),
+            Column("relative", "integer"),
             Column("retain", "integer"),
         ),
     ),
@@ -321,6 +322,11 @@ def _check_table(table: Table, dataset_dir: Path) -> list[Problem]:
         problems.append(Problem("DATASET-MISSING-TABLE", table.name, f"missing file {table.file}"))
         return problems
     frame = pd.read_parquet(path)
+    if table.name == "treatments" and "relative" not in frame.columns:
+        # Datasets compiled before relative age adjustment existed are absolute, which is
+        # also the XML default. Fill it so older datasets stay valid rather than failing the
+        # column check.
+        frame = frame.assign(relative=0)
     for column in table.columns:
         if column.name not in frame.columns:
             problems.append(

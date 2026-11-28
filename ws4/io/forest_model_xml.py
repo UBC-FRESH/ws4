@@ -64,12 +64,22 @@ class Treatment:
     transition : dict of str to str
         The state-variable values the treated area moves to, keyed by field name, as raw
         expressions.
+    adjust : str
+        The age adjustment mode: ``"R"`` (or any value starting with ``R``) means relative,
+        anything else means absolute. The default is absolute, which matches the XML and
+        Patchworks defaults.
+    offset : int
+        The age offset applied by the treatment, in years. Absolute adjustment sets the
+        fragment's age to this value (0 resets it); relative adjustment adds it to the age at
+        which the fragment is treated.
     """
 
     label: str
     min_age: int
     max_age: int
     transition: dict[str, str] = field(default_factory=dict)
+    adjust: str = ""
+    offset: int = 0
 
 
 @dataclass(frozen=True)
@@ -289,6 +299,8 @@ def _treatment(element: ET.Element) -> Treatment:
         min_age=_int_or_zero(element.get("minage")),
         max_age=_int_or_zero(element.get("maxage")),
         transition=transition,
+        adjust=(element.get("adjust") or "").strip(),
+        offset=_int_or_zero(element.get("offset")),
     )
 
 
